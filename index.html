@@ -198,6 +198,7 @@ tr:hover td{background:#fafaf8}
     <button class="tab active" onclick="showSection('sec-plantilla')">Plantilla</button>
     <button class="tab" onclick="showSection('sec-costos')">Gastos fijos</button>
     <button class="tab" onclick="showSection('sec-inhabiles')">Días inhábiles</button>
+    <button class="tab" onclick="showSection('sec-datos')">Exportar / Importar</button>
   </div>
   <div id="sec-plantilla" class="section active">
     <div class="card" style="max-width:420px">
@@ -232,6 +233,22 @@ tr:hover td{background:#fafaf8}
         </div>
       </div>
       <div id="inhabiles-list"></div>
+    </div>
+  </div>
+  <div id="sec-datos" class="section">
+    <div class="card" style="max-width:500px">
+      <h3>Exportar datos</h3>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Descarga un archivo con todos tus datos: commodities, HOEs, lotes, programación, costeos y configuración. Úsalo como respaldo o para transferir datos a otra computadora.</p>
+      <button class="btn primary" onclick="exportarDatos()">Descargar backup (.json)</button>
+    </div>
+    <div class="card" style="max-width:500px">
+      <h3>Importar datos</h3>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Carga un archivo de backup previamente exportado. <strong>Esto reemplazará todos los datos actuales.</strong></p>
+      <div style="margin-bottom:12px">
+        <input type="file" id="import-file" accept=".json" style="font-size:13px;padding:6px">
+      </div>
+      <div id="import-preview" style="margin-bottom:12px"></div>
+      <button class="btn primary" onclick="importarDatos()">Importar datos</button>
     </div>
   </div>
 </div>
@@ -788,6 +805,62 @@ function renderAll(){
 
 // Cerrar modal al hacer clic fuera
 document.querySelectorAll('.modal-overlay').forEach(overlay=>{overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.style.display='none';});});
+
+// EXPORTAR / IMPORTAR
+function exportarDatos(){
+  const data={...state,nextId,exportado:new Date().toISOString(),version:'1.0'};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fecha=new Date().toISOString().split('T')[0];
+  a.href=url;a.download=`erp_backup_${fecha}.json`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importarDatos(){
+  const file=document.getElementById('import-file').files[0];
+  if(!file){alert('Selecciona un archivo .json primero.');return;}
+  if(!confirm('¿Seguro? Esto reemplazará TODOS los datos actuales con los del archivo.'))return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.commodities||!data.hoes||!data.lotes){alert('Archivo inválido — no parece ser un backup del ERP.');return;}
+      state={
+        role:'admin',
+        commodities:data.commodities||[],
+        hoes:data.hoes||[],
+        lotes:data.lotes||[],
+        programacion:data.programacion||[],
+        inhabiles:data.inhabiles||[],
+        config:data.config||{operadores:5,sueldo:500,gastosFijos:1000},
+        costeos:data.costeos||{}
+      };
+      nextId=data.nextId||{c:1,h:1,l:1,p:1};
+      state.commodities=state.commodities.map(c=>({...c,tipo:c.tipo||'ingreso'}));
+      saveState();renderAll();
+      document.getElementById('import-preview').innerHTML=`<div class="alert success">Datos importados correctamente: ${state.commodities.length} commodities, ${state.hoes.length} HOEs, ${state.lotes.length} lotes.</div>`;
+    }catch(err){alert('Error al leer el archivo. Verifica que sea un backup válido.');}
+  };
+  reader.readAsText(file);
+}
+
+// Previsualizar archivo antes de importar
+document.addEventListener('DOMContentLoaded',function(){
+  const fi=document.getElementById('import-file');
+  if(fi)fi.addEventListener('change',function(){
+    const file=this.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const data=JSON.parse(e.target.result);
+        const fecha=data.exportado?new Date(data.exportado).toLocaleDateString('es-MX'):'desconocida';
+        document.getElementById('import-preview').innerHTML=`<div class="alert warning">Archivo: <strong>${file.name}</strong><br>Fecha de exportación: ${fecha}<br>Contiene: ${(data.commodities||[]).length} commodities, ${(data.hoes||[]).length} HOEs, ${(data.lotes||[]).length} lotes.</div>`;
+      }catch(e){document.getElementById('import-preview').innerHTML='<div class="alert danger">Archivo inválido.</div>';}
+    };
+    reader.readAsText(file);
+  });
+});
 
 loadState();
 </script>
