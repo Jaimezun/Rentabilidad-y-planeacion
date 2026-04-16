@@ -838,7 +838,7 @@ function addCcRow(selId,pct){
   div.innerHTML='<select style="flex:2">'+optHtml+'</select>'
     +'<input type="number" value="'+pct+'" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px">'
     +'<span style="font-size:13px;color:#888">%</span>'
-    +'<button class="btn small danger" onclick="this.closest('.commodity-row').remove();updateCcSum()">✕</button>';
+    +'<button class="btn small danger" onclick="this.closest(\'.commodity-row\').remove();updateCcSum()">✕</button>';
   // Append FIRST, then set value — this is critical for select to work correctly
   container.appendChild(div);
   // Now set the selected value after DOM insertion
