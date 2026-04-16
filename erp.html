@@ -224,7 +224,7 @@ tr:hover td{background:#fafaf8}
       <button class="btn primary" onclick="openModal('modal-item-func')">+ Nuevo item</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table><thead><tr><th>Marca / Modelo</th><th>Categoría</th><th>RAM (GB)</th><th>Disco (GB)</th><th>Precio venta</th><th></th></tr></thead>
+      <table><thead><tr><th>Marca / Modelo</th><th>Categoría</th><th>RAM (GB)</th><th>Disco (GB)</th><th>Grado</th><th>Precio venta</th><th></th></tr></thead>
       <tbody id="items-func-table"></tbody></table>
     </div>
   </div>
@@ -532,6 +532,10 @@ tr:hover td{background:#fafaf8}
   <div class="row">
     <div class="field"><label>RAM (GB)</label><input type="number" id="itemf-ram" min="0" placeholder="Ej. 16"></div>
     <div class="field"><label>Disco duro (GB)</label><input type="number" id="itemf-disco" min="0" placeholder="Ej. 256"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Configuración</label><input type="text" id="itemf-config" placeholder="Ej. i5-8250U"></div>
+    <div class="field"><label>Grado</label><input type="text" id="itemf-grado" placeholder="Ej. A, B, C"></div>
   </div>
   <div class="field"><label>Precio de venta ($)</label><input type="number" id="itemf-precio" min="0" step="0.01" placeholder="Ej. 3500"></div>
   <div class="modal-footer">
@@ -989,15 +993,17 @@ function saveItemFunc(){
   const catId=document.getElementById('itemf-categoria').value;
   const ram=parseFloat(document.getElementById('itemf-ram').value)||0;
   const disco=parseFloat(document.getElementById('itemf-disco').value)||0;
+  const config=document.getElementById('itemf-config').value.trim();
+  const grado=document.getElementById('itemf-grado').value.trim();
   const precio=parseFloat(document.getElementById('itemf-precio').value)||0;
   if(!marca||!modelo||!catId){alert('Ingresa marca, modelo y categoría.');return;}
-  const obj={id:id||uid('itf'),marca,modelo,catId,ram,disco,precio};
+  const obj={id:id||uid('itf'),marca,modelo,catId,ram,disco,config,grado,precio};
   if(id){const i=state.itemsFuncionales.findIndex(x=>x.id===id);if(i>=0)state.itemsFuncionales[i]=obj;}else state.itemsFuncionales.push(obj);
   saveState();closeModal('modal-item-func');renderItemsFunc();
 }
 function openModalItemFunc(){
   document.getElementById('itemf-edit-id').value='';
-  ['itemf-marca','itemf-modelo','itemf-ram','itemf-disco','itemf-precio'].forEach(x=>document.getElementById(x).value='');
+  ['itemf-marca','itemf-modelo','itemf-ram','itemf-disco','itemf-config','itemf-grado','itemf-precio'].forEach(x=>document.getElementById(x).value='');
   const sel=document.getElementById('itemf-categoria');
   sel.innerHTML=state.categorias.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
   document.getElementById('modal-item-func-title').textContent='Nuevo item funcional';openModal('modal-item-func');
@@ -1007,6 +1013,7 @@ function editItemFunc(id){
   document.getElementById('itemf-edit-id').value=it.id;
   document.getElementById('itemf-marca').value=it.marca;document.getElementById('itemf-modelo').value=it.modelo;
   document.getElementById('itemf-ram').value=it.ram;document.getElementById('itemf-disco').value=it.disco;
+  document.getElementById('itemf-config').value=it.config||'';document.getElementById('itemf-grado').value=it.grado||'';
   document.getElementById('itemf-precio').value=it.precio;
   const sel=document.getElementById('itemf-categoria');
   sel.innerHTML=state.categorias.map(c=>`<option value="${c.id}" ${c.id===it.catId?'selected':''}>${c.nombre}</option>`).join('');
@@ -1015,10 +1022,10 @@ function editItemFunc(id){
 function deleteItemFunc(id){if(!confirm('¿Eliminar?'))return;state.itemsFuncionales=state.itemsFuncionales.filter(x=>x.id!==id);saveState();renderItemsFunc();}
 function renderItemsFunc(){
   const tb=document.getElementById('items-func-table');
-  if(!state.itemsFuncionales.length){tb.innerHTML='<tr><td colspan="6" style="color:#888;text-align:center;padding:32px">Sin items funcionales</td></tr>';return;}
+  if(!state.itemsFuncionales.length){tb.innerHTML='<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin items funcionales</td></tr>';return;}
   tb.innerHTML=state.itemsFuncionales.map(it=>{
     const cat=state.categorias.find(x=>x.id===it.catId);
-    return`<tr><td><strong>${it.marca} ${it.modelo}</strong></td><td>${cat?`<span class="badge teal">${cat.nombre}</span>`:'-'}</td><td>${it.ram||'-'}</td><td>${it.disco||'-'}</td><td>$${it.precio.toFixed(2)}</td><td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="editItemFunc('${it.id}')">Editar</button> <button class="btn small danger" onclick="deleteItemFunc('${it.id}')">Eliminar</button></td></tr>`;
+    return`<tr><td><strong>${it.marca} ${it.modelo}</strong>${it.config?`<br><span style="font-size:11px;color:#888">${it.config}</span>`:''}</td><td>${cat?`<span class="badge teal">${cat.nombre}</span>`:'-'}</td><td>${it.ram||'-'}</td><td>${it.disco||'-'}</td><td>${it.grado?`<span class="badge neutral">${it.grado}</span>`:'-'}</td><td>$${it.precio.toFixed(2)}</td><td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="editItemFunc('${it.id}')">Editar</button> <button class="btn small danger" onclick="deleteItemFunc('${it.id}')">Eliminar</button></td></tr>`;
   }).join('');
 }
 
