@@ -828,21 +828,23 @@ function renderHoes(){
 function addCcRow(selId,pct){
   selId=selId||'';pct=pct||'';
   const container=document.getElementById('cc-comm-rows');
-  const rowId='ccrow_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
   const div=document.createElement('div');
   div.className='commodity-row';
-  div.dataset.rowid=rowId;
-  // Build select with current commoditiesCierre
+  // Build options
   let optHtml='';
-  state.commoditiesCierre.forEach(c=>{
-    optHtml+=`<option value="${c.id}"${c.id===selId?' selected':''}>${c.nombre}</option>`;
+  state.commoditiesCierre.forEach(function(c){
+    optHtml+='<option value="'+c.id+'">'+c.nombre+'</option>';
   });
-  div.innerHTML=`<select style="flex:2">${optHtml}</select>`
-    +`<input type="number" value="${pct}" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px">`
-    +`<span style="font-size:13px;color:#888">%</span>`
-    +`<button class="btn small danger" onclick="this.closest('.commodity-row').remove();updateCcSum()">✕</button>`;
-  div.querySelector('input').addEventListener('input',updateCcSum);
+  div.innerHTML='<select style="flex:2">'+optHtml+'</select>'
+    +'<input type="number" value="'+pct+'" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px">'
+    +'<span style="font-size:13px;color:#888">%</span>'
+    +'<button class="btn small danger" onclick="this.closest('.commodity-row').remove();updateCcSum()">✕</button>';
+  // Append FIRST, then set value — this is critical for select to work correctly
   container.appendChild(div);
+  // Now set the selected value after DOM insertion
+  const sel=div.querySelector('select');
+  if(selId&&sel){sel.value=selId;}
+  div.querySelector('input').addEventListener('input',updateCcSum);
   updateCcSum();
 }
 function updateCcSum(){
