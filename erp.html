@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP — Módulo de Producción</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:14px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:1px solid #e0e0d8;background:#fff;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:16px;font-weight:600;flex:1}
+.nav{display:flex;gap:4px;padding:8px 20px;border-bottom:1px solid #e0e0d8;background:#f0f0ea;overflow-x:auto;flex-shrink:0}
+.nav button{font-size:13px;padding:6px 14px;border-radius:6px;border:1px solid transparent;background:transparent;color:#666;cursor:pointer;white-space:nowrap;font-family:inherit}
+.nav button.active{background:#fff;border-color:#ccc;color:#1a1a1a;font-weight:500}
+.nav button:hover:not(.active){background:#fff;color:#1a1a1a}
+.content{flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%}
+.page{display:none}.page.active{display:block}
+h2{font-size:20px;font-weight:600;margin-bottom:20px}
+h3{font-size:15px;font-weight:600;margin-bottom:12px}
+.card{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:20px;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#1a1a1a;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:background 0.1s}
+.btn:hover{background:#f5f5f0}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.primary:hover{background:#333}
+.btn.success{background:#1a7a3c;color:#fff;border-color:#1a7a3c}
+.btn.success:hover{background:#158033}
+.btn.danger{color:#c0392b;border-color:#e0a0a0}
+.btn.danger:hover{background:#fdf0f0}
+.btn.warning{background:#a05a00;color:#fff;border-color:#a05a00}
+.btn.small{padding:4px 10px;font-size:12px}
+.row{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.row.center{align-items:center}
+label{font-size:12px;color:#666;display:block;margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;font-size:14px;font-family:inherit;outline:none}
+input:focus,select:focus{border-color:#888}
+.field{margin-bottom:12px;flex:1;min-width:140px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0d8;color:#666;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em}
+td{padding:9px 12px;border-bottom:1px solid #f0f0ea;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.info{background:#e8f0fe;color:#1a56db}
+.badge.success{background:#e8f8ed;color:#1a7a3c}
+.badge.warning{background:#fef8e8;color:#a05a00}
+.badge.danger{background:#fde8e8;color:#c0392b}
+.badge.neutral{background:#f0f0ea;color:#666;border:1px solid #ddd}
+.badge.purple{background:#f0e8fe;color:#6b21a8}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.metric{background:#f8f8f4;border-radius:8px;padding:14px}
+.metric .label{font-size:11px;color:#888;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.metric .value{font-size:22px;font-weight:600}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:#fff;border-radius:12px;border:1px solid #ddd;padding:24px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.modal h3{margin-bottom:16px;font-size:17px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #e0e0d8}
+.alert{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.alert.warning{background:#fef8e8;color:#a05a00;border:1px solid #f0d080}
+.alert.danger{background:#fde8e8;color:#c0392b;border:1px solid #f0a0a0}
+.alert.success{background:#e8f8ed;color:#1a7a3c;border:1px solid #a0d8b0}
+.alert.info{background:#e8f0fe;color:#1a56db;border:1px solid #a0b8f0}
+.commodity-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cal-day-name{text-align:center;font-size:11px;color:#888;padding:4px;font-weight:600}
+.cal-day{min-height:72px;padding:5px;border-radius:6px;border:1px solid #e8e8e0;font-size:10px;background:#fff;cursor:pointer;transition:background 0.1s}
+.cal-day:hover:not(.empty):not(.weekend){background:#f8f8f4}
+.cal-day.empty{background:transparent;border-color:transparent;cursor:default}
+.cal-day.today{border-color:#1a56db;border-width:2px}
+.cal-day.weekend{background:#f8f8f4;opacity:0.6;cursor:default}
+.cal-day .day-num{font-size:11px;color:#888;margin-bottom:3px;font-weight:500}
+.cal-day.today .day-num{color:#1a56db;font-weight:700}
+.lote-chip{font-size:10px;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap-bar-wrap{height:4px;background:#e0e0d8;border-radius:2px;margin-top:3px;overflow:hidden}
+.cap-bar{height:100%;border-radius:2px}
+.cap-label{font-size:9px;color:#999;margin-top:1px}
+.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e0e0d8;overflow-x:auto}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#888;margin-bottom:-2px;font-family:inherit;background:transparent;border-top:none;border-left:none;border-right:none;font-weight:500;white-space:nowrap}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.section{display:none}.section.active{display:block}
+.info-box{background:#f8f8f4;padding:14px;border-radius:8px;font-size:13px;margin-bottom:12px;border:1px solid #e8e8e0}
+.info-box .ib-title{font-weight:600;margin-bottom:8px;font-size:13px}
+.info-box .ib-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eeeeea}
+.info-box .ib-row:last-child{border-bottom:none;font-weight:600;padding-top:8px}
+.estado-programado{background:#e8f0fe;color:#1a56db;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.estado-enproceso{background:#fef8e8;color:#a05a00;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.estado-finalizado{background:#e8f8ed;color:#1a7a3c;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+#day-detail-card{display:none}
+.green-metric{background:linear-gradient(135deg,#e8f8ed,#d0f0dc);border:1px solid #a0d8b0}
+.green-metric .label{color:#1a7a3c}
+.green-metric .value{color:#1a7a3c}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <h1>ERP — Módulo de Producción</h1>
+  <span id="role-badge" class="badge info">Admin</span>
+  <span id="user-name" style="font-size:13px;color:#666;margin-right:8px"></span>
+  <button class="btn small" onclick="logout()">Cerrar sesión</button>
+</div>
+<div class="nav" id="main-nav">
+  <button class="nav active" onclick="showPage('dashboard')">Dashboard</button>
+  <button class="nav" onclick="showPage('clientes')">Clientes</button>
+  <button class="nav" onclick="showPage('commodities')">Commodities</button>
+  <button class="nav" onclick="showPage('hoes')">HOEs</button>
+  <button class="nav" onclick="showPage('catalogo-cierre')">Catálogo cierre</button>
+  <button class="nav" onclick="showPage('lotes')">Lotes</button>
+  <button class="nav" onclick="showPage('planeacion')">Planeación</button>
+  <button class="nav" onclick="showPage('costeo')">Costeo</button>
+  <button class="nav" onclick="showPage('config')">Configuración</button>
+</div>
+<div class="content">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <h2>Dashboard</h2>
+  <div class="metric-grid" id="dash-metrics"></div>
+  <div class="row">
+    <div style="flex:1;min-width:260px"><div class="card"><h3>Lotes recientes</h3><div id="dash-lotes"></div></div></div>
+    <div style="flex:1;min-width:260px"><div class="card"><h3>Alertas</h3><div id="dash-alertas"></div></div></div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div id="page-clientes" class="page">
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-clientes-lista')">Clientes</button>
+    <button class="tab" onclick="showSection('sec-clientes-resumen')">Resumen por cliente</button>
+  </div>
+  <div id="sec-clientes-lista" class="section active">
+    <div class="row center" style="margin-bottom:20px">
+      <h2 style="margin:0;flex:1">Clientes</h2>
+      <button class="btn primary" onclick="openModal('modal-cliente')">+ Nuevo cliente</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Lotes</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="clientes-table"></tbody></table>
+    </div>
+  </div>
+  <div id="sec-clientes-resumen" class="section">
+    <h2>Resumen por cliente</h2>
+    <div class="row center" style="margin-bottom:16px;gap:12px">
+      <div class="field" style="max-width:220px;margin:0">
+        <label>Cliente</label>
+        <select id="resumen-cliente-sel" onchange="renderResumenCliente()">
+          <option value="">— Todos —</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:200px;margin:0">
+        <label>Estado</label>
+        <select id="resumen-estado-sel" onchange="renderResumenCliente()">
+          <option value="">Todos</option>
+          <option value="Programado">Programado</option>
+          <option value="En proceso">En proceso</option>
+          <option value="Finalizado">Finalizado</option>
+        </select>
+      </div>
+    </div>
+    <div id="resumen-cliente-content"></div>
+  </div>
+</div>
+
+<!-- COMMODITIES -->
+<div id="page-commodities" class="page">
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-comm-normales')">Commodities de producción</button>
+    <button class="tab" onclick="showSection('sec-comm-cierre')">Commodities de cierre</button>
+  </div>
+  <div id="sec-comm-normales" class="section active">
+    <div class="row center" style="margin-bottom:20px">
+      <h2 style="margin:0;flex:1">Commodities de producción</h2>
+      <button class="btn primary" onclick="openModalComm('normal')">+ Nuevo</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Nombre</th><th>Tipo</th><th>Valor por kg</th><th>HOEs que lo usan</th><th></th></tr></thead>
+      <tbody id="commodities-table"></tbody></table>
+    </div>
+  </div>
+  <div id="sec-comm-cierre" class="section">
+    <div class="row center" style="margin-bottom:20px">
+      <h2 style="margin:0;flex:1">Commodities de cierre</h2>
+      <button class="btn primary" onclick="openModalComm('cierre')">+ Nuevo</button>
+    </div>
+    <div class="alert info">Estos commodities se usan en el catálogo de cierre. Definen el ahorro ambiental por kg reciclado.</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Nombre</th><th>kWh/kg</th><th>CO₂/kg (kg)</th><th>Agua/kg (L)</th><th>Petróleo/kg (L)</th><th></th></tr></thead>
+      <tbody id="commodities-cierre-table"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- HOEs -->
+<div id="page-hoes" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Hojas de Operación Estándar</h2>
+    <button class="btn primary" onclick="openNewHoe()">+ Nueva HOE</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table><thead><tr><th>Modelo / Descripción</th><th>Tiempo (min)</th><th>Peso (kg)</th><th>Commodities</th><th></th></tr></thead>
+    <tbody id="hoes-table"></tbody></table>
+  </div>
+</div>
+
+<!-- CATÁLOGO CIERRE -->
+<div id="page-catalogo-cierre" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Catálogo de cierre</h2>
+    <button class="btn primary" onclick="openNewCatalogoCierre()">+ Nueva categoría</button>
+  </div>
+  <div class="alert info">Las categorías de cierre agrupan items reales procesados. Cada una tiene proporciones de commodities de cierre para calcular la huella ambiental.</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table><thead><tr><th>Nombre</th><th>Commodities de cierre</th><th></th></tr></thead>
+    <tbody id="catalogo-cierre-table"></tbody></table>
+  </div>
+</div>
+
+<!-- LOTES -->
+<div id="page-lotes" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Lotes</h2>
+    <div class="row center" style="gap:8px;margin:0">
+      <select id="lotes-filtro-estado" onchange="renderLotes()" style="width:160px;padding:7px 10px">
+        <option value="">Todos los estados</option>
+        <option value="Programado">Programado</option>
+        <option value="En proceso">En proceso</option>
+        <option value="Finalizado">Finalizado</option>
+      </select>
+      <button class="btn primary" onclick="openNewLote()">+ Nuevo lote</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table><thead><tr><th>Nombre</th><th>Cliente</th><th>Items</th><th>Peso total</th><th>Deadline</th><th>Estado</th><th></th></tr></thead>
+    <tbody id="lotes-table"></tbody></table>
+  </div>
+</div>
+
+<!-- PLANEACIÓN -->
+<div id="page-planeacion" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Planeación de producción</h2>
+    <button class="btn" onclick="prevMonth()">‹</button>
+    <span id="cal-title" style="font-size:15px;font-weight:600;min-width:140px;text-align:center"></span>
+    <button class="btn" onclick="nextMonth()">›</button>
+  </div>
+  <div class="row" style="gap:16px">
+    <div style="flex:2;min-width:300px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:12px;color:#888;margin-bottom:8px">Haz clic en un día hábil para ver su detalle.</div>
+        <div class="cal-header" id="cal-header"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:#888">
+          <span><span style="display:inline-block;width:10px;height:4px;background:#1a56db;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Cap. usada</span>
+          <span><span style="display:inline-block;width:10px;height:4px;background:#ddd;border-radius:2px;vertical-align:middle;margin-right:4px"></span>Disponible</span>
+        </div>
+      </div>
+      <div class="card" id="day-detail-card">
+        <div class="row center" style="margin-bottom:10px">
+          <h3 style="margin:0;flex:1" id="day-detail-title"></h3>
+          <button class="btn small" onclick="document.getElementById('day-detail-card').style.display='none'">✕</button>
+        </div>
+        <div id="day-detail-content"></div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:220px">
+      <div class="card">
+        <h3>Programar lote</h3>
+        <div class="field"><label>Lote</label><select id="plan-lote" onchange="onPlanInputChange()"></select></div>
+        <div class="field"><label>Fecha de inicio</label><input type="date" id="plan-fecha" onchange="onPlanInputChange()"></div>
+        <div class="field">
+          <label>Personas asignadas</label>
+          <input type="number" id="plan-personas" min="1" value="1" oninput="onPlanInputChange()">
+          <div id="plan-disponibles" style="font-size:12px;color:#888;margin-top:4px"></div>
+        </div>
+        <div id="plan-preview" style="font-size:13px;color:#888;margin-bottom:12px"></div>
+        <div id="plan-alert"></div>
+        <button class="btn primary" onclick="programarLote()" style="width:100%">Programar</button>
+      </div>
+      <div class="card" style="margin-top:0"><h3>Lotes programados</h3><div id="lotes-programados"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- COSTEO -->
+<div id="page-costeo" class="page">
+  <div class="row center" style="margin-bottom:20px"><h2 style="margin:0;flex:1">Costeo</h2></div>
+  <div id="costeo-list"></div>
+</div>
+
+<!-- CONFIG -->
+<div id="page-config" class="page">
+  <h2>Configuración</h2>
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-plantilla')">Plantilla</button>
+    <button class="tab" onclick="showSection('sec-costos')">Gastos fijos</button>
+    <button class="tab" onclick="showSection('sec-inhabiles')">Días inhábiles</button>
+    <button class="tab" onclick="showSection('sec-datos')">Exportar / Importar</button>
+  </div>
+  <div id="sec-plantilla" class="section active">
+    <div class="card" style="max-width:420px">
+      <h3>Plantilla de operadores</h3>
+      <div class="field"><label>Número de operadores</label><input type="number" id="cfg-operadores" min="1" value="1"></div>
+      <div class="field"><label>Sueldo por operador por día ($)</label><input type="number" id="cfg-sueldo" min="0" value="0"></div>
+      <button class="btn primary" onclick="saveConfig()">Guardar</button>
+    </div>
+  </div>
+  <div id="sec-costos" class="section">
+    <div class="card" style="max-width:420px">
+      <h3>Gastos fijos diarios</h3>
+      <div class="field"><label>Renta + costos administrativos por día ($)</label><input type="number" id="cfg-gastos-fijos" min="0" value="0"></div>
+      <button class="btn primary" onclick="saveConfig()">Guardar</button>
+    </div>
+  </div>
+  <div id="sec-inhabiles" class="section">
+    <div class="card">
+      <h3>Días inhábiles</h3>
+      <div class="row" style="margin-bottom:12px;gap:8px;align-items:flex-end">
+        <div class="field" style="min-width:140px"><label>Fecha</label><input type="date" id="inh-fecha"></div>
+        <div class="field" style="flex:2"><label>Descripción</label><input type="text" id="inh-desc" placeholder="Ej. Navidad"></div>
+        <button class="btn" onclick="addInhabil()" style="margin-bottom:12px">Agregar</button>
+      </div>
+      <div style="margin-bottom:16px;padding:14px;background:#f8f8f4;border-radius:8px;border:1px solid #e8e8e0">
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px">Agregar semana completa</div>
+        <div class="row" style="gap:8px;align-items:flex-end">
+          <div class="field"><label>Desde</label><input type="date" id="inh-semana-inicio"></div>
+          <div class="field"><label>Hasta</label><input type="date" id="inh-semana-fin"></div>
+          <div class="field" style="flex:2"><label>Descripción</label><input type="text" id="inh-semana-desc" placeholder="Ej. Semana Santa"></div>
+          <button class="btn" onclick="addSemanaInhabil()" style="margin-bottom:12px">Agregar</button>
+        </div>
+      </div>
+      <div id="inhabiles-list"></div>
+    </div>
+  </div>
+  <div id="sec-datos" class="section">
+    <div class="card" style="max-width:500px">
+      <h3>Exportar datos</h3>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Descarga un archivo con todos los datos del sistema.</p>
+      <button class="btn primary" onclick="exportarDatos()">Descargar backup (.json)</button>
+    </div>
+    <div class="card" style="max-width:500px">
+      <h3>Importar datos</h3>
+      <p style="font-size:13px;color:#666;margin-bottom:16px"><strong>Esto reemplazará todos los datos actuales.</strong></p>
+      <input type="file" id="import-file" accept=".json" style="font-size:13px;padding:6px;margin-bottom:12px">
+      <div id="import-preview" style="margin-bottom:12px"></div>
+      <button class="btn primary" onclick="importarDatos()">Importar datos</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- MODALS -->
+<div id="modal-cliente" class="modal-overlay" style="display:none">
+<div class="modal">
+  <h3 id="modal-cliente-title">Nuevo cliente</h3>
+  <input type="hidden" id="cliente-edit-id">
+  <div class="field"><label>Nombre del cliente</label><input type="text" id="cliente-nombre" placeholder="Ej. Empresa ABC"></div>
+  <div class="field"><label>Usuario (para portal)</label><input type="text" id="cliente-usuario" placeholder="Se genera del nombre automáticamente"></div>
+  <div class="field"><label>Contraseña</label><input type="password" id="cliente-password" placeholder="Contraseña para el portal"></div>
+  <div class="field"><label>Email (opcional)</label><input type="text" id="cliente-email" placeholder="correo@empresa.com"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-cliente')">Cancelar</button>
+    <button class="btn primary" onclick="saveCliente()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-commodity" class="modal-overlay" style="display:none">
+<div class="modal">
+  <h3 id="modal-commodity-title">Nuevo commodity</h3>
+  <input type="hidden" id="comm-edit-id">
+  <input type="hidden" id="comm-edit-tipo-modal">
+  <div id="comm-fields-normal">
+    <div class="field"><label>Nombre</label><input type="text" id="comm-nombre" placeholder="Ej. Cobre"></div>
+    <div class="field"><label>Tipo</label>
+      <select id="comm-tipo">
+        <option value="ingreso">Ingreso — se vende y genera valor</option>
+        <option value="disposicion">Disposición — tiene costo de manejo</option>
+      </select>
+    </div>
+    <div class="field"><label>Valor por kg ($)</label><input type="number" id="comm-valor" min="0" step="0.01"></div>
+  </div>
+  <div id="comm-fields-cierre" style="display:none">
+    <div class="field"><label>Nombre</label><input type="text" id="comm-cierre-nombre" placeholder="Ej. Aluminio reciclado"></div>
+    <div class="field"><label>kWh ahorrados por kg</label><input type="number" id="comm-kwh" min="0" step="0.01"></div>
+    <div class="field"><label>kg de CO₂ ahorrados por kg</label><input type="number" id="comm-co2" min="0" step="0.01"></div>
+    <div class="field"><label>Litros de agua ahorrados por kg</label><input type="number" id="comm-agua" min="0" step="0.01"></div>
+    <div class="field"><label>Litros de petróleo ahorrados por kg</label><input type="number" id="comm-petroleo" min="0" step="0.01"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-commodity')">Cancelar</button>
+    <button class="btn primary" onclick="saveCommodity()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-hoe" class="modal-overlay" style="display:none">
+<div class="modal">
+  <h3 id="modal-hoe-title">Nueva HOE</h3>
+  <input type="hidden" id="hoe-edit-id">
+  <div class="row">
+    <div class="field" style="flex:2"><label>Modelo / Descripción</label><input type="text" id="hoe-modelo"></div>
+    <div class="field"><label>Tiempo (min)</label><input type="number" id="hoe-tiempo" min="0"></div>
+    <div class="field"><label>Peso (kg)</label><input type="number" id="hoe-peso" min="0" step="0.01"></div>
+  </div>
+  <div style="margin-bottom:8px">
+    <div class="row center" style="margin-bottom:8px">
+      <label style="flex:1;margin:0;font-size:13px;font-weight:600">Commodities recuperados</label>
+      <button class="btn small" onclick="addCommRow()">+ Agregar</button>
+    </div>
+    <div id="hoe-comm-rows"></div>
+    <div id="hoe-comm-sum" style="font-size:12px;margin-top:6px;font-weight:600"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-hoe')">Cancelar</button>
+    <button class="btn primary" onclick="saveHoe()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-catalogo-cierre" class="modal-overlay" style="display:none">
+<div class="modal">
+  <h3 id="modal-catalogo-cierre-title">Nueva categoría de cierre</h3>
+  <input type="hidden" id="cc-edit-id">
+  <div class="field"><label>Nombre de la categoría</label><input type="text" id="cc-nombre" placeholder="Ej. Laptop"></div>
+  <div style="margin-bottom:8px">
+    <div class="row center" style="margin-bottom:8px">
+      <label style="flex:1;margin:0;font-size:13px;font-weight:600">Commodities de cierre</label>
+      <button class="btn small" onclick="addCcRow()">+ Agregar</button>
+    </div>
+    <div id="cc-comm-rows"></div>
+    <div id="cc-comm-sum" style="font-size:12px;margin-top:6px;font-weight:600"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-catalogo-cierre')">Cancelar</button>
+    <button class="btn primary" onclick="saveCatalogoCierre()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-lote" class="modal-overlay" style="display:none">
+<div class="modal">
+  <h3 id="modal-lote-title">Nuevo lote</h3>
+  <input type="hidden" id="lote-edit-id">
+  <div class="row">
+    <div class="field" style="flex:2"><label>Nombre del lote</label><input type="text" id="lote-nombre"></div>
+    <div class="field"><label>Deadline</label><input type="date" id="lote-deadline"></div>
+  </div>
+  <div class="field"><label>Cliente</label><select id="lote-cliente"></select></div>
+  <div style="margin-bottom:8px">
+    <div class="row center" style="margin-bottom:8px">
+      <label style="flex:1;margin:0;font-size:13px;font-weight:600">Items (HOEs)</label>
+      <button class="btn small" onclick="addItemRow()">+ Agregar item</button>
+    </div>
+    <div id="lote-item-rows"></div>
+  </div>
+  <div id="lote-preview" class="metric-grid" style="margin-top:12px"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-lote')">Cancelar</button>
+    <button class="btn primary" onclick="saveLote()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-cierre" class="modal-overlay" style="display:none">
+<div class="modal" style="max-width:640px">
+  <h3 id="modal-cierre-title">Cierre del lote</h3>
+  <input type="hidden" id="cierre-lote-id">
+  <div class="alert info" style="margin-bottom:16px">Registra los items y pesos reales procesados. Usa las categorías del catálogo de cierre.</div>
+  <div class="row center" style="margin-bottom:12px">
+    <label style="flex:1;margin:0;font-size:13px;font-weight:600">Items procesados</label>
+    <button class="btn small" onclick="addCierreRow()">+ Agregar</button>
+  </div>
+  <div id="cierre-rows"></div>
+  <div id="cierre-preview" style="margin-top:16px"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-cierre')">Cancelar</button>
+    <button class="btn warning" onclick="finalizarLote()" style="color:#fff">Finalizar lote</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-costeo" class="modal-overlay" style="display:none">
+<div class="modal" style="max-width:620px">
+  <h3 id="modal-costeo-title">Costeo del lote</h3>
+  <input type="hidden" id="costeo-lote-id">
+  <div class="tabs">
+    <button class="tab active" onclick="showCosteoTab('egresos')">Egresos</button>
+    <button class="tab" onclick="showCosteoTab('ingresos')">Ingresos</button>
+    <button class="tab" onclick="showCosteoTab('resumen')">Resumen</button>
+  </div>
+  <div id="costeo-egresos" class="section active">
+    <div class="field"><label>Egreso logística ($)</label><input type="number" id="cst-log-egreso" step="0.01" value="0"></div>
+    <div id="cst-variables" class="info-box"></div>
+    <div id="cst-fijos" class="info-box"></div>
+    <div id="cst-disposicion" class="info-box"></div>
+  </div>
+  <div id="costeo-ingresos" class="section">
+    <div class="field"><label>Cobro por procesamiento</label>
+      <div class="row" style="gap:8px">
+        <select id="cst-cobro-tipo" style="flex:1"><option value="total">Total ($)</option><option value="kg">Por kg ($)</option><option value="pieza">Por pieza ($)</option></select>
+        <input type="number" id="cst-cobro-valor" step="0.01" value="0" style="flex:1" placeholder="Puede ser negativo">
+      </div>
+    </div>
+    <div class="field"><label>Ingreso logística ($)</label><input type="number" id="cst-log-ingreso" step="0.01" value="0"></div>
+    <div id="cst-commodities-val" class="info-box"></div>
+  </div>
+  <div id="costeo-resumen" class="section"><div id="cst-resumen-content"></div></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-costeo')">Cancelar</button>
+    <button class="btn primary" onclick="saveCosteo()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<div id="modal-detail" class="modal-overlay" style="display:none">
+<div class="modal" style="max-width:640px">
+  <h3 id="modal-detail-title"></h3>
+  <div id="modal-detail-content"></div>
+  <div class="modal-footer"><button class="btn" onclick="closeModal('modal-detail')">Cerrar</button></div>
+</div>
+</div>
+
+<script>
+const MIN_DIA=480;
+let state={
+  role:'admin',user:null,
+  clientes:[],
+  commodities:[],commoditiesCierre:[],
+  hoes:[],catalogoCierre:[],
+  lotes:[],programacion:[],inhabiles:[],
+  config:{operadores:5,sueldo:500,gastosFijos:1000},
+  costeos:{},cierres:{}
+};
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let nextId={c:1,cc:1,h:1,hc:1,l:1,p:1,cl:1};
+
+// AUTH
+function checkAuth(){
+  const u=localStorage.getItem('erp_session');
+  if(!u){window.location.href='index.html';return;}
+  const sess=JSON.parse(u);
+  state.role=sess.role;state.user=sess;
+  document.getElementById('role-badge').textContent=sess.role==='admin'?'Admin':'Operador';
+  document.getElementById('role-badge').className='badge '+(sess.role==='admin'?'info':'success');
+  document.getElementById('user-name').textContent=sess.nombre||sess.username;
+}
+function logout(){localStorage.removeItem('erp_session');window.location.href='index.html';}
+
+function loadState(){
+  try{const r=localStorage.getItem('erp_state');if(r){const d=JSON.parse(r);state={...state,...d};nextId=d.nextId||nextId;}}catch(e){}
+  state.commodities=(state.commodities||[]).map(c=>({...c,tipo:c.tipo||'ingreso'}));
+  state.clientes=state.clientes||[];
+  state.commoditiesCierre=state.commoditiesCierre||[];
+  state.catalogoCierre=state.catalogoCierre||[];
+  state.cierres=state.cierres||{};
+  checkAuth();
+  renderAll();
+}
+function saveState(){try{localStorage.setItem('erp_state',JSON.stringify({...state,nextId}));}catch(e){alert('Error al guardar.');}}
+function uid(p){return p+(nextId[p]++);}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='planeacion')renderCalendar();
+  if(id==='dashboard')renderDashboard();
+  if(id==='costeo')renderCosteoList();
+  if(id==='clientes'){renderClientes();renderResumenClienteSelects();}
+  if(id==='catalogo-cierre')renderCatalogoCierre();
+}
+function openModal(id){document.getElementById(id).style.display='flex';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function showSection(id){
+  const parent=document.getElementById(id).closest('.page')||document.body;
+  parent.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  parent.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ESTADO DEL LOTE
+function getEstadoLote(lote){
+  if(lote.finalizado)return'Finalizado';
+  const prog=state.programacion.find(p=>p.loteId===lote.id);
+  if(!prog)return'Programado';
+  const today=new Date().toISOString().split('T')[0];
+  if(today>=prog.fechaInicio&&today<=prog.fechaFin)return'En proceso';
+  if(today<prog.fechaInicio)return'Programado';
+  return'En proceso';
+}
+function estadoBadge(est){
+  if(est==='Finalizado')return`<span class="estado-finalizado">${est}</span>`;
+  if(est==='En proceso')return`<span class="estado-enproceso">${est}</span>`;
+  return`<span class="estado-programado">${est}</span>`;
+}
+
+// CLIENTES
+function saveCliente(){
+  const id=document.getElementById('cliente-edit-id').value;
+  const nombre=document.getElementById('cliente-nombre').value.trim();
+  const usuario=document.getElementById('cliente-usuario').value.trim()||nombre.toLowerCase().replace(/\s+/g,'-');
+  const password=document.getElementById('cliente-password').value;
+  const email=document.getElementById('cliente-email').value.trim();
+  if(!nombre){alert('Ingresa un nombre.');return;}
+  if(!id&&!password){alert('Ingresa una contraseña.');return;}
+  if(id){
+    const i=state.clientes.findIndex(c=>c.id===id);
+    if(i>=0){
+      state.clientes[i]={...state.clientes[i],nombre,usuario,email};
+      if(password)state.clientes[i].password=password;
+    }
+  } else {
+    if(state.clientes.some(c=>c.usuario===usuario)){alert('Ya existe un cliente con ese usuario.');return;}
+    state.clientes.push({id:uid('cl'),nombre,usuario,password,email});
+  }
+  saveState();closeModal('modal-cliente');renderClientes();
+  document.getElementById('cliente-edit-id').value='';
+  document.getElementById('cliente-nombre').value='';
+  document.getElementById('cliente-usuario').value='';
+  document.getElementById('cliente-password').value='';
+  document.getElementById('cliente-email').value='';
+}
+document.getElementById('cliente-nombre').addEventListener('input',function(){
+  const u=document.getElementById('cliente-usuario');
+  if(!document.getElementById('cliente-edit-id').value) u.value=this.value.toLowerCase().replace(/\s+/g,'-');
+});
+function editCliente(id){
+  const c=state.clientes.find(x=>x.id===id);if(!c)return;
+  document.getElementById('cliente-edit-id').value=c.id;
+  document.getElementById('cliente-nombre').value=c.nombre;
+  document.getElementById('cliente-usuario').value=c.usuario;
+  document.getElementById('cliente-password').value='';
+  document.getElementById('cliente-email').value=c.email||'';
+  document.getElementById('modal-cliente-title').textContent='Editar cliente';
+  openModal('modal-cliente');
+}
+function deleteCliente(id){
+  if(!confirm('¿Eliminar este cliente?'))return;
+  state.clientes=state.clientes.filter(c=>c.id!==id);saveState();renderClientes();
+}
+function renderClientes(){
+  const tb=document.getElementById('clientes-table');
+  if(!state.clientes.length){tb.innerHTML='<tr><td colspan="5" style="color:#888;text-align:center;padding:32px">Sin clientes registrados</td></tr>';return;}
+  tb.innerHTML=state.clientes.map(c=>{
+    const lotes=state.lotes.filter(l=>l.clienteId===c.id).length;
+    return`<tr><td><strong>${c.nombre}</strong>${c.email?`<br><span style="font-size:11px;color:#888">${c.email}</span>`:''}</td><td><code style="background:#f0f0ea;padding:2px 6px;border-radius:4px;font-size:12px">${c.usuario}</code></td><td>${lotes} lote${lotes!==1?'s':''}</td><td><span class="badge success">Activo</span></td><td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="editCliente('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteCliente('${c.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+function renderResumenClienteSelects(){
+  const sel=document.getElementById('resumen-cliente-sel');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Todos —</option>'+state.clientes.map(c=>`<option value="${c.id}" ${c.id===cur?'selected':''}>${c.nombre}</option>`).join('');
+  renderResumenCliente();
+}
+function renderResumenCliente(){
+  const clienteId=document.getElementById('resumen-cliente-sel').value;
+  const estado=document.getElementById('resumen-estado-sel').value;
+  let lotes=state.lotes;
+  if(clienteId)lotes=lotes.filter(l=>l.clienteId===clienteId);
+  if(estado)lotes=lotes.filter(l=>getEstadoLote(l)===estado);
+  const el=document.getElementById('resumen-cliente-content');
+  if(!lotes.length){el.innerHTML='<p style="color:#888">Sin lotes con los filtros seleccionados.</p>';return;}
+  // Agrupar por cliente
+  const porCliente={};
+  lotes.forEach(l=>{
+    const cid=l.clienteId||'sin-cliente';
+    if(!porCliente[cid])porCliente[cid]=[];
+    porCliente[cid].push(l);
+  });
+  let html='';
+  Object.entries(porCliente).forEach(([cid,ls])=>{
+    const cliente=state.clientes.find(x=>x.id===cid);
+    let totalKg=0,totalItems=0,totalIngreso=0,totalEgreso=0;
+    const rows=ls.map(l=>{
+      const items=l.items.reduce((a,x)=>a+x.qty,0);
+      totalItems+=items;totalKg+=l.pesoTotal;
+      const r=calcCosteo(l.id);
+      if(r){totalIngreso+=r.totalIngresos;totalEgreso+=r.totalEgresos;}
+      const neto=r?r.ingresosNetos:0;
+      const mc=r&&r.margen!==null?(r.margen>=20?'success':r.margen>=0?'warning':'danger'):'neutral';
+      const mt=r&&r.margen!==null?`${r.margen.toFixed(1)}%`:'N/A';
+      return`<tr><td><a href="#" onclick="viewLote('${l.id}');return false" style="color:#1a56db;text-decoration:none">${l.nombre}</a></td><td>${estadoBadge(getEstadoLote(l))}</td><td>${items}</td><td>${l.pesoTotal.toFixed(2)} kg</td><td>$${neto.toFixed(0)}</td><td><span class="badge ${mc}">${mt}</span></td></tr>`;
+    }).join('');
+    const netoTotal=totalIngreso-totalEgreso;
+    html+=`<div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="flex:1"><strong style="font-size:15px">${cliente?cliente.nombre:'Sin cliente'}</strong></div>
+      </div>
+      <div class="metric-grid" style="margin-bottom:14px">
+        <div class="metric"><div class="label">Lotes</div><div class="value">${ls.length}</div></div>
+        <div class="metric"><div class="label">Items totales</div><div class="value">${totalItems}</div></div>
+        <div class="metric"><div class="label">Kg totales</div><div class="value">${totalKg.toFixed(0)}</div></div>
+        <div class="metric"><div class="label">Neto total</div><div class="value" style="font-size:16px">$${netoTotal.toFixed(0)}</div></div>
+      </div>
+      <table><thead><tr><th>Lote</th><th>Estado</th><th>Items</th><th>Kg</th><th>Neto</th><th>Margen</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+// COMMODITIES
+function openModalComm(tipo){
+  document.getElementById('comm-edit-id').value='';
+  document.getElementById('comm-edit-tipo-modal').value=tipo;
+  if(tipo==='normal'){
+    document.getElementById('comm-fields-normal').style.display='block';
+    document.getElementById('comm-fields-cierre').style.display='none';
+    document.getElementById('modal-commodity-title').textContent='Nuevo commodity de producción';
+    document.getElementById('comm-nombre').value='';document.getElementById('comm-valor').value='';
+  } else {
+    document.getElementById('comm-fields-normal').style.display='none';
+    document.getElementById('comm-fields-cierre').style.display='block';
+    document.getElementById('modal-commodity-title').textContent='Nuevo commodity de cierre';
+    document.getElementById('comm-cierre-nombre').value='';document.getElementById('comm-kwh').value='';
+    document.getElementById('comm-co2').value='';document.getElementById('comm-agua').value='';document.getElementById('comm-petroleo').value='';
+  }
+  openModal('modal-commodity');
+}
+function saveCommodity(){
+  const id=document.getElementById('comm-edit-id').value;
+  const tipoModal=document.getElementById('comm-edit-tipo-modal').value;
+  if(tipoModal==='cierre'){
+    const nombre=document.getElementById('comm-cierre-nombre').value.trim();
+    if(!nombre)return;
+    const obj={id:id||uid('cc'),nombre,kwh:parseFloat(document.getElementById('comm-kwh').value)||0,co2:parseFloat(document.getElementById('comm-co2').value)||0,agua:parseFloat(document.getElementById('comm-agua').value)||0,petroleo:parseFloat(document.getElementById('comm-petroleo').value)||0};
+    if(id){const i=state.commoditiesCierre.findIndex(c=>c.id===id);if(i>=0)state.commoditiesCierre[i]=obj;}
+    else state.commoditiesCierre.push(obj);
+  } else {
+    const n=document.getElementById('comm-nombre').value.trim();const tipo=document.getElementById('comm-tipo').value;const v=parseFloat(document.getElementById('comm-valor').value)||0;
+    if(!n)return;
+    const obj={id:id||uid('c'),nombre:n,tipo,valor:v};
+    if(id){const i=state.commodities.findIndex(c=>c.id===id);if(i>=0)state.commodities[i]=obj;}
+    else state.commodities.push(obj);
+  }
+  saveState();closeModal('modal-commodity');renderCommodities();renderCommoditiesCierre();
+}
+function editCommodityNormal(id){
+  const c=state.commodities.find(x=>x.id===id);if(!c)return;
+  document.getElementById('comm-edit-id').value=c.id;document.getElementById('comm-edit-tipo-modal').value='normal';
+  document.getElementById('comm-nombre').value=c.nombre;document.getElementById('comm-tipo').value=c.tipo||'ingreso';document.getElementById('comm-valor').value=c.valor;
+  document.getElementById('comm-fields-normal').style.display='block';document.getElementById('comm-fields-cierre').style.display='none';
+  document.getElementById('modal-commodity-title').textContent='Editar commodity';openModal('modal-commodity');
+}
+function editCommodityCierre(id){
+  const c=state.commoditiesCierre.find(x=>x.id===id);if(!c)return;
+  document.getElementById('comm-edit-id').value=c.id;document.getElementById('comm-edit-tipo-modal').value='cierre';
+  document.getElementById('comm-cierre-nombre').value=c.nombre;document.getElementById('comm-kwh').value=c.kwh;
+  document.getElementById('comm-co2').value=c.co2;document.getElementById('comm-agua').value=c.agua;document.getElementById('comm-petroleo').value=c.petroleo;
+  document.getElementById('comm-fields-normal').style.display='none';document.getElementById('comm-fields-cierre').style.display='block';
+  document.getElementById('modal-commodity-title').textContent='Editar commodity de cierre';openModal('modal-commodity');
+}
+function deleteCommodity(id){if(!confirm('¿Eliminar?'))return;state.commodities=state.commodities.filter(c=>c.id!==id);saveState();renderCommodities();}
+function deleteCommodityCierre(id){if(!confirm('¿Eliminar?'))return;state.commoditiesCierre=state.commoditiesCierre.filter(c=>c.id!==id);saveState();renderCommoditiesCierre();}
+function renderCommodities(){
+  const tb=document.getElementById('commodities-table');
+  if(!state.commodities.length){tb.innerHTML='<tr><td colspan="5" style="color:#888;text-align:center;padding:32px">Sin commodities</td></tr>';return;}
+  tb.innerHTML=state.commodities.map(c=>{
+    const uses=state.hoes.filter(h=>h.commodities&&h.commodities.some(x=>x.id===c.id)).length;
+    const tb2=c.tipo==='disposicion'?'<span class="badge warning">Disposición</span>':'<span class="badge success">Ingreso</span>';
+    return`<tr><td><strong>${c.nombre}</strong></td><td>${tb2}</td><td>$${c.valor.toFixed(2)}/kg</td><td>${uses>0?`<span class="badge info">${uses} HOE${uses!==1?'s':''}</span>`:'-'}</td><td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="editCommodityNormal('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteCommodity('${c.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+function renderCommoditiesCierre(){
+  const tb=document.getElementById('commodities-cierre-table');
+  if(!state.commoditiesCierre.length){tb.innerHTML='<tr><td colspan="6" style="color:#888;text-align:center;padding:32px">Sin commodities de cierre</td></tr>';return;}
+  tb.innerHTML=state.commoditiesCierre.map(c=>`<tr><td><strong>${c.nombre}</strong></td><td>${c.kwh}</td><td>${c.co2}</td><td>${c.agua}</td><td>${c.petroleo}</td><td style="text-align:right"><button class="btn small" onclick="editCommodityCierre('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteCommodityCierre('${c.id}')">Eliminar</button></td></tr>`).join('');
+}
+
+// HOEs
+function addCommRow(sel='',pct=''){
+  const opts=state.commodities.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${c.tipo==='disposicion'?'[Disp] ':''}${c.nombre}</option>`).join('');
+  const row=document.createElement('div');row.className='commodity-row';
+  row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${pct}" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px"><span style="font-size:13px;color:#888">%</span><button class="btn small danger" onclick="this.parentElement.remove();updateCommSum()">✕</button>`;
+  row.querySelector('input').addEventListener('input',updateCommSum);
+  document.getElementById('hoe-comm-rows').appendChild(row);updateCommSum();
+}
+function updateCommSum(){
+  const rows=document.querySelectorAll('#hoe-comm-rows .commodity-row input[type=number]');
+  const sum=Array.from(rows).reduce((a,r)=>a+(parseFloat(r.value)||0),0);
+  const el=document.getElementById('hoe-comm-sum');
+  el.textContent=`Total: ${sum.toFixed(1)}%`;el.style.color=Math.abs(sum-100)<0.01?'#1a7a3c':'#c0392b';
+}
+function openNewHoe(){
+  if(!state.commodities.length){alert('Primero crea al menos un commodity.');return;}
+  document.getElementById('hoe-edit-id').value='';document.getElementById('hoe-modelo').value='';
+  document.getElementById('hoe-tiempo').value='';document.getElementById('hoe-peso').value='';
+  document.getElementById('hoe-comm-rows').innerHTML='';document.getElementById('modal-hoe-title').textContent='Nueva HOE';
+  addCommRow();openModal('modal-hoe');
+}
+function saveHoe(){
+  const id=document.getElementById('hoe-edit-id').value;
+  const modelo=document.getElementById('hoe-modelo').value.trim();
+  const tiempo=parseFloat(document.getElementById('hoe-tiempo').value)||0;
+  const peso=parseFloat(document.getElementById('hoe-peso').value)||0;
+  if(!modelo){alert('Ingresa modelo/descripción.');return;}
+  const rows=document.querySelectorAll('#hoe-comm-rows .commodity-row');
+  const comms=Array.from(rows).map(r=>({id:r.querySelector('select').value,pct:parseFloat(r.querySelector('input').value)||0})).filter(c=>c.id&&c.pct>0);
+  const sum=comms.reduce((a,c)=>a+c.pct,0);
+  if(comms.length&&Math.abs(sum-100)>0.5){alert(`Porcentajes deben sumar 100% (actual: ${sum.toFixed(1)}%)`);return;}
+  const hoe={id:id||uid('h'),modelo,tiempo,peso,commodities:comms};
+  if(id){const i=state.hoes.findIndex(h=>h.id===id);if(i>=0)state.hoes[i]=hoe;}else state.hoes.push(hoe);
+  saveState();closeModal('modal-hoe');renderHoes();
+}
+function editHoe(id){
+  const h=state.hoes.find(x=>x.id===id);if(!h)return;
+  document.getElementById('hoe-edit-id').value=h.id;document.getElementById('hoe-modelo').value=h.modelo;
+  document.getElementById('hoe-tiempo').value=h.tiempo;document.getElementById('hoe-peso').value=h.peso;
+  document.getElementById('hoe-comm-rows').innerHTML='';document.getElementById('modal-hoe-title').textContent='Editar HOE';
+  (h.commodities||[]).forEach(c=>addCommRow(c.id,c.pct));
+  if(!(h.commodities||[]).length)addCommRow();openModal('modal-hoe');
+}
+function deleteHoe(id){if(!confirm('¿Eliminar?'))return;state.hoes=state.hoes.filter(h=>h.id!==id);saveState();renderHoes();}
+function renderHoes(){
+  const tb=document.getElementById('hoes-table');
+  if(!state.hoes.length){tb.innerHTML='<tr><td colspan="5" style="color:#888;text-align:center;padding:32px">Sin HOEs</td></tr>';return;}
+  tb.innerHTML=state.hoes.map(h=>{
+    const comms=(h.commodities||[]).map(c=>{const cm=state.commodities.find(x=>x.id===c.id);if(!cm)return'';const b=cm.tipo==='disposicion'?'warning':'success';return`<span class="badge ${b}" style="margin-right:3px">${cm.nombre} ${c.pct}%</span>`;}).filter(Boolean).join('');
+    return`<tr><td><strong>${h.modelo}</strong></td><td>${h.tiempo} min</td><td>${h.peso} kg</td><td>${comms||'-'}</td><td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="editHoe('${h.id}')">Editar</button> <button class="btn small danger" onclick="deleteHoe('${h.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+
+// CATÁLOGO CIERRE
+function addCcRow(sel='',pct=''){
+  const opts=state.commoditiesCierre.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${c.nombre}</option>`).join('');
+  const row=document.createElement('div');row.className='commodity-row';
+  row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${pct}" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px"><span style="font-size:13px;color:#888">%</span><button class="btn small danger" onclick="this.parentElement.remove();updateCcSum()">✕</button>`;
+  row.querySelector('input').addEventListener('input',updateCcSum);
+  document.getElementById('cc-comm-rows').appendChild(row);updateCcSum();
+}
+function updateCcSum(){
+  const rows=document.querySelectorAll('#cc-comm-rows .commodity-row input[type=number]');
+  const sum=Array.from(rows).reduce((a,r)=>a+(parseFloat(r.value)||0),0);
+  const el=document.getElementById('cc-comm-sum');
+  el.textContent=`Total: ${sum.toFixed(1)}%`;el.style.color=Math.abs(sum-100)<0.01?'#1a7a3c':'#c0392b';
+}
+function openNewCatalogoCierre(){
+  if(!state.commoditiesCierre.length){alert('Primero crea commodities de cierre.');return;}
+  document.getElementById('cc-edit-id').value='';document.getElementById('cc-nombre').value='';
+  document.getElementById('cc-comm-rows').innerHTML='';document.getElementById('modal-catalogo-cierre-title').textContent='Nueva categoría de cierre';
+  addCcRow();openModal('modal-catalogo-cierre');
+}
+function saveCatalogoCierre(){
+  const id=document.getElementById('cc-edit-id').value;
+  const nombre=document.getElementById('cc-nombre').value.trim();if(!nombre)return;
+  const rows=document.querySelectorAll('#cc-comm-rows .commodity-row');
+  const comms=Array.from(rows).map(r=>({id:r.querySelector('select').value,pct:parseFloat(r.querySelector('input').value)||0})).filter(c=>c.id&&c.pct>0);
+  const sum=comms.reduce((a,c)=>a+c.pct,0);
+  if(comms.length&&Math.abs(sum-100)>0.5){alert(`Porcentajes deben sumar 100%`);return;}
+  const obj={id:id||uid('hc'),nombre,commodities:comms};
+  if(id){const i=state.catalogoCierre.findIndex(h=>h.id===id);if(i>=0)state.catalogoCierre[i]=obj;}else state.catalogoCierre.push(obj);
+  saveState();closeModal('modal-catalogo-cierre');renderCatalogoCierre();
+}
+function editCatalogoCierre(id){
+  const h=state.catalogoCierre.find(x=>x.id===id);if(!h)return;
+  document.getElementById('cc-edit-id').value=h.id;document.getElementById('cc-nombre').value=h.nombre;
+  document.getElementById('cc-comm-rows').innerHTML='';document.getElementById('modal-catalogo-cierre-title').textContent='Editar categoría';
+  (h.commodities||[]).forEach(c=>addCcRow(c.id,c.pct));if(!(h.commodities||[]).length)addCcRow();
+  openModal('modal-catalogo-cierre');
+}
+function deleteCatalogoCierre(id){if(!confirm('¿Eliminar?'))return;state.catalogoCierre=state.catalogoCierre.filter(h=>h.id!==id);saveState();renderCatalogoCierre();}
+function renderCatalogoCierre(){
+  const tb=document.getElementById('catalogo-cierre-table');
+  if(!state.catalogoCierre.length){tb.innerHTML='<tr><td colspan="3" style="color:#888;text-align:center;padding:32px">Sin categorías de cierre</td></tr>';return;}
+  tb.innerHTML=state.catalogoCierre.map(h=>{
+    const comms=(h.commodities||[]).map(c=>{const cm=state.commoditiesCierre.find(x=>x.id===c.id);return cm?`<span class="badge purple" style="margin-right:3px">${cm.nombre} ${c.pct}%</span>`:''}).filter(Boolean).join('');
+    return`<tr><td><strong>${h.nombre}</strong></td><td>${comms||'-'}</td><td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="editCatalogoCierre('${h.id}')">Editar</button> <button class="btn small danger" onclick="deleteCatalogoCierre('${h.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+
+// LOTES
+function getLoteCalc(items){
+  let tiempoTotal=0,pesoTotal=0;const commAgg={};
+  items.forEach(({hoeId,qty})=>{const h=state.hoes.find(x=>x.id===hoeId);if(!h)return;tiempoTotal+=h.tiempo*qty;pesoTotal+=h.peso*qty;(h.commodities||[]).forEach(c=>{if(!commAgg[c.id])commAgg[c.id]=0;commAgg[c.id]+=(h.peso*qty*c.pct/100);});});
+  return{tiempoTotal,pesoTotal,commAgg};
+}
+function addItemRow(){
+  const opts=state.hoes.map(h=>`<option value="${h.id}">${h.modelo}</option>`).join('');
+  const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
+  row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="1" min="1" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove();updateLotePreview()">✕</button>`;
+  row.querySelector('input').addEventListener('input',updateLotePreview);row.querySelector('select').addEventListener('change',updateLotePreview);
+  document.getElementById('lote-item-rows').appendChild(row);updateLotePreview();
+}
+function updateLotePreview(){
+  const rows=document.querySelectorAll('#lote-item-rows .row');
+  const items=Array.from(rows).map(r=>({hoeId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0}));
+  const{tiempoTotal,pesoTotal,commAgg}=getLoteCalc(items);
+  let vI=0,vD=0;Object.entries(commAgg).forEach(([id,kg])=>{const c=state.commodities.find(x=>x.id===id);if(!c)return;if(c.tipo==='disposicion')vD+=c.valor*kg;else vI+=c.valor*kg;});
+  document.getElementById('lote-preview').innerHTML=`
+    <div class="metric"><div class="label">Tiempo total</div><div class="value">${tiempoTotal.toFixed(0)} min</div></div>
+    <div class="metric"><div class="label">Peso total</div><div class="value">${pesoTotal.toFixed(2)} kg</div></div>
+    <div class="metric"><div class="label">Val. ingreso</div><div class="value" style="font-size:16px;color:#1a7a3c">$${vI.toFixed(0)}</div></div>
+    <div class="metric"><div class="label">Val. disposición</div><div class="value" style="font-size:16px;color:#a05a00">$${vD.toFixed(0)}</div></div>`;
+}
+function openNewLote(){
+  if(!state.hoes.length){alert('Primero crea al menos una HOE.');return;}
+  document.getElementById('lote-edit-id').value='';document.getElementById('lote-nombre').value='';
+  document.getElementById('lote-deadline').value='';document.getElementById('lote-item-rows').innerHTML='';
+  document.getElementById('lote-preview').innerHTML='';document.getElementById('modal-lote-title').textContent='Nuevo lote';
+  const sel=document.getElementById('lote-cliente');
+  sel.innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  addItemRow();openModal('modal-lote');
+}
+function saveLote(){
+  const id=document.getElementById('lote-edit-id').value;
+  const nombre=document.getElementById('lote-nombre').value.trim();const deadline=document.getElementById('lote-deadline').value;
+  const clienteId=document.getElementById('lote-cliente').value;
+  if(!nombre||!deadline){alert('Completa nombre y deadline.');return;}
+  const rows=document.querySelectorAll('#lote-item-rows .row');
+  const items=Array.from(rows).map(r=>({hoeId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
+  if(!items.length){alert('Agrega al menos un item.');return;}
+  const calc=getLoteCalc(items);
+  const lote={id:id||uid('l'),nombre,deadline,clienteId,items,...calc,finalizado:false};
+  if(id){const i=state.lotes.findIndex(l=>l.id===id);if(i>=0)state.lotes[i]={...lote,finalizado:state.lotes[i].finalizado};}
+  else state.lotes.push(lote);
+  saveState();closeModal('modal-lote');renderLotes();
+}
+function editLote(id){
+  const l=state.lotes.find(x=>x.id===id);if(!l)return;
+  if(l.finalizado){alert('Este lote está finalizado y no se puede editar.');return;}
+  document.getElementById('lote-edit-id').value=l.id;document.getElementById('lote-nombre').value=l.nombre;
+  document.getElementById('lote-deadline').value=l.deadline;document.getElementById('lote-item-rows').innerHTML='';
+  document.getElementById('modal-lote-title').textContent='Editar lote';
+  const sel=document.getElementById('lote-cliente');
+  sel.innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}" ${c.id===l.clienteId?'selected':''}>${c.nombre}</option>`).join('');
+  l.items.forEach(item=>{
+    const opts=state.hoes.map(h=>`<option value="${h.id}" ${h.id===item.hoeId?'selected':''}>${h.modelo}</option>`).join('');
+    const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
+    row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${item.qty}" min="1" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove();updateLotePreview()">✕</button>`;
+    row.querySelector('input').addEventListener('input',updateLotePreview);row.querySelector('select').addEventListener('change',updateLotePreview);
+    document.getElementById('lote-item-rows').appendChild(row);
+  });
+  updateLotePreview();openModal('modal-lote');
+}
+function deleteLote(id){
+  if(!confirm('¿Eliminar este lote?'))return;
+  state.lotes=state.lotes.filter(l=>l.id!==id);state.programacion=state.programacion.filter(p=>p.loteId!==id);
+  saveState();renderLotes();
+}
+function viewLote(id){
+  const l=state.lotes.find(x=>x.id===id);if(!l)return;
+  let vI=0,vD=0;
+  const cr=Object.entries(l.commAgg||{}).map(([cid,kg])=>{const c=state.commodities.find(x=>x.id===cid);if(!c)return'';const v=c.valor*kg;if(c.tipo==='disposicion')vD+=v;else vI+=v;const b=c.tipo==='disposicion'?'warning':'success';return`<tr><td>${c.nombre}</td><td><span class="badge ${b}">${c.tipo==='disposicion'?'Disposición':'Ingreso'}</span></td><td>${kg.toFixed(2)} kg</td><td>$${v.toFixed(2)}</td></tr>`;}).join('');
+  const ir=l.items.map(it=>{const h=state.hoes.find(x=>x.id===it.hoeId);return h?`<tr><td>${h.modelo}</td><td>${it.qty}</td><td>${(h.tiempo*it.qty).toFixed(0)} min</td><td>${(h.peso*it.qty).toFixed(2)} kg</td></tr>`:''}).join('');
+  const cliente=state.clientes.find(x=>x.id===l.clienteId);
+  const cierre=state.cierres[l.id];
+  let cierreHtml='';
+  if(cierre){
+    const cRows=cierre.items.map(it=>{const cc=state.catalogoCierre.find(x=>x.id===it.catId);return`<tr><td>${cc?cc.nombre:it.catId}</td><td>${it.piezas}</td><td>${it.kg.toFixed(2)} kg</td></tr>`;}).join('');
+    cierreHtml=`<h3 style="margin:16px 0 8px">Cierre real</h3><table><thead><tr><th>Categoría</th><th>Piezas</th><th>Kg reales</th></tr></thead><tbody>${cRows}</tbody></table>`;
+  }
+  document.getElementById('modal-detail-title').textContent=l.nombre;
+  document.getElementById('modal-detail-content').innerHTML=`
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Estado</div><div class="value" style="font-size:14px">${estadoBadge(getEstadoLote(l))}</div></div>
+      <div class="metric"><div class="label">Cliente</div><div class="value" style="font-size:14px">${cliente?cliente.nombre:'—'}</div></div>
+      <div class="metric"><div class="label">Tiempo estimado</div><div class="value">${l.tiempoTotal.toFixed(0)} min</div></div>
+      <div class="metric"><div class="label">Peso estimado</div><div class="value">${l.pesoTotal.toFixed(2)} kg</div></div>
+      <div class="metric"><div class="label">Val. ingreso</div><div class="value" style="font-size:15px;color:#1a7a3c">$${vI.toFixed(0)}</div></div>
+      <div class="metric"><div class="label">Val. disposición</div><div class="value" style="font-size:15px;color:#a05a00">$${vD.toFixed(0)}</div></div>
+    </div>
+    <h3 style="margin:12px 0 8px">Items (HOEs)</h3>
+    <table><thead><tr><th>HOE</th><th>Cantidad</th><th>Tiempo</th><th>Peso est.</th></tr></thead><tbody>${ir}</tbody></table>
+    ${cr?`<h3 style="margin:12px 0 8px">Commodities estimados</h3><table><thead><tr><th>Commodity</th><th>Tipo</th><th>Kg</th><th>Valor</th></tr></thead><tbody>${cr}</tbody></table>`:''}
+    ${cierreHtml}`;
+  openModal('modal-detail');
+}
+function renderLotes(){
+  const tb=document.getElementById('lotes-table');
+  const filtro=document.getElementById('lotes-filtro-estado').value;
+  let lotes=state.lotes;
+  if(filtro)lotes=lotes.filter(l=>getEstadoLote(l)===filtro);
+  if(!lotes.length){tb.innerHTML=`<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin lotes${filtro?' con estado '+filtro:''}</td></tr>`;return;}
+  tb.innerHTML=lotes.map(l=>{
+    const ti=l.items.reduce((a,x)=>a+x.qty,0);
+    const prog=state.programacion.find(p=>p.loteId===l.id);
+    const est=getEstadoLote(l);
+    const cliente=state.clientes.find(x=>x.id===l.clienteId);
+    const vencido=prog&&prog.fechaFin>l.deadline&&!l.finalizado;
+    return`<tr>
+      <td><a href="#" onclick="viewLote('${l.id}');return false" style="color:#1a56db;text-decoration:none;font-weight:500">${l.nombre}</a>${vencido?` <span class="badge danger" style="font-size:10px">Vence</span>`:''}${prog?`<br><span style="font-size:11px;color:#888">${prog.fechaInicio} → ${prog.fechaFin}</span>`:''}</td>
+      <td>${cliente?cliente.nombre:'<span style="color:#ccc">—</span>'}</td>
+      <td>${ti}</td><td>${l.pesoTotal.toFixed(2)} kg</td><td>${l.deadline}</td>
+      <td>${estadoBadge(est)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        ${!l.finalizado?`<button class="btn small success" onclick="openCierre('${l.id}')" title="Cierre">Cierre</button> `:'<span class="badge success" style="margin-right:4px">Cerrado</span>'}
+        <button class="btn small" onclick="openCosteo('${l.id}')">Costeo</button>
+        ${!l.finalizado?`<button class="btn small" onclick="editLote('${l.id}')">Editar</button> `:''}
+        <button class="btn small danger" onclick="deleteLote('${l.id}')">Eliminar</button>
+      </td></tr>`;
+  }).join('');
+}
+
+// CIERRE
+function addCierreRow(){
+  const opts=state.catalogoCierre.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
+  row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="1" min="0" placeholder="Piezas" style="flex:1;max-width:80px" title="Piezas"><input type="number" value="0" min="0" step="0.01" placeholder="Kg" style="flex:1;max-width:80px" title="Kg"><button class="btn small danger" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('cierre-rows').appendChild(row);
+}
+function openCierre(loteId){
+  if(!state.catalogoCierre.length){alert('Primero crea categorías en el catálogo de cierre.');return;}
+  const l=state.lotes.find(x=>x.id===loteId);if(!l)return;
+  document.getElementById('cierre-lote-id').value=loteId;
+  document.getElementById('modal-cierre-title').textContent=`Cierre: ${l.nombre}`;
+  document.getElementById('cierre-rows').innerHTML='';
+  // Si ya tiene cierre, cargar datos
+  const cierre=state.cierres[loteId];
+  if(cierre){
+    cierre.items.forEach(it=>{
+      const opts=state.catalogoCierre.map(c=>`<option value="${c.id}" ${c.id===it.catId?'selected':''}>${c.nombre}</option>`).join('');
+      const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
+      row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${it.piezas}" min="0" placeholder="Piezas" style="flex:1;max-width:80px"><input type="number" value="${it.kg}" min="0" step="0.01" placeholder="Kg" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove()">✕</button>`;
+      document.getElementById('cierre-rows').appendChild(row);
+    });
+  } else {
+    addCierreRow();
+  }
+  openModal('modal-cierre');
+}
+function finalizarLote(){
+  const loteId=document.getElementById('cierre-lote-id').value;
+  const rows=document.querySelectorAll('#cierre-rows .row');
+  if(!rows.length){alert('Agrega al menos un item de cierre.');return;}
+  const items=Array.from(rows).map(r=>{
+    const inputs=r.querySelectorAll('input[type=number]');
+    return{catId:r.querySelector('select').value,piezas:parseInt(inputs[0].value)||0,kg:parseFloat(inputs[1].value)||0};
+  }).filter(x=>x.catId);
+  if(!confirm('¿Finalizar este lote? Ya no se podrá editar ni reprogramar.'))return;
+  state.cierres[loteId]=state.cierres[loteId]||{};
+  state.cierres[loteId]={items,fechaCierre:new Date().toISOString().split('T')[0]};
+  const li=state.lotes.findIndex(l=>l.id===loteId);
+  if(li>=0)state.lotes[li].finalizado=true;
+  // Eliminar de programación
+  state.programacion=state.programacion.filter(p=>p.loteId!==loteId);
+  saveState();closeModal('modal-cierre');renderLotes();renderCalendar();
+  alert('Lote finalizado correctamente.');
+}
+
+// Huella ambiental de un lote (basada en cierre real)
+function calcHuella(loteId){
+  const cierre=state.cierres[loteId];if(!cierre)return null;
+  let kwh=0,co2=0,agua=0,petroleo=0,kgTotal=0,piezasTotal=0;
+  cierre.items.forEach(it=>{
+    const cat=state.catalogoCierre.find(x=>x.id===it.catId);if(!cat)return;
+    kgTotal+=it.kg;piezasTotal+=it.piezas;
+    (cat.commodities||[]).forEach(cc=>{
+      const cm=state.commoditiesCierre.find(x=>x.id===cc.id);if(!cm)return;
+      const kgCC=it.kg*cc.pct/100;
+      kwh+=cm.kwh*kgCC;co2+=cm.co2*kgCC;agua+=cm.agua*kgCC;petroleo+=cm.petroleo*kgCC;
+    });
+  });
+  return{kwh,co2,agua,petroleo,kgTotal,piezasTotal};
+}
+
+// PLANEACIÓN
+function isInhabil(ds){const d=new Date(ds+'T12:00:00');if(d.getDay()===0||d.getDay()===6)return true;return state.inhabiles.some(i=>i.fecha===ds);}
+function capTotalDia(){return state.config.operadores*MIN_DIA;}
+function minUsadosEnDia(ds,excludeId){if(isInhabil(ds))return 0;let u=0;state.programacion.filter(p=>p.id!==excludeId).forEach(p=>{if(ds>=p.fechaInicio&&ds<=p.fechaFin)u+=(p.minPorDia||0);});return u;}
+function minDisponibles(ds,mpd,excludeId){if(isInhabil(ds))return 0;return Math.max(0,capTotalDia()-minUsadosEnDia(ds,excludeId));}
+// mpd = personas * 480 (minutos que aportan esas personas ese día)
+// El lote avanza mpd min/día hasta completar tiempoTotal
+// Si el lote termina antes de mpd en el último día, el resto del día queda libre
+function addWorkMinutes(startStr,totalMin,mpd,excludeId){
+  let rem=totalMin;let d=new Date(startStr+'T12:00:00');let it=0;
+  while(rem>0&&it<500){
+    it++;const ds=d.toISOString().split('T')[0];
+    if(!isInhabil(ds)){
+      const disp=minDisponibles(ds,mpd,excludeId);
+      if(disp>=mpd)rem-=mpd; // avanza mpd min (o lo que quede si rem<mpd, pero siempre consume mpd de capacidad)
+    }
+    if(rem>0)d.setDate(d.getDate()+1);
+  }
+  return d.toISOString().split('T')[0];
+}
+function onPlanInputChange(){
+  const loteId=document.getElementById('plan-lote').value;const fechaInicio=document.getElementById('plan-fecha').value;
+  const pi=document.getElementById('plan-personas');const lote=state.lotes.find(l=>l.id===loteId);
+  const existing=state.programacion.find(p=>p.loteId===loteId);const excl=existing?existing.id:null;
+  if(!lote||!fechaInicio){document.getElementById('plan-disponibles').textContent='';document.getElementById('plan-preview').textContent='';return;}
+  const capDia=capTotalDia();const usadoInicio=minUsadosEnDia(fechaInicio,excl);const dispMin=Math.max(0,capDia-usadoInicio);
+  const dispP=Math.floor(dispMin/MIN_DIA);let personas=parseInt(pi.value)||1;if(personas<1)personas=1;pi.max=state.config.operadores;pi.value=Math.min(personas,state.config.operadores);personas=parseInt(pi.value);
+  document.getElementById('plan-disponibles').innerHTML=`<span style="color:${dispP<=0?'#c0392b':'#888'}">Cap. disponible: <strong>${dispMin} min</strong> (~${dispP} pers. libres) · Total/día: ${capDia} min</span>`;
+  if(isInhabil(fechaInicio)){document.getElementById('plan-preview').innerHTML='<span style="color:#c0392b">Día inhábil.</span>';return;}
+  // minPorDia = cuántos minutos aportan las personas asignadas por día
+  const mpd=personas*MIN_DIA;
+  const diasNecesarios=Math.ceil(lote.tiempoTotal/mpd);
+  const fechaFin=addWorkMinutes(fechaInicio,lote.tiempoTotal,mpd,excl);
+  const vencido=fechaFin>lote.deadline;
+  document.getElementById('plan-preview').innerHTML=`Fin estimado: <strong>${fechaFin}</strong> · ${mpd} min/día · ~${diasNecesarios} día${diasNecesarios!==1?'s':''}`+(vencido?` <span class="badge danger">Supera deadline</span>`:'');
+  document.getElementById('plan-alert').innerHTML='';
+}
+function programarLote(){
+  const loteId=document.getElementById('plan-lote').value;const personas=parseInt(document.getElementById('plan-personas').value)||0;const fechaInicio=document.getElementById('plan-fecha').value;
+  if(!loteId||!personas||!fechaInicio){alert('Completa todos los campos.');return;}
+  const lote=state.lotes.find(l=>l.id===loteId);if(!lote)return;
+  if(lote.finalizado){alert('Este lote ya está finalizado.');return;}
+  if(isInhabil(fechaInicio)){alert('Fecha de inicio inhábil.');return;}
+  if(personas>state.config.operadores){alert(`Máximo ${state.config.operadores} operadores.`);return;}
+  const existing=state.programacion.find(p=>p.loteId===loteId);const excl=existing?existing.id:null;
+  // minPorDia = personas * 480 minutos
+  const mpd=personas*MIN_DIA;
+  let rem=lote.tiempoTotal;let d=new Date(fechaInicio+'T12:00:00');let conflictDay='';let it=0;
+  while(rem>0&&it<500){
+    it++;const ds=d.toISOString().split('T')[0];
+    if(!isInhabil(ds)){
+      const disp=minDisponibles(ds,mpd,excl);
+      if(disp<mpd){conflictDay=ds;break;}
+      rem-=mpd;
+    }
+    if(rem>0)d.setDate(d.getDate()+1);
+  }
+  if(conflictDay){
+    const disp=minDisponibles(conflictDay,mpd,excl);
+    const persDisp=Math.floor(disp/MIN_DIA);
+    document.getElementById('plan-alert').innerHTML=`<div class="alert danger">Conflicto el ${conflictDay}: se requieren ${mpd} min (${personas} pers.), pero solo hay ${disp} min disponibles (~${persDisp} personas libres).</div>`;return;
+  }
+  const fechaFin=d.toISOString().split('T')[0];
+  if(fechaFin>lote.deadline&&!confirm(`Termina el ${fechaFin}, deadline es ${lote.deadline}. ¿Continuar?`))return;
+  const plan={id:excl||uid('p'),loteId,personas,fechaInicio,fechaFin,minPorDia:mpd};
+  if(existing){const i=state.programacion.findIndex(p=>p.id===excl);state.programacion[i]=plan;}else state.programacion.push(plan);
+  saveState();renderCalendar();renderLotes();renderLotesProgramados();
+  const dias=Math.ceil(lote.tiempoTotal/mpd);
+  document.getElementById('plan-alert').innerHTML=`<div class="alert success">Programado del ${fechaInicio} al ${fechaFin} · ${mpd} min/día · ${dias} día${dias!==1?'s':''} hábiles.</div>`;
+}
+function renderLotesProgramados(){
+  const el=document.getElementById('lotes-programados');
+  if(!state.programacion.length){el.innerHTML='<p style="font-size:13px;color:#888">Sin lotes programados</p>';return;}
+  el.innerHTML=state.programacion.map(p=>{
+    const l=state.lotes.find(x=>x.id===p.loteId);const v=l&&p.fechaFin>l.deadline;
+    return`<div style="margin-bottom:10px;padding:10px;background:#f8f8f4;border-radius:8px;border:1px solid #e8e8e0">
+      <div style="font-size:13px;font-weight:600">${l?l.nombre:p.loteId}</div>
+      <div style="font-size:12px;color:#888">${p.fechaInicio} → ${p.fechaFin} · ${p.personas} pers.</div>
+      ${v?'<span class="badge danger" style="font-size:11px;margin-top:4px;display:inline-block">Supera deadline</span>':''}
+      <div style="margin-top:8px"><button class="btn small danger" onclick="eliminarProgramacion('${p.id}')">Eliminar</button></div>
+    </div>`;
+  }).join('');
+}
+function eliminarProgramacion(id){state.programacion=state.programacion.filter(p=>p.id!==id);saveState();renderCalendar();renderLotes();renderLotesProgramados();}
+function getMinUsadosDia(ds){let u=0;state.programacion.forEach(p=>{if(ds>=p.fechaInicio&&ds<=p.fechaFin)u+=(p.minPorDia||0);});return u;}
+function showDayDetail(ds){
+  const card=document.getElementById('day-detail-card');const capDia=capTotalDia();const used=getMinUsadosDia(ds);
+  const pct=Math.min(100,capDia>0?used/capDia*100:0);const color=pct>90?'#c0392b':pct>70?'#a05a00':'#1a56db';
+  const lotesDelDia=state.programacion.filter(p=>ds>=p.fechaInicio&&ds<=p.fechaFin);
+  document.getElementById('day-detail-title').textContent=`Detalle: ${ds}`;
+  document.getElementById('day-detail-content').innerHTML=`
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:#666">Capacidad usada</span><span><strong>${used.toFixed(0)}</strong> / ${capDia} min</span></div>
+      <div class="cap-bar-wrap" style="height:10px;border-radius:5px"><div class="cap-bar" style="width:${pct.toFixed(1)}%;background:${color};border-radius:5px"></div></div>
+      <div style="font-size:12px;color:#888;margin-top:4px">${(capDia-used).toFixed(0)} min disponibles</div>
+    </div>
+    ${lotesDelDia.length?`<table><thead><tr><th>Lote</th><th>Personas</th><th>Min/día</th></tr></thead><tbody>${lotesDelDia.map(p=>{const l=state.lotes.find(x=>x.id===p.loteId);return`<tr><td>${l?l.nombre:p.loteId}</td><td>${p.personas}</td><td>${(p.minPorDia||0).toFixed(0)}</td></tr>`;}).join('')}</tbody></table>`:'<p style="font-size:13px;color:#888">Sin lotes este día.</p>'}`;
+  card.style.display='block';
+}
+const COLORS=['#1a56db','#0f6e56','#993c1d','#993556','#3b6d11','#854f0b','#a32d2d','#534ab7'];
+function renderCalendar(){
+  const header=document.getElementById('cal-header');const grid=document.getElementById('cal-grid');const title=document.getElementById('cal-title');
+  header.innerHTML=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  title.textContent=`${months[calMonth]} ${calYear}`;
+  const first=new Date(calYear,calMonth,1).getDay();const daysInMonth=new Date(calYear,calMonth+1,0).getDate();const today=new Date().toISOString().split('T')[0];const capDia=capTotalDia();
+  let html='';for(let i=0;i<first;i++)html+='<div class="cal-day empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const inh=isInhabil(ds);const isToday=ds===today;let chips='';let used=0;
+    state.programacion.forEach((p,idx)=>{if(ds>=p.fechaInicio&&ds<=p.fechaFin&&!inh){const l=state.lotes.find(x=>x.id===p.loteId);const color=COLORS[idx%COLORS.length];chips+=`<div class="lote-chip" style="background:${color}22;color:${color}">${l?l.nombre.substring(0,11):p.loteId}</div>`;used+=(p.minPorDia||0);}});
+    let barHtml='';
+    if(!inh&&capDia>0){const pct=Math.min(100,used/capDia*100);const bc=pct>90?'#c0392b':pct>70?'#a05a00':'#1a56db';barHtml=`<div class="cap-bar-wrap"><div class="cap-bar" style="width:${pct.toFixed(0)}%;background:${bc}"></div></div><div class="cap-label">${used.toFixed(0)}/${capDia}min</div>`;}
+    html+=`<div class="cal-day${inh?' weekend':''}${isToday?' today':''}" onclick="${inh?'':'showDayDetail(\''+ds+'\')'}"><div class="day-num">${d}</div>${chips}${barHtml}</div>`;
+  }
+  grid.innerHTML=html;
+  document.getElementById('plan-lote').innerHTML=state.lotes.filter(l=>!l.finalizado).map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
+  renderLotesProgramados();
+}
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+
+// INHABILES
+function addInhabil(){const f=document.getElementById('inh-fecha').value;const d=document.getElementById('inh-desc').value.trim()||'Día inhábil';if(!f)return;if(!state.inhabiles.some(i=>i.fecha===f)){state.inhabiles.push({fecha:f,desc:d});saveState();renderInhabiles();}}
+function addSemanaInhabil(){const ini=document.getElementById('inh-semana-inicio').value;const fin=document.getElementById('inh-semana-fin').value;const desc=document.getElementById('inh-semana-desc').value.trim()||'Semana inhábil';if(!ini||!fin)return;let dt=new Date(ini+'T12:00:00');const en=new Date(fin+'T12:00:00');while(dt<=en){const ds=dt.toISOString().split('T')[0];if(!state.inhabiles.some(x=>x.fecha===ds))state.inhabiles.push({fecha:ds,desc});dt.setDate(dt.getDate()+1);}saveState();renderInhabiles();}
+function deleteInhabil(f){state.inhabiles=state.inhabiles.filter(i=>i.fecha!==f);saveState();renderInhabiles();}
+function renderInhabiles(){
+  const el=document.getElementById('inhabiles-list');const s=[...state.inhabiles].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  if(!s.length){el.innerHTML='<p style="font-size:13px;color:#888">Sin días inhábiles.</p>';return;}
+  el.innerHTML=`<table><thead><tr><th>Fecha</th><th>Descripción</th><th></th></tr></thead><tbody>${s.map(i=>`<tr><td>${i.fecha}</td><td>${i.desc}</td><td style="text-align:right"><button class="btn small danger" onclick="deleteInhabil('${i.fecha}')">Eliminar</button></td></tr>`).join('')}</tbody></table>`;
+}
+
+// CONFIG
+function saveConfig(){state.config={operadores:parseInt(document.getElementById('cfg-operadores').value)||1,sueldo:parseFloat(document.getElementById('cfg-sueldo').value)||0,gastosFijos:parseFloat(document.getElementById('cfg-gastos-fijos').value)||0};saveState();alert('Configuración guardada.');}
+
+// COSTEO
+function calcCosteo(loteId){
+  const l=state.lotes.find(x=>x.id===loteId);if(!l)return null;
+  const cst=state.costeos[loteId]||{};
+  const horasTotales=l.tiempoTotal/60;const costoMO=(horasTotales/8)*state.config.sueldo;
+  const minsSat=l.tiempoTotal/state.config.operadores;const diasSat=minsSat/60/8;const costoFijos=diasSat*state.config.gastosFijos;
+  let valIngreso=0,valDisposicion=0;
+  Object.entries(l.commAgg||{}).forEach(([cid,kg])=>{const c=state.commodities.find(x=>x.id===cid);if(!c)return;if(c.tipo==='disposicion')valDisposicion+=c.valor*kg;else valIngreso+=c.valor*kg;});
+  const logEgreso=parseFloat(cst.logEgreso)||0;
+  let cobro=0;const tipo=cst.cobroTipo||'total';const val=parseFloat(cst.cobroValor)||0;
+  if(tipo==='total')cobro=val;else if(tipo==='kg')cobro=val*l.pesoTotal;else if(tipo==='pieza')cobro=val*l.items.reduce((a,x)=>a+x.qty,0);
+  const logIngreso=parseFloat(cst.logIngreso)||0;
+  const totalEgresos=costoMO+costoFijos+logEgreso+valDisposicion+(cobro<0?Math.abs(cobro):0);
+  const totalIngresos=valIngreso+logIngreso+(cobro>0?cobro:0);
+  const ingresosNetos=totalIngresos-totalEgresos;
+  const margen=totalIngresos>0?(ingresosNetos/totalIngresos*100):null;
+  return{costoMO,costoFijos,logEgreso,valDisposicion,totalEgresos,valIngreso,cobro,logIngreso,totalIngresos,ingresosNetos,margen,horasTotales,diasSat};
+}
+function openCosteo(loteId){
+  const l=state.lotes.find(x=>x.id===loteId);if(!l)return;
+  const cst=state.costeos[loteId]||{};
+  document.getElementById('costeo-lote-id').value=loteId;document.getElementById('modal-costeo-title').textContent=`Costeo: ${l.nombre}`;
+  document.getElementById('cst-log-egreso').value=cst.logEgreso||0;document.getElementById('cst-cobro-tipo').value=cst.cobroTipo||'total';
+  document.getElementById('cst-cobro-valor').value=cst.cobroValor||0;document.getElementById('cst-log-ingreso').value=cst.logIngreso||0;
+  const r=calcCosteo(loteId);
+  document.getElementById('cst-variables').innerHTML=`<div class="ib-title">Mano de obra</div><div class="ib-row"><span>Horas-persona totales</span><span>${r.horasTotales.toFixed(2)} h</span></div><div class="ib-row"><span>Días-persona</span><span>${(r.horasTotales/8).toFixed(3)}</span></div><div class="ib-row"><span>Sueldo/día</span><span>$${state.config.sueldo.toFixed(2)}</span></div><div class="ib-row"><span style="font-size:11px;color:#888">Fijo · independiente de personas asignadas</span><span style="color:#c0392b">$${r.costoMO.toFixed(2)}</span></div>`;
+  document.getElementById('cst-fijos').innerHTML=`<div class="ib-title">Gastos fijos asignados</div><div class="ib-row"><span>Tiempo saturación</span><span>${(l.tiempoTotal/state.config.operadores).toFixed(0)} min</span></div><div class="ib-row"><span>Días saturación</span><span>${r.diasSat.toFixed(3)}</span></div><div class="ib-row"><span>Gastos fijos/día</span><span>$${state.config.gastosFijos.toFixed(2)}</span></div><div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.costoFijos.toFixed(2)}</span></div>`;
+  const dr=Object.entries(l.commAgg||{}).filter(([cid])=>{const c=state.commodities.find(x=>x.id===cid);return c&&c.tipo==='disposicion';}).map(([cid,kg])=>{const c=state.commodities.find(x=>x.id===cid);return`<div class="ib-row"><span>${c.nombre} (${kg.toFixed(2)} kg)</span><span>$${(c.valor*kg).toFixed(2)}</span></div>`;}).join('');
+  document.getElementById('cst-disposicion').innerHTML=`<div class="ib-title">Disposición de commodities</div>${dr||'<div style="color:#888;font-size:12px;padding:4px 0">Sin commodities de disposición</div>'}<div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.valDisposicion.toFixed(2)}</span></div>`;
+  const ir2=Object.entries(l.commAgg||{}).filter(([cid])=>{const c=state.commodities.find(x=>x.id===cid);return c&&c.tipo==='ingreso';}).map(([cid,kg])=>{const c=state.commodities.find(x=>x.id===cid);return`<div class="ib-row"><span>${c.nombre} (${kg.toFixed(2)} kg)</span><span>$${(c.valor*kg).toFixed(2)}</span></div>`;}).join('');
+  document.getElementById('cst-commodities-val').innerHTML=`<div class="ib-title">Commodities de ingreso</div>${ir2||'<div style="color:#888;font-size:12px;padding:4px 0">Sin commodities de ingreso</div>'}<div class="ib-row"><span>Subtotal</span><span style="color:#1a7a3c">$${r.valIngreso.toFixed(2)}</span></div>`;
+  document.querySelectorAll('#modal-costeo .section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('#modal-costeo .tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('costeo-egresos').classList.add('active');document.querySelector('#modal-costeo .tab').classList.add('active');
+  openModal('modal-costeo');
+}
+function showCosteoTab(id){
+  document.querySelectorAll('#modal-costeo .section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('#modal-costeo .tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('costeo-'+id).classList.add('active');event.target.classList.add('active');if(id==='resumen')renderCosteoResumen();
+}
+function renderCosteoResumen(){
+  const loteId=document.getElementById('costeo-lote-id').value;
+  state.costeos[loteId]={...(state.costeos[loteId]||{}),logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value};
+  const r=calcCosteo(loteId);if(!r)return;
+  const mc=r.margen===null?'neutral':r.margen>=20?'success':r.margen>=0?'warning':'danger';const mt=r.margen===null?'N/A':`${r.margen.toFixed(1)}%`;
+  document.getElementById('cst-resumen-content').innerHTML=`
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Total egresos</div><div class="value" style="font-size:16px;color:#c0392b">$${r.totalEgresos.toFixed(2)}</div></div>
+      <div class="metric"><div class="label">Total ingresos</div><div class="value" style="font-size:16px;color:#1a7a3c">$${r.totalIngresos.toFixed(2)}</div></div>
+      <div class="metric"><div class="label">Neto</div><div class="value" style="font-size:16px">$${r.ingresosNetos.toFixed(2)}</div></div>
+      <div class="metric"><div class="label">Margen</div><div class="value"><span class="badge ${mc}">${mt}</span></div></div>
+    </div>
+    <table style="margin-top:8px"><tbody>
+      <tr><td style="color:#666">Mano de obra</td><td style="text-align:right">$${r.costoMO.toFixed(2)}</td></tr>
+      <tr><td style="color:#666">Gastos fijos</td><td style="text-align:right">$${r.costoFijos.toFixed(2)}</td></tr>
+      <tr><td style="color:#666">Disposición commodities</td><td style="text-align:right">$${r.valDisposicion.toFixed(2)}</td></tr>
+      <tr><td style="color:#666">Logística (egreso)</td><td style="text-align:right">$${r.logEgreso.toFixed(2)}</td></tr>
+      ${r.cobro<0?`<tr><td style="color:#666">Pago por material</td><td style="text-align:right;color:#c0392b">$${Math.abs(r.cobro).toFixed(2)}</td></tr>`:''}
+      <tr style="font-weight:600;border-top:2px solid #e0e0d8"><td>Total egresos</td><td style="text-align:right;color:#c0392b">$${r.totalEgresos.toFixed(2)}</td></tr>
+      <tr><td colspan="2" style="padding:4px 0"></td></tr>
+      <tr><td style="color:#666">Commodities de ingreso</td><td style="text-align:right">$${r.valIngreso.toFixed(2)}</td></tr>
+      ${r.cobro>0?`<tr><td style="color:#666">Cobro procesamiento</td><td style="text-align:right">$${r.cobro.toFixed(2)}</td></tr>`:''}
+      <tr><td style="color:#666">Logística (ingreso)</td><td style="text-align:right">$${r.logIngreso.toFixed(2)}</td></tr>
+      <tr style="font-weight:600;border-top:2px solid #e0e0d8"><td>Total ingresos</td><td style="text-align:right;color:#1a7a3c">$${r.totalIngresos.toFixed(2)}</td></tr>
+    </tbody></table>`;
+}
+function saveCosteo(){
+  const loteId=document.getElementById('costeo-lote-id').value;
+  state.costeos[loteId]={logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value};
+  saveState();closeModal('modal-costeo');renderCosteoList();
+}
+function renderCosteoList(){
+  const el=document.getElementById('costeo-list');if(!state.lotes.length){el.innerHTML='<p style="color:#888">Sin lotes.</p>';return;}
+  el.innerHTML=state.lotes.map(l=>{
+    const r=calcCosteo(l.id);const mc=!r||r.margen===null?'neutral':r.margen>=20?'success':r.margen>=0?'warning':'danger';const mt=!r||r.margen===null?'N/A':`${r.margen.toFixed(1)}%`;
+    const cliente=state.clientes.find(x=>x.id===l.clienteId);
+    return`<div class="card"><div class="row center" style="margin-bottom:14px"><div style="flex:1"><span style="font-weight:600;font-size:15px">${l.nombre}</span> <span style="font-size:12px;color:#888">· ${cliente?cliente.nombre:'Sin cliente'} · deadline ${l.deadline}</span> ${estadoBadge(getEstadoLote(l))}</div><button class="btn small" onclick="openCosteo('${l.id}')">Editar costeo</button></div>
+    ${r?`<div class="metric-grid"><div class="metric"><div class="label">Egresos</div><div class="value" style="font-size:16px">$${r.totalEgresos.toFixed(0)}</div></div><div class="metric"><div class="label">Ingresos</div><div class="value" style="font-size:16px">$${r.totalIngresos.toFixed(0)}</div></div><div class="metric"><div class="label">Neto</div><div class="value" style="font-size:16px">$${r.ingresosNetos.toFixed(0)}</div></div><div class="metric"><div class="label">Margen</div><div class="value"><span class="badge ${mc}">${mt}</span></div></div></div>`:'<p style="font-size:13px;color:#888">Sin datos de costeo</p>'}
+    </div>`;
+  }).join('');
+}
+
+// DASHBOARD
+function renderDashboard(){
+  const prog=state.lotes.filter(l=>getEstadoLote(l)==='Programado').length;
+  const enProc=state.lotes.filter(l=>getEstadoLote(l)==='En proceso').length;
+  const fin=state.lotes.filter(l=>getEstadoLote(l)==='Finalizado').length;
+  document.getElementById('dash-metrics').innerHTML=`
+    <div class="metric"><div class="label">Lotes total</div><div class="value">${state.lotes.length}</div></div>
+    <div class="metric"><div class="label">Programados</div><div class="value" style="color:#1a56db">${prog}</div></div>
+    <div class="metric"><div class="label">En proceso</div><div class="value" style="color:#a05a00">${enProc}</div></div>
+    <div class="metric"><div class="label">Finalizados</div><div class="value" style="color:#1a7a3c">${fin}</div></div>
+    <div class="metric"><div class="label">Clientes</div><div class="value">${state.clientes.length}</div></div>
+    <div class="metric"><div class="label">Operadores</div><div class="value">${state.config.operadores}</div></div>`;
+  const le=document.getElementById('dash-lotes');
+  if(!state.lotes.length)le.innerHTML='<p style="font-size:13px;color:#888">Sin lotes</p>';
+  else le.innerHTML=state.lotes.slice(0,6).map(l=>{const est=getEstadoLote(l);return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ea"><span style="flex:1;font-size:13px;font-weight:500">${l.nombre}</span>${estadoBadge(est)}</div>`;}).join('');
+  const ae=document.getElementById('dash-alertas');const al=[];
+  state.programacion.forEach(p=>{const l=state.lotes.find(x=>x.id===p.loteId);if(l&&!l.finalizado&&p.fechaFin>l.deadline)al.push(`<div class="alert warning" style="margin-bottom:8px"><strong>${l.nombre}</strong>: termina ${p.fechaFin}, deadline ${l.deadline}</div>`);});
+  ae.innerHTML=al.length?al.join(''):'<p style="font-size:13px;color:#1a7a3c">Sin alertas activas</p>';
+}
+
+// EXPORTAR / IMPORTAR
+function exportarDatos(){
+  const data={...state,nextId,exportado:new Date().toISOString(),version:'2.0'};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`erp_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(url);
+}
+function importarDatos(){
+  const file=document.getElementById('import-file').files[0];
+  if(!file){alert('Selecciona un archivo.');return;}
+  if(!confirm('¿Reemplazar todos los datos?'))return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!d.lotes){{alert('Archivo inválido.');return;}}
+      state={role:state.role,user:state.user,clientes:d.clientes||[],commodities:(d.commodities||[]).map(c=>({...c,tipo:c.tipo||'ingreso'})),commoditiesCierre:d.commoditiesCierre||[],hoes:d.hoes||[],catalogoCierre:d.catalogoCierre||[],lotes:d.lotes||[],programacion:d.programacion||[],inhabiles:d.inhabiles||[],config:d.config||{operadores:5,sueldo:500,gastosFijos:1000},costeos:d.costeos||{},cierres:d.cierres||{}};
+      nextId=d.nextId||{c:1,cc:1,h:1,hc:1,l:1,p:1,cl:1};
+      saveState();renderAll();
+      document.getElementById('import-preview').innerHTML=`<div class="alert success">Importado: ${state.commodities.length} commodities, ${state.hoes.length} HOEs, ${state.lotes.length} lotes, ${state.clientes.length} clientes.</div>`;
+    }catch(err){alert('Error al leer el archivo.');}
+  };reader.readAsText(file);
+}
+
+function renderAll(){
+  renderCommodities();renderCommoditiesCierre();renderHoes();renderCatalogoCierre();
+  renderLotes();renderClientes();renderInhabiles();renderDashboard();
+  document.getElementById('cfg-operadores').value=state.config.operadores;
+  document.getElementById('cfg-sueldo').value=state.config.sueldo;
+  document.getElementById('cfg-gastos-fijos').value=state.config.gastosFijos;
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.style.display='none';});});
+document.addEventListener('DOMContentLoaded',function(){
+  const fi=document.getElementById('import-file');
+  if(fi)fi.addEventListener('change',function(){
+    const file=this.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(e){try{const d=JSON.parse(e.target.result);const fecha=d.exportado?new Date(d.exportado).toLocaleDateString('es-MX'):'desconocida';document.getElementById('import-preview').innerHTML=`<div class="alert warning">Archivo: <strong>${file.name}</strong> · Exportado: ${fecha}<br>${(d.lotes||[]).length} lotes, ${(d.clientes||[]).length} clientes.</div>`;}catch(e){document.getElementById('import-preview').innerHTML='<div class="alert danger">Archivo inválido.</div>';}};
+    reader.readAsText(file);
+  });
+});
+loadState();
+</script>
+</body>
+</html>
