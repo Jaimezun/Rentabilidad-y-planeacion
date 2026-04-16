@@ -846,13 +846,24 @@ function openNewCatalogoCierre(){
 }
 function saveCatalogoCierre(){
   const id=document.getElementById('cc-edit-id').value;
-  const nombre=document.getElementById('cc-nombre').value.trim();if(!nombre)return;
-  const rows=document.querySelectorAll('#cc-comm-rows .commodity-row');
-  const comms=Array.from(rows).map(r=>({id:r.querySelector('select').value,pct:parseFloat(r.querySelector('input').value)||0})).filter(c=>c.id&&c.pct>0);
+  const nombre=document.getElementById('cc-nombre').value.trim();
+  if(!nombre){alert('Ingresa un nombre.');return;}
+  const rowEls=document.getElementById('cc-comm-rows').querySelectorAll('.commodity-row');
+  if(!rowEls.length){alert('Agrega al menos un commodity de cierre.');return;}
+  const comms=[];
+  rowEls.forEach(r=>{
+    const sel=r.querySelector('select');
+    const inp=r.querySelector('input[type=number]');
+    const commId=sel?sel.value:'';
+    const pct=inp?(parseFloat(inp.value)||0):0;
+    if(commId&&pct>0)comms.push({id:commId,pct});
+  });
+  if(!comms.length){alert('Agrega al menos un commodity con porcentaje mayor a 0.');return;}
   const sum=comms.reduce((a,c)=>a+c.pct,0);
-  if(comms.length&&Math.abs(sum-100)>0.5){alert(`Porcentajes deben sumar 100%`);return;}
+  if(Math.abs(sum-100)>0.5){alert('Los porcentajes deben sumar 100% (actual: '+sum.toFixed(1)+'%)');return;}
   const obj={id:id||uid('hc'),nombre,commodities:comms};
-  if(id){const i=state.catalogoCierre.findIndex(h=>h.id===id);if(i>=0)state.catalogoCierre[i]=obj;}else state.catalogoCierre.push(obj);
+  if(id){const i=state.catalogoCierre.findIndex(h=>h.id===id);if(i>=0)state.catalogoCierre[i]=obj;}
+  else state.catalogoCierre.push(obj);
   saveState();closeModal('modal-catalogo-cierre');renderCatalogoCierre();
 }
 function editCatalogoCierre(id){
