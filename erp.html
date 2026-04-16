@@ -825,52 +825,86 @@ function renderHoes(){
 }
 
 // CATÁLOGO CIERRE
-function addCcRow(sel='',pct=''){
-  const opts=state.commoditiesCierre.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${c.nombre}</option>`).join('');
-  const row=document.createElement('div');row.className='commodity-row';
-  row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${pct}" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px"><span style="font-size:13px;color:#888">%</span><button class="btn small danger" onclick="this.parentElement.remove();updateCcSum()">✕</button>`;
-  row.querySelector('input').addEventListener('input',updateCcSum);
-  document.getElementById('cc-comm-rows').appendChild(row);updateCcSum();
+function addCcRow(selId,pct){
+  selId=selId||'';pct=pct||'';
+  const container=document.getElementById('cc-comm-rows');
+  const rowId='ccrow_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  const div=document.createElement('div');
+  div.className='commodity-row';
+  div.dataset.rowid=rowId;
+  // Build select with current commoditiesCierre
+  let optHtml='';
+  state.commoditiesCierre.forEach(c=>{
+    optHtml+=`<option value="${c.id}"${c.id===selId?' selected':''}>${c.nombre}</option>`;
+  });
+  div.innerHTML=`<select style="flex:2">${optHtml}</select>`
+    +`<input type="number" value="${pct}" min="0" max="100" step="0.01" placeholder="%" style="flex:1;max-width:80px">`
+    +`<span style="font-size:13px;color:#888">%</span>`
+    +`<button class="btn small danger" onclick="this.closest('.commodity-row').remove();updateCcSum()">✕</button>`;
+  div.querySelector('input').addEventListener('input',updateCcSum);
+  container.appendChild(div);
+  updateCcSum();
 }
 function updateCcSum(){
-  const rows=document.querySelectorAll('#cc-comm-rows .commodity-row input[type=number]');
-  const sum=Array.from(rows).reduce((a,r)=>a+(parseFloat(r.value)||0),0);
+  const container=document.getElementById('cc-comm-rows');
+  if(!container)return;
+  const inputs=container.querySelectorAll('input[type=number]');
+  const sum=Array.from(inputs).reduce((a,r)=>a+(parseFloat(r.value)||0),0);
   const el=document.getElementById('cc-comm-sum');
-  el.textContent=`Total: ${sum.toFixed(1)}%`;el.style.color=Math.abs(sum-100)<0.01?'#1a7a3c':'#c0392b';
+  if(el){el.textContent=`Total: ${sum.toFixed(1)}%`;el.style.color=Math.abs(sum-100)<0.01?'#1a7a3c':'#c0392b';}
 }
 function openNewCatalogoCierre(){
   if(!state.commoditiesCierre.length){alert('Primero crea commodities de cierre.');return;}
-  document.getElementById('cc-edit-id').value='';document.getElementById('cc-nombre').value='';
-  document.getElementById('cc-comm-rows').innerHTML='';document.getElementById('modal-catalogo-cierre-title').textContent='Nueva categoría de cierre';
-  addCcRow();openModal('modal-catalogo-cierre');
+  document.getElementById('cc-edit-id').value='';
+  document.getElementById('cc-nombre').value='';
+  document.getElementById('cc-comm-rows').innerHTML='';
+  document.getElementById('modal-catalogo-cierre-title').textContent='Nueva categoría de cierre';
+  addCcRow();
+  openModal('modal-catalogo-cierre');
 }
 function saveCatalogoCierre(){
   const id=document.getElementById('cc-edit-id').value;
   const nombre=document.getElementById('cc-nombre').value.trim();
   if(!nombre){alert('Ingresa un nombre.');return;}
-  const rowEls=document.getElementById('cc-comm-rows').querySelectorAll('.commodity-row');
+  const container=document.getElementById('cc-comm-rows');
+  const rowEls=container.querySelectorAll('.commodity-row');
   if(!rowEls.length){alert('Agrega al menos un commodity de cierre.');return;}
   const comms=[];
-  rowEls.forEach(r=>{
+  rowEls.forEach(function(r){
     const sel=r.querySelector('select');
     const inp=r.querySelector('input[type=number]');
-    const commId=sel?sel.value:'';
-    const pct=inp?(parseFloat(inp.value)||0):0;
-    if(commId&&pct>0)comms.push({id:commId,pct});
+    if(!sel||!inp)return;
+    const commId=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].value:'';
+    const pct=parseFloat(inp.value)||0;
+    if(commId&&pct>0)comms.push({id:commId,pct:pct});
   });
   if(!comms.length){alert('Agrega al menos un commodity con porcentaje mayor a 0.');return;}
-  const sum=comms.reduce((a,c)=>a+c.pct,0);
+  const sum=comms.reduce(function(a,c){return a+c.pct;},0);
   if(Math.abs(sum-100)>0.5){alert('Los porcentajes deben sumar 100% (actual: '+sum.toFixed(1)+'%)');return;}
-  const obj={id:id||uid('hc'),nombre,commodities:comms};
-  if(id){const i=state.catalogoCierre.findIndex(h=>h.id===id);if(i>=0)state.catalogoCierre[i]=obj;}
-  else state.catalogoCierre.push(obj);
-  saveState();closeModal('modal-catalogo-cierre');renderCatalogoCierre();
+  const newId=id||uid('hc');
+  const obj={id:newId,nombre:nombre,commodities:comms};
+  if(id){
+    const i=state.catalogoCierre.findIndex(function(h){return h.id===id;});
+    if(i>=0)state.catalogoCierre[i]=obj;
+  } else {
+    state.catalogoCierre.push(obj);
+  }
+  saveState();
+  closeModal('modal-catalogo-cierre');
+  renderCatalogoCierre();
 }
 function editCatalogoCierre(id){
-  const h=state.catalogoCierre.find(x=>x.id===id);if(!h)return;
-  document.getElementById('cc-edit-id').value=h.id;document.getElementById('cc-nombre').value=h.nombre;
-  document.getElementById('cc-comm-rows').innerHTML='';document.getElementById('modal-catalogo-cierre-title').textContent='Editar categoría';
-  (h.commodities||[]).forEach(c=>addCcRow(c.id,c.pct));if(!(h.commodities||[]).length)addCcRow();
+  const h=state.catalogoCierre.find(function(x){return x.id===id;});
+  if(!h)return;
+  document.getElementById('cc-edit-id').value=h.id;
+  document.getElementById('cc-nombre').value=h.nombre;
+  document.getElementById('cc-comm-rows').innerHTML='';
+  document.getElementById('modal-catalogo-cierre-title').textContent='Editar categoría';
+  if(h.commodities&&h.commodities.length){
+    h.commodities.forEach(function(c){addCcRow(c.id,c.pct);});
+  } else {
+    addCcRow();
+  }
   openModal('modal-catalogo-cierre');
 }
 function deleteCatalogoCierre(id){if(!confirm('¿Eliminar?'))return;state.catalogoCierre=state.catalogoCierre.filter(h=>h.id!==id);saveState();renderCatalogoCierre();}
