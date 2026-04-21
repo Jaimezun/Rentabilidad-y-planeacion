@@ -95,6 +95,12 @@ tr:hover td{background:#fafaf8}
 .estado-plancompleta{background:#f0e8fe;color:#6b21a8;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .area-tag-eol{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;background:#e8f0fe;color:#1a56db;margin-left:4px}
 .area-tag-ars{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;background:#e8faf8;color:#0f6e56;margin-left:4px}
+.estado-encamino{background:#f0f0ea;color:#666;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.estado-recibido{background:#fef8e8;color:#a05a00;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.estado-sinprogramar{background:#e8f0fe;color:#1a56db;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.estado-bueno{background:#e8f8ed;color:#1a7a3c;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600}
+.estado-danado{background:#fef8e8;color:#a05a00;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600}
+.estado-muydanado{background:#fde8e8;color:#c0392b;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600}
 /* DAY PANEL */
 .day-panel{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:18px;margin-bottom:12px}
 .op-assign-row{display:flex;gap:8px;align-items:center;padding:8px;background:#f8f8f4;border-radius:8px;margin-bottom:6px;border:1px solid #e8e8e0}
@@ -166,7 +172,7 @@ tr:hover td{background:#fafaf8}
       <div class="field" style="max-width:220px;margin:0"><label>Cliente</label>
         <select id="resumen-cliente-sel" onchange="renderResumenCliente()"><option value="">— Todos —</option></select></div>
       <div class="field" style="max-width:200px;margin:0"><label>Estado</label>
-        <select id="resumen-estado-sel" onchange="renderResumenCliente()"><option value="">Todos</option><option>Programado</option><option>En proceso</option><option>Finalizado</option></select></div>
+        <select id="resumen-estado-sel" onchange="renderResumenCliente()"><option value="">Todos</option><option>En camino</option><option>Recibido</option><option>Sin programar</option><option>Programado</option><option>En proceso</option><option>Plan completa</option><option>Finalizado</option></select></div>
     </div>
     <div id="resumen-cliente-content"></div>
   </div>
@@ -274,7 +280,7 @@ tr:hover td{background:#fafaf8}
     <div class="row center" style="gap:8px;margin:0">
       <select id="lotes-filtro-estado" onchange="renderLotes()" style="width:160px;padding:7px 10px">
         <option value="">Todos los estados</option>
-        <option>Programado</option><option>En proceso</option><option>Finalizado</option><option>Plan completa</option>
+        <option>En camino</option><option>Recibido</option><option>Sin programar</option><option>Programado</option><option>En proceso</option><option>Plan completa</option><option>Finalizado</option>
       </select>
       <button class="btn primary" onclick="openNewLote()">+ Nuevo lote</button>
     </div>
@@ -292,6 +298,7 @@ tr:hover td{background:#fafaf8}
     <button class="tab" onclick="showPlanTab('ars')">Global ARS</button>
     <button class="tab" onclick="showPlanTab('ops-eol')">Operadores EOL</button>
     <button class="tab" onclick="showPlanTab('ops-ars')">Operadores ARS</button>
+    <button class="tab" onclick="showPlanTab('recibo')">Calendario Recibo</button>
   </div>
 
   <!-- GLOBAL EOL -->
@@ -360,6 +367,38 @@ tr:hover td{background:#fafaf8}
       <button class="btn primary" onclick="openModalOperador('ars')">+ Agregar operador</button>
     </div>
     <div id="ops-ars-list"></div>
+  </div>
+
+  <!-- CALENDARIO RECIBO -->
+  <div id="plan-tab-recibo" class="plan-tab" style="display:none">
+    <div class="row center" style="margin-bottom:16px">
+      <h2 style="margin:0;flex:1">Calendario de recibo</h2>
+      <button class="btn" onclick="prevMonthCal('recibo')">‹</button>
+      <span id="cal-title-recibo" style="font-size:15px;font-weight:600;min-width:140px;text-align:center"></span>
+      <button class="btn" onclick="nextMonthCal('recibo')">›</button>
+    </div>
+    <div class="row" style="gap:16px;align-items:flex-start">
+      <div style="flex:2;min-width:340px">
+        <div class="card" style="padding:14px">
+          <div style="font-size:12px;color:#888;margin-bottom:8px">Fechas de arribo de lotes.</div>
+          <div class="cal-header-row" id="cal-header-recibo"></div>
+          <div class="cal-wrap"><div class="cal-grid" id="cal-grid-recibo"></div></div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:260px">
+        <div class="card" id="recibo-day-panel" style="display:none">
+          <div class="row center" style="margin-bottom:10px">
+            <h3 style="margin:0;flex:1" id="recibo-day-title"></h3>
+            <button class="btn small" onclick="document.getElementById('recibo-day-panel').style.display='none'">✕</button>
+          </div>
+          <div id="recibo-day-content"></div>
+        </div>
+        <div class="card">
+          <h3>Próximos arribos</h3>
+          <div id="proximos-arribos"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -535,6 +574,7 @@ tr:hover td{background:#fafaf8}
   <input type="hidden" id="lote-edit-id">
   <div class="row">
     <div class="field" style="flex:2"><label>Nombre del lote</label><input type="text" id="lote-nombre"></div>
+    <div class="field"><label>Fecha de arribo</label><input type="date" id="lote-arribo"></div>
     <div class="field"><label>Deadline</label><input type="date" id="lote-deadline"></div>
   </div>
   <div class="field"><label>Cliente</label><select id="lote-cliente"></select></div>
@@ -635,6 +675,28 @@ tr:hover td{background:#fafaf8}
   </div>
 </div></div>
 
+<!-- MODAL RECIBO -->
+<div id="modal-recibo" class="modal-overlay" style="display:none"><div class="modal" style="max-width:600px">
+  <h3 id="modal-recibo-title">Recibo del lote</h3>
+  <input type="hidden" id="recibo-lote-id">
+  <div class="row">
+    <div class="field"><label>Fecha de recibo</label><input type="date" id="recibo-fecha"></div>
+    <div class="field"><label>Piezas totales</label><input type="number" id="recibo-piezas" min="0" placeholder="Ej. 50"></div>
+  </div>
+  <div style="margin-bottom:12px">
+    <div class="row center" style="margin-bottom:8px">
+      <label style="flex:1;margin:0;font-size:13px;font-weight:600">Tarimas</label>
+      <button class="btn small" onclick="addTarimaRow()">+ Agregar tarima</button>
+    </div>
+    <div id="recibo-tarimas-rows"></div>
+    <div id="recibo-tarimas-total" style="font-size:13px;font-weight:600;color:#1a1a1a;margin-top:8px;padding:8px;background:#f8f8f4;border-radius:6px"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-recibo')">Cancelar</button>
+    <button class="btn primary" onclick="saveRecibo()">Guardar recibo</button>
+  </div>
+</div></div>
+
 <div id="modal-detail" class="modal-overlay" style="display:none"><div class="modal" style="max-width:640px">
   <h3 id="modal-detail-title"></h3>
   <div id="modal-detail-content"></div>
@@ -654,6 +716,7 @@ let state={
   lotes:[],
   operadoresEOL:[],operadoresARS:[],
   diasEOL:{},diasARS:{},
+  recibos:{},
   inhabiles:[],
   config:{
     eol:{sueldoDia:500,gastosFijos:1000},
@@ -662,9 +725,9 @@ let state={
   costeos:{},cierres:{}
 };
 
-let calYear={eol:new Date().getFullYear(),ars:new Date().getFullYear()};
-let calMonth={eol:new Date().getMonth(),ars:new Date().getMonth()};
-let selectedDay={eol:null,ars:null};
+let calYear={eol:new Date().getFullYear(),ars:new Date().getFullYear(),recibo:new Date().getFullYear()};
+let calMonth={eol:new Date().getMonth(),ars:new Date().getMonth(),recibo:new Date().getMonth()};
+let selectedDay={eol:null,ars:null,recibo:null};
 let currentPlanTab='eol';
 let nextId={c:1,cc:1,h:1,hc:1,l:1,cl:1,cat:1,itf:1,ref:1,op:1};
 
@@ -708,6 +771,7 @@ function loadState(){
   state.commodities=state.commodities.map(c=>({...c,tipo:c.tipo||'ingreso'}));
   state.diasEOL=state.diasEOL||{};
   state.diasARS=state.diasARS||{};
+  state.recibos=state.recibos||{};
   state.costeos=state.costeos||{};
   state.cierres=state.cierres||{};
   checkAuth();
@@ -725,7 +789,7 @@ function showPage(id){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   event.target.classList.add('active');
-  if(id==='planeacion'){renderCalendar('eol');renderCalendar('ars');renderOpsPanel('eol');renderOpsPanel('ars');}
+  if(id==='planeacion'){renderCalendar('eol');renderCalendar('ars');renderOpsPanel('eol');renderOpsPanel('ars');renderCalendarRecibo();renderProximosArribos();}
   if(id==='dashboard')renderDashboard();
   if(id==='costeo')renderCosteoList();
   if(id==='clientes'){renderClientes();renderResumenClienteSelects();}
@@ -752,6 +816,7 @@ function showPlanTab(tab){
   if(tab==='eol'||tab==='ars')renderCalendar(tab);
   if(tab==='ops-eol')renderOpsPanel('eol');
   if(tab==='ops-ars')renderOpsPanel('ars');
+  if(tab==='recibo'){renderCalendarRecibo();renderProximosArribos();}
 }
 
 // ── ESTADO DEL LOTE ───────────────────────────────────────
@@ -779,17 +844,26 @@ function getEstadoLote(lote){
   const eolListo=!tieneEOL||trEOL===0;
   const arsListo=!tieneARS||trARS===0;
   if(eolListo&&arsListo&&(tieneEOL||tieneARS))return'Plan completa';
-  // Check if any assignment exists today or earlier
-  const diasEOL=Object.keys(state.diasEOL).filter(d=>d<=TODAY&&Object.values(state.diasEOL[d]||{}).some(a=>a.some(x=>x.loteId===lote.id)));
-  const diasARS=Object.keys(state.diasARS).filter(d=>d<=TODAY&&Object.values(state.diasARS[d]||{}).some(a=>a.some(x=>x.loteId===lote.id)));
-  if(diasEOL.length||diasARS.length)return'En proceso';
-  return'Programado';
+  // Check planning
+  const tieneEOLPlan=Object.keys(state.diasEOL).some(d=>Object.values(state.diasEOL[d]||{}).some(a=>a.some(x=>x.loteId===lote.id)));
+  const tieneARSPlan=Object.keys(state.diasARS).some(d=>Object.values(state.diasARS[d]||{}).some(a=>a.some(x=>x.loteId===lote.id)));
+  const diasEOLPasados=Object.keys(state.diasEOL).filter(d=>d<=TODAY&&Object.values(state.diasEOL[d]||{}).some(a=>a.some(x=>x.loteId===lote.id)));
+  const diasARSPasados=Object.keys(state.diasARS).filter(d=>d<=TODAY&&Object.values(state.diasARS[d]||{}).some(a=>a.some(x=>x.loteId===lote.id)));
+  if(diasEOLPasados.length||diasARSPasados.length)return'En proceso';
+  if(tieneEOLPlan||tieneARSPlan)return'Programado';
+  // Check recibo
+  if(state.recibos[lote.id])return'Sin programar';
+  // Check arribo
+  if(lote.fechaArribo&&lote.fechaArribo<=TODAY)return'Sin programar';
+  return'En camino';
 }
 
 function estadoBadge(est){
   if(est==='Finalizado')return`<span class="estado-finalizado">${est}</span>`;
   if(est==='En proceso')return`<span class="estado-enproceso">${est}</span>`;
   if(est==='Plan completa')return`<span class="estado-plancompleta">${est}</span>`;
+  if(est==='En camino')return`<span class="estado-encamino">${est}</span>`;
+  if(est==='Recibido'||est==='Sin programar')return`<span class="estado-recibido">${est}</span>`;
   return`<span class="estado-programado">${est}</span>`;
 }
 
@@ -1191,7 +1265,7 @@ function updateLotePreview(){
     <div class="metric"><div class="label">Costo refacc.</div><div class="value" style="color:#c0392b">$${costoRefTotal.toFixed(0)}</div></div>`;
 }
 function openNewLote(){
-  document.getElementById('lote-edit-id').value='';document.getElementById('lote-nombre').value='';document.getElementById('lote-deadline').value='';
+  document.getElementById('lote-edit-id').value='';document.getElementById('lote-nombre').value='';document.getElementById('lote-arribo').value='';document.getElementById('lote-deadline').value='';
   document.getElementById('lote-item-rows').innerHTML='';document.getElementById('lote-ars-rows').innerHTML='';document.getElementById('lote-ref-rows').innerHTML='';
   document.getElementById('lote-preview').innerHTML='';document.getElementById('modal-lote-title').textContent='Nuevo lote';
   document.getElementById('lote-cliente').innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
@@ -1199,7 +1273,7 @@ function openNewLote(){
 }
 function saveLote(){
   const id=document.getElementById('lote-edit-id').value;
-  const nombre=document.getElementById('lote-nombre').value.trim();const deadline=document.getElementById('lote-deadline').value;
+  const nombre=document.getElementById('lote-nombre').value.trim();const fechaArribo=document.getElementById('lote-arribo').value;const deadline=document.getElementById('lote-deadline').value;
   const clienteId=document.getElementById('lote-cliente').value;
   if(!nombre||!deadline){alert('Completa nombre y deadline.');return;}
   const items=Array.from(document.querySelectorAll('#lote-item-rows .row')).map(r=>({hoeId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
@@ -1207,7 +1281,7 @@ function saveLote(){
   const refacciones=Array.from(document.querySelectorAll('#lote-ref-rows .row')).map(r=>({refId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
   if(!items.length&&!itemsARS.length){alert('Agrega al menos un HOE o item.');return;}
   const calc=getLoteCalc(items);const arsCalc=getLoteARSCalc(itemsARS);
-  const lote={id:id||uid('l'),nombre,deadline,clienteId,items,itemsARS,refacciones,...calc,tiempoARSTotal:arsCalc.tiempoARSTotal,valorARSTotal:arsCalc.valorARSTotal,finalizado:false};
+  const lote={id:id||uid('l'),nombre,fechaArribo,deadline,clienteId,items,itemsARS,refacciones,...calc,tiempoARSTotal:arsCalc.tiempoARSTotal,valorARSTotal:arsCalc.valorARSTotal,finalizado:false};
   if(id){const i=state.lotes.findIndex(l=>l.id===id);if(i>=0)state.lotes[i]={...lote,finalizado:state.lotes[i].finalizado};}
   else state.lotes.push(lote);
   saveState();closeModal('modal-lote');renderLotes();
@@ -1215,7 +1289,7 @@ function saveLote(){
 function editLote(id){
   const l=state.lotes.find(x=>x.id===id);if(!l)return;
   if(l.finalizado){alert('Este lote está finalizado.');return;}
-  document.getElementById('lote-edit-id').value=l.id;document.getElementById('lote-nombre').value=l.nombre;document.getElementById('lote-deadline').value=l.deadline;
+  document.getElementById('lote-edit-id').value=l.id;document.getElementById('lote-nombre').value=l.nombre;document.getElementById('lote-arribo').value=l.fechaArribo||'';document.getElementById('lote-deadline').value=l.deadline;
   document.getElementById('lote-item-rows').innerHTML='';document.getElementById('lote-ars-rows').innerHTML='';document.getElementById('lote-ref-rows').innerHTML='';
   document.getElementById('modal-lote-title').textContent='Editar lote';
   document.getElementById('lote-cliente').innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}" ${c.id===l.clienteId?'selected':''}>${c.nombre}</option>`).join('');
@@ -1285,12 +1359,14 @@ function renderLotes(){
     const trEOL=tiempoRestanteLote(l.id,'eol');const trARS=tiempoRestanteLote(l.id,'ars');
     const est=getEstadoLote(l);const cliente=state.clientes.find(x=>x.id===l.clienteId);
     return`<tr>
-      <td><a href="#" onclick="viewLote('${l.id}');return false" style="color:#1a56db;text-decoration:none;font-weight:500">${l.nombre}</a></td>
+      <td><a href="#" onclick="viewLote('${l.id}');return false" style="color:#1a56db;text-decoration:none;font-weight:500">${l.nombre}</a>${l.fechaArribo?`<br><span style="font-size:11px;color:#888">Arribo: ${l.fechaArribo}</span>`:''}</td>
       <td>${cliente?cliente.nombre:'<span style="color:#ccc">—</span>'}</td>
       <td>${eolCount?`<span class="area-tag-eol">${eolCount} HOEs</span> `:''}${arsCount?`<span class="area-tag-ars">${arsCount} items</span>`:''}</td>
       <td style="font-size:12px">${(l.tiempoTotal||0)>0?`<span class="area-tag-eol">${trEOL} min</span> `:''}${(l.tiempoARSTotal||0)>0?`<span class="area-tag-ars">${trARS} min</span>`:''}</td>
       <td>${l.deadline}</td><td>${estadoBadge(est)}</td>
       <td style="text-align:right;white-space:nowrap">
+        ${!l.finalizado&&!state.recibos[l.id]?`<button class="btn small warning" onclick="openRecibo('${l.id}')" style="color:#fff">Recibir</button> `:''}
+        ${state.recibos[l.id]?`<button class="btn small" onclick="openRecibo('${l.id}')">Recibo</button> `:''}
         ${!l.finalizado?`<button class="btn small success" onclick="openCierre('${l.id}')">Cierre</button> `:'<span class="badge success" style="margin-right:4px">Cerrado</span>'}
         <button class="btn small" onclick="openCosteo('${l.id}')">Costeo</button>
         ${!l.finalizado?`<button class="btn small" onclick="editLote('${l.id}')">Editar</button> `:''}
@@ -1553,8 +1629,8 @@ function renderCalendar(area){
   }
   document.getElementById(gridId).innerHTML=html;
 }
-function prevMonthCal(area){calMonth[area]--;if(calMonth[area]<0){calMonth[area]=11;calYear[area]--;}renderCalendar(area);}
-function nextMonthCal(area){calMonth[area]++;if(calMonth[area]>11){calMonth[area]=0;calYear[area]++;}renderCalendar(area);}
+function prevMonthCal(area){calMonth[area]--;if(calMonth[area]<0){calMonth[area]=11;calYear[area]--;}if(area==='recibo')renderCalendarRecibo();else renderCalendar(area);}
+function nextMonthCal(area){calMonth[area]++;if(calMonth[area]>11){calMonth[area]=0;calYear[area]++;}if(area==='recibo')renderCalendarRecibo();else renderCalendar(area);}
 
 function onCalDayClick(ds,area){
   selectedDay[area]=ds;
@@ -1815,6 +1891,192 @@ function renderLotesDisponiblesPanel(area){
   }).join('');
 }
 
+// ── RECIBO ───────────────────────────────────────────────────
+function openRecibo(loteId){
+  const l=state.lotes.find(x=>x.id===loteId);if(!l)return;
+  const existing=state.recibos[loteId];
+  document.getElementById('recibo-lote-id').value=loteId;
+  document.getElementById('modal-recibo-title').textContent=`Recibo: ${l.nombre}`;
+  document.getElementById('recibo-fecha').value=existing?existing.fechaRecibo:TODAY;
+  document.getElementById('recibo-piezas').value=existing?existing.piezas:'';
+  document.getElementById('recibo-tarimas-rows').innerHTML='';
+  if(existing&&existing.tarimas&&existing.tarimas.length){
+    existing.tarimas.forEach(t=>addTarimaRow(t.peso,t.estado));
+  } else {
+    addTarimaRow();
+  }
+  updateTarimasTotal();
+  openModal('modal-recibo');
+}
+
+function addTarimaRow(peso='',estado='Bueno'){
+  const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:6px;align-items:center';
+  const idx=document.querySelectorAll('#recibo-tarimas-rows .row').length+1;
+  row.innerHTML=`<span style="font-size:12px;color:#888;min-width:60px">Tarima ${idx}</span>
+    <input type="number" value="${peso}" min="0" step="0.01" placeholder="Kg" style="flex:1" oninput="updateTarimasTotal()">
+    <select style="flex:1" onchange="updateTarimasTotal()">
+      <option value="Bueno" ${estado==='Bueno'?'selected':''}>✓ Bueno</option>
+      <option value="Dañado" ${estado==='Dañado'?'selected':''}>⚠ Dañado</option>
+      <option value="Muy dañado" ${estado==='Muy dañado'?'selected':''}>✕ Muy dañado</option>
+    </select>
+    <button class="btn small danger" onclick="this.parentElement.remove();updateTarimasTotal();renumberTarimas()">✕</button>`;
+  document.getElementById('recibo-tarimas-rows').appendChild(row);
+  updateTarimasTotal();
+}
+
+function renumberTarimas(){
+  const rows=document.querySelectorAll('#recibo-tarimas-rows .row');
+  rows.forEach((r,i)=>{const span=r.querySelector('span');if(span)span.textContent=`Tarima ${i+1}`;});
+}
+
+function updateTarimasTotal(){
+  const rows=document.querySelectorAll('#recibo-tarimas-rows .row');
+  let totalKg=0;let counts={Bueno:0,Dañado:0,'Muy dañado':0};
+  rows.forEach(r=>{
+    const kg=parseFloat(r.querySelector('input[type=number]').value)||0;
+    const est=r.querySelector('select').value;
+    totalKg+=kg;counts[est]=(counts[est]||0)+1;
+  });
+  const el=document.getElementById('recibo-tarimas-total');
+  if(el){
+    const parts=Object.entries(counts).filter(([,v])=>v>0).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(', ');
+    el.innerHTML=`<strong>${rows.length} tarimas</strong> · <strong>${totalKg.toFixed(2)} kg total</strong>${parts?` · ${parts}`:''}`;
+  }
+}
+
+function saveRecibo(){
+  const loteId=document.getElementById('recibo-lote-id').value;
+  const fechaRecibo=document.getElementById('recibo-fecha').value;
+  const piezas=parseInt(document.getElementById('recibo-piezas').value)||0;
+  if(!fechaRecibo){alert('Ingresa fecha de recibo.');return;}
+  const rows=document.querySelectorAll('#recibo-tarimas-rows .row');
+  if(!rows.length){alert('Agrega al menos una tarima.');return;}
+  const tarimas=Array.from(rows).map((r,i)=>({
+    id:i+1,
+    peso:parseFloat(r.querySelector('input[type=number]').value)||0,
+    estado:r.querySelector('select').value
+  }));
+  const totalKg=tarimas.reduce((a,t)=>a+t.peso,0);
+  state.recibos[loteId]={fechaRecibo,piezas,tarimas,totalKg,totalTarimas:tarimas.length};
+  saveState();closeModal('modal-recibo');renderLotes();renderCalendarRecibo();renderProximosArribos();
+}
+
+// ── CALENDARIO RECIBO ─────────────────────────────────────
+function renderCalendarRecibo(){
+  const yr=calYear.recibo;const mo=calMonth.recibo;
+  const header=document.getElementById('cal-header-recibo');
+  const grid=document.getElementById('cal-grid-recibo');
+  const title=document.getElementById('cal-title-recibo');
+  if(!header||!grid||!title)return;
+
+  header.innerHTML=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  title.textContent=`${months[mo]} ${yr}`;
+
+  const first=new Date(yr,mo,1).getDay();const daysInMonth=new Date(yr,mo+1,0).getDate();
+
+  // Build map: date -> [lotes arriving that day]
+  const arriboMap={};
+  state.lotes.forEach(l=>{
+    if(l.fechaArribo){
+      if(!arriboMap[l.fechaArribo])arriboMap[l.fechaArribo]=[];
+      arriboMap[l.fechaArribo].push(l);
+    }
+  });
+  // Also show actual recibos
+  Object.entries(state.recibos).forEach(([loteId,r])=>{
+    if(r.fechaRecibo){
+      if(!arriboMap[r.fechaRecibo])arriboMap[r.fechaRecibo]=[];
+      // Only add if not already there from arribo
+      const l=state.lotes.find(x=>x.id===loteId);
+      if(l&&!(l.fechaArribo===r.fechaRecibo&&arriboMap[r.fechaRecibo].some(x=>x.id===loteId))){
+        arriboMap[r.fechaRecibo].push(l);
+      }
+    }
+  });
+
+  let html='';for(let i=0;i<first;i++)html+='<div class="cal-day empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=ds===TODAY;const isSel=selectedDay.recibo===ds;
+    const lotesEnDia=arriboMap[ds]||[];
+    let chips=lotesEnDia.map(l=>{
+      const recibido=!!state.recibos[l.id];
+      const color=recibido?'#1a7a3c':'#a05a00';
+      return`<div class="lote-chip" style="background:${color}22;color:${color}">${l.nombre.substring(0,12)}${recibido?' ✓':''}</div>`;
+    }).join('');
+    html+=`<div class="cal-day${isToday?' today':''}${isSel?' selected':''}" onclick="onReciboDayClick('${ds}')">
+      <div class="day-num">${d}</div>${chips}
+      ${lotesEnDia.length?`<div class="cap-label">${lotesEnDia.length} lote${lotesEnDia.length!==1?'s':''}</div>`:''}
+    </div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function onReciboDayClick(ds){
+  selectedDay.recibo=ds;
+  renderCalendarRecibo();
+  const panel=document.getElementById('recibo-day-panel');
+  const title=document.getElementById('recibo-day-title');
+  const content=document.getElementById('recibo-day-content');
+  if(!panel||!title||!content)return;
+
+  // Lotes arriving this day (by fechaArribo or fechaRecibo)
+  const lotes=state.lotes.filter(l=>{
+    if(l.fechaArribo===ds)return true;
+    const r=state.recibos[l.id];
+    return r&&r.fechaRecibo===ds;
+  });
+
+  title.textContent=`Recibos — ${ds}`;
+  if(!lotes.length){content.innerHTML='<p style="font-size:13px;color:#888">Sin lotes este día.</p>';}
+  else{
+    content.innerHTML=lotes.map(l=>{
+      const r=state.recibos[l.id];
+      const recibido=!!r;
+      const estadoStr=recibido
+        ?`<span class="badge success">Recibido</span> <span style="font-size:12px;color:#888">${r.fechaRecibo}</span>`
+        :`<span class="badge warning">Pendiente</span>`;
+      const tarimasHtml=recibido&&r.tarimas?r.tarimas.map(t=>`<div style="display:flex;gap:8px;font-size:12px;padding:3px 0">
+        <span style="color:#888">Tarima ${t.id}</span>
+        <span>${t.peso} kg</span>
+        <span class="estado-${t.estado==='Bueno'?'bueno':t.estado==='Dañado'?'danado':'muydanado'}">${t.estado}</span>
+      </div>`).join(''):'';
+      return`<div style="padding:12px;background:#f8f8f4;border-radius:8px;margin-bottom:8px;border:1px solid #e8e8e0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-weight:600;flex:1">${l.nombre}</span>${estadoStr}
+        </div>
+        ${recibido?`<div style="font-size:12px;color:#888;margin-bottom:4px">${r.totalTarimas} tarimas · ${r.totalKg.toFixed(2)} kg · ${r.piezas} piezas</div>${tarimasHtml}`:''}
+        ${!recibido?`<button class="btn small primary" onclick="openRecibo('${l.id}');document.getElementById('recibo-day-panel').style.display='none'">Registrar recibo</button>`:`<button class="btn small" onclick="openRecibo('${l.id}')">Editar recibo</button>`}
+      </div>`;
+    }).join('');
+  }
+  panel.style.display='block';
+}
+
+function renderProximosArribos(){
+  const el=document.getElementById('proximos-arribos');if(!el)return;
+  // Show lotes with fechaArribo >= today, sorted by date
+  const proximos=state.lotes
+    .filter(l=>l.fechaArribo&&l.fechaArribo>=TODAY&&!l.finalizado)
+    .sort((a,b)=>a.fechaArribo.localeCompare(b.fechaArribo))
+    .slice(0,8);
+  if(!proximos.length){el.innerHTML='<p style="font-size:13px;color:#888">Sin arribos próximos.</p>';return;}
+  el.innerHTML=proximos.map(l=>{
+    const recibido=!!state.recibos[l.id];
+    const dias=Math.ceil((new Date(l.fechaArribo+'T12:00:00')-new Date(TODAY+'T12:00:00'))/(1000*60*60*24));
+    const color=dias===0?'#1a7a3c':dias<=3?'#a05a00':'#1a56db';
+    return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ea">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${l.nombre}</div>
+        <div style="font-size:11px;color:#888">${l.fechaArribo}</div>
+      </div>
+      <span style="font-size:12px;font-weight:600;color:${color}">${dias===0?'Hoy':dias===1?'Mañana':'En '+dias+' días'}</span>
+      ${recibido?'<span class="badge success" style="font-size:10px">✓</span>':''}
+    </div>`;
+  }).join('');
+}
+
 // ── INHABILES ─────────────────────────────────────────────
 function addInhabil(){const f=document.getElementById('inh-fecha').value;const d=document.getElementById('inh-desc').value.trim()||'Día inhábil';if(!f)return;if(!state.inhabiles.some(i=>i.fecha===f)){state.inhabiles.push({fecha:f,desc:d});saveState();renderInhabiles();}}
 function addSemanaInhabil(){const ini=document.getElementById('inh-semana-inicio').value;const fin=document.getElementById('inh-semana-fin').value;const desc=document.getElementById('inh-semana-desc').value.trim()||'Semana inhábil';if(!ini||!fin)return;let dt=new Date(ini+'T12:00:00');const en=new Date(fin+'T12:00:00');while(dt<=en){const ds=dt.toISOString().split('T')[0];if(!state.inhabiles.some(x=>x.fecha===ds))state.inhabiles.push({fecha:ds,desc});dt.setDate(dt.getDate()+1);}saveState();renderInhabiles();}
@@ -2013,6 +2275,7 @@ function importarDatos(){
         lotes:d.lotes||[],
         operadoresEOL:d.operadoresEOL||[],operadoresARS:d.operadoresARS||[],
         diasEOL:d.diasEOL||{},diasARS:d.diasARS||{},
+        recibos:d.recibos||{},
         inhabiles:d.inhabiles||[],config:cfg,costeos:d.costeos||{},cierres:d.cierres||{}};
       nextId=d.nextId||{c:1,cc:1,h:1,hc:1,l:1,cl:1,cat:1,itf:1,ref:1,op:1};
       saveState();renderAll();
