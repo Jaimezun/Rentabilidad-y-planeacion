@@ -1909,7 +1909,7 @@ function openRecibo(loteId){
   openModal('modal-recibo');
 }
 
-function addTarimaRow(peso='',estado='Bueno'){
+function addTarimaRow(peso='',estado=''){
   const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:6px;align-items:center';
   const idx=document.querySelectorAll('#recibo-tarimas-rows .row').length+1;
   row.innerHTML=`<span style="font-size:12px;color:#888;min-width:60px">Tarima ${idx}</span>
