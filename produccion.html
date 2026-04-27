@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Producción</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:14px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:1px solid #e0e0d8;background:#fff;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:16px;font-weight:600;flex:1}
+.nav{display:flex;gap:4px;padding:8px 20px;border-bottom:1px solid #e0e0d8;background:#1a1a1a;overflow-x:auto;flex-shrink:0}
+.nav button{font-size:13px;padding:6px 16px;border-radius:6px;border:1px solid transparent;background:transparent;color:#aaa;cursor:pointer;white-space:nowrap;font-family:inherit;font-weight:500}
+.nav button.active{background:#fff;color:#1a1a1a}
+.nav button:hover:not(.active){background:rgba(255,255,255,0.1);color:#fff}
+.content{flex:1;padding:24px;max-width:1280px;margin:0 auto;width:100%}
+.page{display:none}.page.active{display:block}
+h2{font-size:20px;font-weight:600;margin-bottom:20px}
+h3{font-size:15px;font-weight:600;margin-bottom:12px}
+.card{background:#fff;border:1px solid #e0e0d8;border-radius:10px;padding:20px;margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#1a1a1a;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:background 0.1s}
+.btn:hover{background:#f5f5f0}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn.primary:hover{background:#333}
+.btn.success{background:#1a7a3c;color:#fff;border-color:#1a7a3c}
+.btn.success:hover{background:#158033}
+.btn.danger{color:#c0392b;border-color:#e0a0a0}
+.btn.danger:hover{background:#fdf0f0}
+.btn.warning{background:#a05a00;color:#fff;border-color:#a05a00}
+.btn.eol{background:#1a56db;color:#fff;border-color:#1a56db}
+.btn.ars{background:#0f6e56;color:#fff;border-color:#0f6e56}
+.btn.small{padding:4px 10px;font-size:12px}
+.row{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.row.center{align-items:center}
+label{font-size:12px;color:#666;display:block;margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a;font-size:14px;font-family:inherit;outline:none}
+input:focus,select:focus{border-color:#888}
+textarea{resize:vertical;min-height:60px}
+.field{margin-bottom:12px;flex:1;min-width:140px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0d8;color:#666;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em}
+td{padding:9px 12px;border-bottom:1px solid #f0f0ea;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.info{background:#e8f0fe;color:#1a56db}
+.badge.success{background:#e8f8ed;color:#1a7a3c}
+.badge.warning{background:#fef8e8;color:#a05a00}
+.badge.danger{background:#fde8e8;color:#c0392b}
+.badge.neutral{background:#f0f0ea;color:#666;border:1px solid #ddd}
+.badge.eol{background:#e8f0fe;color:#1a56db}
+.badge.ars{background:#e8faf8;color:#0f6e56}
+.badge.scrap{background:#fde8e8;color:#c0392b}
+.badge.reventa{background:#e8f8ed;color:#1a7a3c}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.metric{background:#f8f8f4;border-radius:8px;padding:14px}
+.metric .label{font-size:11px;color:#888;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.metric .value{font-size:22px;font-weight:600}
+.metric.eol-metric{background:linear-gradient(135deg,#e8f0fe,#d0e0fc);border:1px solid #a0b8f0}
+.metric.ars-metric{background:linear-gradient(135deg,#e8faf8,#d0f0e8);border:1px solid #a0d8c8}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:#fff;border-radius:12px;border:1px solid #ddd;padding:24px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.modal.wide{max-width:760px}
+.modal h3{margin-bottom:16px;font-size:17px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #e0e0d8}
+.alert{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.alert.warning{background:#fef8e8;color:#a05a00;border:1px solid #f0d080}
+.alert.danger{background:#fde8e8;color:#c0392b;border:1px solid #f0a0a0}
+.alert.success{background:#e8f8ed;color:#1a7a3c;border:1px solid #a0d8b0}
+.alert.info{background:#e8f0fe;color:#1a56db;border:1px solid #a0b8f0}
+.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e0e0d8;overflow-x:auto}
+.tab{padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#888;margin-bottom:-2px;font-family:inherit;background:transparent;border-top:none;border-left:none;border-right:none;font-weight:500;white-space:nowrap}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.section{display:none}.section.active{display:block}
+.search-box{width:100%;padding:7px 10px 7px 32px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center}
+.search-box:focus{border-color:#888}
+.search-wrap{position:relative;margin-bottom:12px}
+.template-field{padding:10px;background:#f8f8f4;border-radius:8px;border:1px solid #e8e8e0;margin-bottom:8px}
+.template-field label{color:#555;font-weight:600}
+.asset-card{background:#fff;border:1px solid #e0e0d8;border-radius:8px;padding:14px;margin-bottom:10px}
+.asset-card .asset-id{font-size:11px;color:#888;margin-bottom:4px}
+.asset-card .asset-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.sorting-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:8px;background:#f8f8f4;border-radius:6px}
+.price-ok{color:#1a7a3c;font-weight:600}
+.price-warn{color:#c0392b;font-weight:600}
+.inv-row{display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #f0f0ea}
+.inv-row:last-child{border-bottom:none}
+.load-chip{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:#e8f0fe;color:#1a56db;margin:2px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <h1>Producción</h1>
+  <span id="user-name" style="font-size:13px;color:#666;margin-right:8px"></span>
+  <a href="erp.html" class="btn small">← Administrativo</a>
+  <button class="btn small" onclick="logout()">Cerrar sesión</button>
+</div>
+<div class="nav">
+  <button class="nav active" onclick="showPage('eol')">EOL</button>
+  <button class="nav" onclick="showPage('ars')">ARS</button>
+  <button class="nav" onclick="showPage('inventario')">Inventario</button>
+  <button class="nav" onclick="showPage('sales')">Sales Orders</button>
+  <button class="nav" onclick="showPage('compradores')">Compradores</button>
+</div>
+<div class="content">
+
+<!-- EOL -->
+<div id="page-eol" class="page active">
+  <h2>EOL — End of Life</h2>
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-sorting')">Sorting</button>
+    <button class="tab" onclick="showSection('sec-destruction')">Destruction</button>
+    <button class="tab" onclick="showSection('sec-loads')">Loads</button>
+  </div>
+
+  <!-- SORTING -->
+  <div id="sec-sorting" class="section active">
+    <div class="row center" style="margin-bottom:16px">
+      <h3 style="margin:0;flex:1">Sortings</h3>
+      <button class="btn eol" onclick="openModalSorting()">+ Nuevo sorting</button>
+    </div>
+    <div class="search-wrap"><input class="search-box" id="sorting-search" placeholder="Buscar por lote..." oninput="renderSortings()"></div>
+    <div id="sortings-list"></div>
+  </div>
+
+  <!-- DESTRUCTION -->
+  <div id="sec-destruction" class="section">
+    <div class="row center" style="margin-bottom:16px">
+      <h3 style="margin:0;flex:1">Balance de masa (Destruction)</h3>
+      <button class="btn eol" onclick="openModalDestruction()">+ Nuevo balance</button>
+    </div>
+    <div class="alert info">Opcional. Solo cuando el cliente requiere un desglose de commodities resultantes.</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Lote</th><th>Fecha</th><th>Commodities</th><th></th></tr></thead>
+      <tbody id="destructions-table"></tbody></table>
+    </div>
+  </div>
+
+  <!-- LOADS -->
+  <div id="sec-loads" class="section">
+    <div class="row center" style="margin-bottom:16px">
+      <h3 style="margin:0;flex:1">Loads</h3>
+      <button class="btn eol" onclick="openModalLoad()">+ Nuevo load</button>
+    </div>
+    <div class="search-wrap"><input class="search-box" id="loads-search" placeholder="Buscar commodity..." oninput="renderLoads()"></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>#Load</th><th>Commodity</th><th>Peso (kg)</th><th>Fecha</th><th>Estado</th><th>Valor</th><th></th></tr></thead>
+      <tbody id="loads-table"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ARS -->
+<div id="page-ars" class="page">
+  <h2>ARS — Asset Recovery</h2>
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-assets')">Assets</button>
+    <button class="tab" onclick="showSection('sec-scrap')">Inventario Scrap</button>
+  </div>
+
+  <!-- ASSETS -->
+  <div id="sec-assets" class="section active">
+    <div class="row center" style="margin-bottom:16px">
+      <h3 style="margin:0;flex:1">Assets</h3>
+      <button class="btn ars" onclick="openModalAsset()">+ Nuevo asset</button>
+    </div>
+    <div class="row" style="gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="search-wrap" style="flex:2;min-width:200px;margin:0"><input class="search-box" id="assets-search" placeholder="Buscar por serial, marca, modelo..." oninput="renderAssets()"></div>
+      <select id="assets-filtro-lote" onchange="renderAssets()" style="flex:1;min-width:140px;padding:7px 10px">
+        <option value="">Todos los lotes</option>
+      </select>
+      <select id="assets-filtro-destino" onchange="renderAssets()" style="flex:1;min-width:140px;padding:7px 10px">
+        <option value="">Todos los destinos</option>
+        <option value="Reventa">Reventa</option>
+        <option value="Scrap">Scrap</option>
+      </select>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Asset #</th><th># Cliente</th><th>Lote</th><th>Categoría</th><th>Marca / Modelo</th><th>Serial</th><th>Grado</th><th>Destino</th><th>Precio</th><th></th></tr></thead>
+      <tbody id="assets-table"></tbody></table>
+    </div>
+  </div>
+
+  <!-- SCRAP -->
+  <div id="sec-scrap" class="section">
+    <div class="row center" style="margin-bottom:16px">
+      <h3 style="margin:0;flex:1">Inventario Scrap ARS</h3>
+      <button class="btn warning" onclick="openModalLoteScrap()">Crear lote scrap → EOL</button>
+    </div>
+    <div class="alert info">Assets marcados como Scrap. Se pueden agrupar en un lote scrap y enviar a EOL para destruction.</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Asset #</th><th>Lote origen</th><th>Categoría</th><th>Marca / Modelo</th><th>Serial</th><th>Estado scrap</th><th></th></tr></thead>
+      <tbody id="scrap-table"></tbody></table>
+    </div>
+    <div class="card" style="margin-top:8px">
+      <h3>Lotes scrap enviados a EOL</h3>
+      <div id="lotes-scrap-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INVENTARIO -->
+<div id="page-inventario" class="page">
+  <h2>Inventario</h2>
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-inv-eol')">EOL — Loads</button>
+    <button class="tab" onclick="showSection('sec-inv-ars')">ARS — Assets</button>
+  </div>
+
+  <!-- INVENTARIO EOL -->
+  <div id="sec-inv-eol" class="section active">
+    <div id="inv-eol-metrics" class="metric-grid"></div>
+    <div id="inv-eol-content"></div>
+  </div>
+
+  <!-- INVENTARIO ARS -->
+  <div id="sec-inv-ars" class="section">
+    <div class="row" style="gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="search-wrap" style="flex:2;min-width:200px;margin:0"><input class="search-box" id="inv-ars-search" placeholder="Buscar marca, modelo, procesador..." oninput="renderInvARS()"></div>
+      <select id="inv-ars-cat" onchange="renderInvARS()" style="flex:1;min-width:140px;padding:7px 10px">
+        <option value="">Todas las categorías</option>
+      </select>
+    </div>
+    <div id="inv-ars-metrics" class="metric-grid"></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Asset #</th><th>Categoría</th><th>Marca / Modelo</th><th>Serial</th><th>Grado</th><th>Estado</th><th>Precio</th></tr></thead>
+      <tbody id="inv-ars-table"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- SALES ORDERS -->
+<div id="page-sales" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Sales Orders</h2>
+    <button class="btn primary" onclick="openModalSalesOrder()">+ Nueva sales order</button>
+  </div>
+  <div class="search-wrap"><input class="search-box" id="so-search" placeholder="Buscar por comprador, material..." oninput="renderSalesOrders()"></div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table><thead><tr><th>#SO</th><th>Fecha</th><th>Comprador</th><th>Material</th><th>Monto</th><th>Estado</th><th></th></tr></thead>
+    <tbody id="so-table"></tbody></table>
+  </div>
+</div>
+
+<!-- COMPRADORES -->
+<div id="page-compradores" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Compradores</h2>
+    <button class="btn primary" onclick="openModal('modal-comprador')">+ Nuevo comprador</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table><thead><tr><th>Nombre</th><th>Contacto</th><th>Email</th><th>Sales Orders</th><th></th></tr></thead>
+    <tbody id="compradores-table"></tbody></table>
+  </div>
+</div>
+
+</div></div><!-- end content/app -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- MODAL SORTING -->
+<div id="modal-sorting" class="modal-overlay" style="display:none"><div class="modal wide">
+  <h3 id="modal-sorting-title">Nuevo sorting</h3>
+  <input type="hidden" id="sorting-edit-id">
+  <div class="row">
+    <div class="field"><label>Lote</label><select id="sorting-lote" onchange="onSortingLoteChange()"></select></div>
+    <div class="field"><label>Fecha</label><input type="date" id="sorting-fecha"></div>
+  </div>
+  <div id="sorting-lote-info" style="margin-bottom:12px"></div>
+  <div class="row center" style="margin-bottom:8px">
+    <label style="flex:1;margin:0;font-size:13px;font-weight:600">Categorías sorteadas</label>
+    <button class="btn small" onclick="addSortingRow()">+ Agregar</button>
+  </div>
+  <div id="sorting-rows"></div>
+  <div id="sorting-total" style="font-size:13px;font-weight:600;padding:8px;background:#f8f8f4;border-radius:6px;margin-top:8px"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-sorting')">Cancelar</button>
+    <button class="btn eol" onclick="saveSorting()">Guardar sorting</button>
+  </div>
+</div></div>
+
+<!-- MODAL DESTRUCTION -->
+<div id="modal-destruction" class="modal-overlay" style="display:none"><div class="modal">
+  <h3>Nuevo balance de masa</h3>
+  <input type="hidden" id="dest-edit-id">
+  <div class="row">
+    <div class="field"><label>Lote</label><select id="dest-lote"></select></div>
+    <div class="field"><label>Fecha</label><input type="date" id="dest-fecha"></div>
+  </div>
+  <div class="row center" style="margin-bottom:8px">
+    <label style="flex:1;margin:0;font-size:13px;font-weight:600">Commodities resultantes</label>
+    <button class="btn small" onclick="addDestRow()">+ Agregar</button>
+  </div>
+  <div id="dest-rows"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-destruction')">Cancelar</button>
+    <button class="btn eol" onclick="saveDestruction()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- MODAL LOAD -->
+<div id="modal-load" class="modal-overlay" style="display:none"><div class="modal">
+  <h3 id="modal-load-title">Nuevo load</h3>
+  <input type="hidden" id="load-edit-id">
+  <div class="alert info" style="margin-bottom:12px">Un load es una tarima de un solo commodity.</div>
+  <div class="row">
+    <div class="field"><label>Commodity</label><select id="load-commodity"></select></div>
+    <div class="field"><label>Peso (kg)</label><input type="number" id="load-peso" min="0" step="0.01"></div>
+  </div>
+  <div class="field"><label>Fecha de creación</label><input type="date" id="load-fecha"></div>
+  <div id="load-valor-preview" style="font-size:13px;color:#888;margin-top:-8px;margin-bottom:12px"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-load')">Cancelar</button>
+    <button class="btn eol" onclick="saveLoad()">Guardar load</button>
+  </div>
+</div></div>
+
+<!-- MODAL ASSET -->
+<div id="modal-asset" class="modal-overlay" style="display:none"><div class="modal wide">
+  <h3 id="modal-asset-title">Nuevo asset</h3>
+  <input type="hidden" id="asset-edit-id">
+  <div class="row">
+    <div class="field"><label>Lote</label><select id="asset-lote" onchange="onAssetLoteChange()"></select></div>
+    <div class="field"><label>Categoría</label><select id="asset-categoria" onchange="onAssetCatChange()"></select></div>
+  </div>
+  <div class="row">
+    <div class="field"><label># Cliente (opcional)</label><input type="text" id="asset-num-cliente" placeholder="ID del cliente"></div>
+    <div class="field"><label>Serial #</label><input type="text" id="asset-serial"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Marca</label><input type="text" id="asset-marca" oninput="checkAssetMatch()"></div>
+    <div class="field"><label>Modelo</label><input type="text" id="asset-modelo" oninput="checkAssetMatch()"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Peso neto (kg)</label><input type="number" id="asset-peso" min="0" step="0.01"></div>
+    <div class="field"><label>Grado</label><input type="text" id="asset-grado" placeholder="A, B, C..."></div>
+  </div>
+  <div class="field"><label>Destino</label>
+    <select id="asset-destino">
+      <option value="Reventa">Reventa</option>
+      <option value="Scrap">Scrap</option>
+    </select>
+  </div>
+  <!-- Precio -->
+  <div id="asset-precio-section" style="margin-bottom:12px">
+    <div id="asset-match-info"></div>
+    <div class="field"><label>Precio ($)</label><input type="number" id="asset-precio" min="0" step="0.01" oninput="checkAssetPrecio()"></div>
+    <div id="asset-precio-warning"></div>
+  </div>
+  <!-- Template fields -->
+  <div id="asset-template-fields"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-asset')">Cancelar</button>
+    <button class="btn ars" onclick="saveAsset()">Guardar asset</button>
+  </div>
+</div></div>
+
+<!-- MODAL LOTE SCRAP -->
+<div id="modal-lote-scrap" class="modal-overlay" style="display:none"><div class="modal">
+  <h3>Crear lote scrap → EOL</h3>
+  <div class="alert warning" style="margin-bottom:12px">Agrupa assets de scrap para enviarlos a EOL como un lote de destruction.</div>
+  <div id="scrap-disponibles"></div>
+  <div id="scrap-seleccionados" style="margin-top:12px"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-lote-scrap')">Cancelar</button>
+    <button class="btn warning" onclick="crearLoteScrap()">Crear lote scrap</button>
+  </div>
+</div></div>
+
+<!-- MODAL SALES ORDER -->
+<div id="modal-so" class="modal-overlay" style="display:none"><div class="modal wide">
+  <h3 id="modal-so-title">Nueva sales order</h3>
+  <input type="hidden" id="so-edit-id">
+  <div class="row">
+    <div class="field"><label>Comprador</label><select id="so-comprador"></select></div>
+    <div class="field"><label>Fecha</label><input type="date" id="so-fecha"></div>
+  </div>
+  <div class="tabs" style="margin-bottom:12px">
+    <button class="tab active" onclick="showSoTab('loads')">Vender Loads (EOL)</button>
+    <button class="tab" onclick="showSoTab('assets')">Vender Assets (ARS)</button>
+  </div>
+  <div id="so-tab-loads" class="so-tab">
+    <div class="row center" style="margin-bottom:8px">
+      <label style="flex:1;margin:0;font-size:13px;font-weight:600">Loads a vender</label>
+      <button class="btn small" onclick="addSoLoadRow()">+ Agregar load</button>
+    </div>
+    <div id="so-load-rows"></div>
+  </div>
+  <div id="so-tab-assets" class="so-tab" style="display:none">
+    <div class="search-wrap"><input class="search-box" id="so-asset-search" placeholder="Buscar asset..." oninput="filterSoAssets()"></div>
+    <div id="so-assets-disponibles"></div>
+    <div id="so-assets-seleccionados" style="margin-top:12px"></div>
+  </div>
+  <div id="so-total-preview" style="margin-top:12px;padding:12px;background:#f8f8f4;border-radius:8px;font-size:13px"></div>
+  <div id="so-precio-alert"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-so')">Cancelar</button>
+    <button class="btn primary" onclick="saveSalesOrder()">Guardar sales order</button>
+  </div>
+</div></div>
+
+<!-- MODAL COMPRADOR -->
+<div id="modal-comprador" class="modal-overlay" style="display:none"><div class="modal">
+  <h3 id="modal-comprador-title">Nuevo comprador</h3>
+  <input type="hidden" id="comp-edit-id">
+  <div class="field"><label>Nombre</label><input type="text" id="comp-nombre"></div>
+  <div class="field"><label>Contacto</label><input type="text" id="comp-contacto" placeholder="Nombre del contacto"></div>
+  <div class="field"><label>Email</label><input type="text" id="comp-email"></div>
+  <div class="field"><label>Teléfono</label><input type="text" id="comp-tel"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('modal-comprador')">Cancelar</button>
+    <button class="btn primary" onclick="saveComprador()">Guardar</button>
+  </div>
+</div></div>
+
+<!-- MODAL DETALLE -->
+<div id="modal-detail" class="modal-overlay" style="display:none"><div class="modal wide">
+  <h3 id="modal-detail-title"></h3>
+  <div id="modal-detail-content"></div>
+  <div class="modal-footer"><button class="btn" onclick="closeModal('modal-detail')">Cerrar</button></div>
+</div></div>
+<script>
+const TODAY=new Date().toISOString().split('T')[0];
+
+// ── STATE FROM SHARED localStorage ───────────────────────
+function getAdminState(){
+  try{const r=localStorage.getItem('erp_state');return r?JSON.parse(r):null;}catch(e){return null;}
+}
+function saveAdminState(st){
+  try{localStorage.setItem('erp_state',JSON.stringify(st));}catch(e){alert('Error al guardar.');}
+}
+
+// Produccion state is stored separately
+let pState={
+  sortings:[],       // [{id,loteId,fecha,items:[{catCierreId,kg}],finalizado}]
+  destructions:[],   // [{id,loteId,fecha,items:[{commodityId,kg}]}]
+  loads:[],          // [{id,num,commodityId,peso,fecha,estado:'disponible'|'vendido',pesoVendido}]
+  assets:[],         // [{id,num,assetCliente,loteId,catId,serial,marca,modelo,pesoNeto,grado,destino,precio,precioManual,templateData,estado:'disponible'|'vendido'|'scrap_pendiente'|'scrap_enviado'}]
+  lotesScraps:[],    // [{id,assetIds,fecha,estadoEol:'pendiente'|'destruction'|'finalizado'}]
+  salesOrders:[],    // [{id,num,compradorId,fecha,tipo:'loads'|'assets',items,monto}]
+  compradores:[],    // [{id,nombre,contacto,email,tel}]
+};
+let pNextId={s:1,d:1,ld:1,a:1,ls:1,so:1,cp:1};
+
+function loadPState(){
+  try{const r=localStorage.getItem('erp_prod_state');if(r){const d=JSON.parse(r);pState={...pState,...d};pNextId=d.nextId||pNextId;}}catch(e){}
+}
+function savePState(){
+  try{localStorage.setItem('erp_prod_state',JSON.stringify({...pState,nextId:pNextId}));}catch(e){alert('Error al guardar.');}
+}
+function puid(p){if(!pNextId[p])pNextId[p]=1;return p+(pNextId[p]++);}
+
+// ── AUTH ─────────────────────────────────────────────────
+function checkAuth(){
+  const u=localStorage.getItem('erp_session');
+  if(!u){window.location.href='index.html';return;}
+  const sess=JSON.parse(u);
+  document.getElementById('user-name').textContent=sess.nombre||sess.username;
+}
+function logout(){localStorage.removeItem('erp_session');window.location.href='index.html';}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='eol'){renderSortings();renderDestructions();renderLoads();}
+  if(id==='ars'){renderAssets();renderScrap();populateAssetLoteFiltro();}
+  if(id==='inventario'){renderInvEOL();renderInvARS();}
+  if(id==='sales'){renderSalesOrders();}
+  if(id==='compradores'){renderCompradores();}
+}
+function openModal(id){document.getElementById(id).style.display='flex';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function showSection(id){
+  const el=document.getElementById(id);
+  const parent=el.closest('.page')||document.body;
+  parent.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  parent.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');event.target.classList.add('active');
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function getAdminLotes(){const st=getAdminState();return st?st.lotes||[]:[]; }
+function getAdminCatCierre(){const st=getAdminState();return st?st.catalogoCierre||[]:[]; }
+function getAdminCommodities(){const st=getAdminState();return st?st.commodities||[]:[]; }
+function getAdminCatARS(){const st=getAdminState();return st?st.categorias||[]:[]; }
+function getAdminItemsFuncionales(){const st=getAdminState();return st?st.itemsFuncionales||[]:[]; }
+function getLotesGanados(){
+  const st=getAdminState();if(!st)return[];
+  return (st.lotes||[]).filter(l=>l.estadoComercial==='ganada'&&!l.finalizado);
+}
+
+// ── SORTING ───────────────────────────────────────────────
+function openModalSorting(id){
+  document.getElementById('sorting-edit-id').value=id||'';
+  document.getElementById('modal-sorting-title').textContent=id?'Editar sorting':'Nuevo sorting';
+  const lotes=getLotesGanados();
+  const st=getAdminState();
+  // Also include lotes that already have sortings (so you can add more partial sortings)
+  const lotesConSorting=pState.sortings.filter(s=>!s.finalizado).map(s=>s.loteId);
+  const allLotes=[...new Set([...lotes.map(l=>l.id),...lotesConSorting])].map(lid=>(st&&st.lotes||[]).find(l=>l.id===lid)).filter(Boolean);
+  document.getElementById('sorting-lote').innerHTML=allLotes.map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
+  document.getElementById('sorting-fecha').value=TODAY;
+  document.getElementById('sorting-rows').innerHTML='';
+  document.getElementById('sorting-total').textContent='';
+  if(id){
+    const s=pState.sortings.find(x=>x.id===id);
+    if(s){
+      document.getElementById('sorting-lote').value=s.loteId;
+      document.getElementById('sorting-fecha').value=s.fecha;
+      s.items.forEach(it=>addSortingRow(it.catCierreId,it.kg));
+    }
+  } else {
+    addSortingRow();
+  }
+  onSortingLoteChange();
+  openModal('modal-sorting');
+}
+function onSortingLoteChange(){
+  const loteId=document.getElementById('sorting-lote').value;
+  const st=getAdminState();const l=st&&(st.lotes||[]).find(x=>x.id===loteId);
+  const el=document.getElementById('sorting-lote-info');
+  if(!l){el.innerHTML='';return;}
+  // Show accumulated kg already sorted for this lote
+  const totalesPorCat={};
+  pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>{
+    s.items.forEach(it=>{totalesPorCat[it.catCierreId]=(totalesPorCat[it.catCierreId]||0)+it.kg;});
+  });
+  const rows=Object.entries(totalesPorCat).map(([cid,kg])=>{
+    const cat=(st.catalogoCierre||[]).find(x=>x.id===cid);
+    return`<span style="font-size:12px;margin-right:12px">${cat?cat.nombre:cid}: <strong>${kg.toFixed(2)} kg</strong></span>`;
+  }).join('');
+  el.innerHTML=rows?`<div class="alert info" style="margin-bottom:8px">Ya sorteado: ${rows}</div>`:'';
+}
+function addSortingRow(catId='',kg=''){
+  const cats=getAdminCatCierre();
+  const row=document.createElement('div');row.className='sorting-row';
+  row.innerHTML=`<select style="flex:2">${cats.map(c=>`<option value="${c.id}" ${c.id===catId?'selected':''}>${c.nombre}</option>`).join('')}</select>
+    <input type="number" value="${kg}" min="0" step="0.01" placeholder="kg" style="flex:1;max-width:100px" oninput="updateSortingTotal()">
+    <button class="btn small danger" onclick="this.parentElement.remove();updateSortingTotal()">✕</button>`;
+  document.getElementById('sorting-rows').appendChild(row);
+  updateSortingTotal();
+}
+function updateSortingTotal(){
+  const rows=document.querySelectorAll('#sorting-rows .sorting-row');
+  let total=0;rows.forEach(r=>{total+=parseFloat(r.querySelector('input').value)||0;});
+  document.getElementById('sorting-total').textContent=`Total este sorting: ${total.toFixed(2)} kg`;
+}
+function saveSorting(){
+  const id=document.getElementById('sorting-edit-id').value;
+  const loteId=document.getElementById('sorting-lote').value;
+  const fecha=document.getElementById('sorting-fecha').value;
+  if(!loteId||!fecha){alert('Completa lote y fecha.');return;}
+  const rows=document.querySelectorAll('#sorting-rows .sorting-row');
+  const items=Array.from(rows).map(r=>({catCierreId:r.querySelector('select').value,kg:parseFloat(r.querySelector('input').value)||0})).filter(x=>x.kg>0);
+  if(!items.length){alert('Agrega al menos una categoría con kg.');return;}
+  const obj={id:id||puid('s'),loteId,fecha,items,finalizado:false};
+  if(id){const i=pState.sortings.findIndex(x=>x.id===id);if(i>=0)pState.sortings[i]=obj;}
+  else pState.sortings.push(obj);
+  savePState();closeModal('modal-sorting');renderSortings();
+}
+function finalizarSorting(loteId){
+  if(!confirm('¿Finalizar sorting de este lote? Esto alimentará el cierre en el módulo administrativo.'))return;
+  pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>s.finalizado=true);
+  // Update admin state cierres with accumulated sorting data
+  const st=getAdminState();if(!st)return;
+  const totalesPorCat={};
+  pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>{
+    s.items.forEach(it=>{totalesPorCat[it.catCierreId]=(totalesPorCat[it.catCierreId]||0)+it.kg;});
+  });
+  if(!st.cierres)st.cierres={};
+  // Build cierre items from sorting (kg per category)
+  const cierreItems=Object.entries(totalesPorCat).map(([catId,kg])=>({catId,piezas:0,kg}));
+  st.cierres[loteId]={items:cierreItems,fechaCierre:TODAY,fromProduccion:true};
+  saveAdminState(st);
+  savePState();renderSortings();
+  alert('Sorting finalizado. El lote ya puede cerrarse desde el módulo administrativo.');
+}
+function renderSortings(){
+  const el=document.getElementById('sortings-list');
+  const srch=(document.getElementById('sorting-search')||{}).value||'';
+  const st=getAdminState();
+  // Group sortings by lote
+  const byLote={};
+  pState.sortings.forEach(s=>{if(!byLote[s.loteId])byLote[s.loteId]=[];byLote[s.loteId].push(s);});
+  // Include lotes with no sortings yet (ganados)
+  getLotesGanados().forEach(l=>{if(!byLote[l.id])byLote[l.id]=[];});
+  if(!Object.keys(byLote).length){el.innerHTML='<div class="card" style="text-align:center;padding:32px;color:#888">Sin lotes disponibles para sorting. Los lotes deben estar en estado "Ganada" en el módulo administrativo.</div>';return;}
+  let html='';
+  Object.entries(byLote).forEach(([loteId,sortings])=>{
+    const l=st&&(st.lotes||[]).find(x=>x.id===loteId);
+    if(!l)return;
+    if(srch&&!l.nombre.toLowerCase().includes(srch.toLowerCase()))return;
+    const finalizado=sortings.length>0&&sortings.every(s=>s.finalizado);
+    const totalesPorCat={};
+    sortings.forEach(s=>s.items.forEach(it=>{totalesPorCat[it.catCierreId]=(totalesPorCat[it.catCierreId]||0)+it.kg;}));
+    const totalKg=Object.values(totalesPorCat).reduce((a,b)=>a+b,0);
+    const catRows=Object.entries(totalesPorCat).map(([cid,kg])=>{
+      const cat=(st&&st.catalogoCierre||[]).find(x=>x.id===cid);
+      return`<tr><td>${cat?cat.nombre:cid}</td><td>${kg.toFixed(2)} kg</td></tr>`;
+    }).join('');
+    html+=`<div class="card">
+      <div class="row center" style="margin-bottom:12px">
+        <div style="flex:1"><strong style="font-size:15px">${l.nombre}</strong> ${finalizado?'<span class="badge success">Sorting finalizado</span>':'<span class="badge warning">En progreso</span>'}</div>
+        ${!finalizado?`<button class="btn small" onclick="openModalSorting()">+ Sorting parcial</button> <button class="btn small success" onclick="finalizarSorting('${loteId}')">Finalizar sorting</button>`:''}
+      </div>
+      ${totalKg>0?`<div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:6px">Acumulado total:</div><table><thead><tr><th>Categoría cierre</th><th>Kg totales</th></tr></thead><tbody>${catRows}</tbody></table><div style="font-weight:600;margin-top:8px;font-size:13px">Total: ${totalKg.toFixed(2)} kg</div></div>`:'<p style="font-size:13px;color:#888">Sin sortings aún.</p>'}
+      ${sortings.length>0?`<details style="margin-top:8px"><summary style="font-size:12px;color:#888;cursor:pointer">${sortings.length} sorting${sortings.length!==1?'s':''} registrados</summary><div style="margin-top:8px">${sortings.map(s=>`<div style="font-size:12px;padding:6px;background:#f8f8f4;border-radius:6px;margin-bottom:4px"><span style="color:#888">${s.fecha}</span> — ${s.items.map(it=>{const cat=(st&&st.catalogoCierre||[]).find(x=>x.id===it.catCierreId);return`${cat?cat.nombre:it.catCierreId}: ${it.kg} kg`;}).join(', ')} ${!finalizado?`<button class="btn small" style="margin-left:8px" onclick="openModalSorting('${s.id}')">Editar</button> <button class="btn small danger" onclick="deleteSorting('${s.id}')">Eliminar</button>`:''}</div>`).join('')}</div></details>`:''}
+    </div>`;
+  });
+  el.innerHTML=html||'<div class="card" style="text-align:center;padding:32px;color:#888">Sin resultados.</div>';
+}
+function deleteSorting(id){if(!confirm('¿Eliminar este sorting?'))return;pState.sortings=pState.sortings.filter(x=>x.id!==id);savePState();renderSortings();}
+
+// ── DESTRUCTION ───────────────────────────────────────────
+function openModalDestruction(id){
+  document.getElementById('dest-edit-id').value=id||'';
+  const lotes=getLotesGanados();
+  document.getElementById('dest-lote').innerHTML=lotes.map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
+  document.getElementById('dest-fecha').value=TODAY;
+  document.getElementById('dest-rows').innerHTML='';
+  if(id){const d=pState.destructions.find(x=>x.id===id);if(d){document.getElementById('dest-lote').value=d.loteId;document.getElementById('dest-fecha').value=d.fecha;d.items.forEach(it=>addDestRow(it.commodityId,it.kg));}}
+  else addDestRow();
+  openModal('modal-destruction');
+}
+function addDestRow(commId='',kg=''){
+  const comms=getAdminCommodities();
+  const row=document.createElement('div');row.className='sorting-row';
+  row.innerHTML=`<select style="flex:2">${comms.map(c=>`<option value="${c.id}" ${c.id===commId?'selected':''}>${c.nombre}</option>`).join('')}</select>
+    <input type="number" value="${kg}" min="0" step="0.01" placeholder="kg" style="flex:1;max-width:100px">
+    <button class="btn small danger" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('dest-rows').appendChild(row);
+}
+function saveDestruction(){
+  const id=document.getElementById('dest-edit-id').value;
+  const loteId=document.getElementById('dest-lote').value;const fecha=document.getElementById('dest-fecha').value;
+  if(!loteId||!fecha){alert('Completa lote y fecha.');return;}
+  const rows=document.querySelectorAll('#dest-rows .sorting-row');
+  const items=Array.from(rows).map(r=>({commodityId:r.querySelector('select').value,kg:parseFloat(r.querySelector('input').value)||0})).filter(x=>x.kg>0);
+  if(!items.length){alert('Agrega commodities.');return;}
+  const obj={id:id||puid('d'),loteId,fecha,items};
+  if(id){const i=pState.destructions.findIndex(x=>x.id===id);if(i>=0)pState.destructions[i]=obj;}else pState.destructions.push(obj);
+  savePState();closeModal('modal-destruction');renderDestructions();
+}
+function renderDestructions(){
+  const tb=document.getElementById('destructions-table');
+  const st=getAdminState();
+  if(!pState.destructions.length){tb.innerHTML='<tr><td colspan="4" style="color:#888;text-align:center;padding:32px">Sin balances registrados</td></tr>';return;}
+  tb.innerHTML=pState.destructions.map(d=>{
+    const l=st&&(st.lotes||[]).find(x=>x.id===d.loteId);
+    const comms=d.items.map(it=>{const c=getAdminCommodities().find(x=>x.id===it.commodityId);return`${c?c.nombre:it.commodityId}: ${it.kg} kg`;}).join(', ');
+    return`<tr><td>${l?l.nombre:d.loteId}</td><td>${d.fecha}</td><td style="font-size:12px">${comms}</td>
+    <td style="text-align:right"><button class="btn small" onclick="openModalDestruction('${d.id}')">Editar</button> <button class="btn small danger" onclick="deleteDestruction('${d.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+function deleteDestruction(id){if(!confirm('¿Eliminar?'))return;pState.destructions=pState.destructions.filter(x=>x.id!==id);savePState();renderDestructions();}
+
+// ── LOADS ─────────────────────────────────────────────────
+function openModalLoad(id){
+  document.getElementById('load-edit-id').value=id||'';
+  document.getElementById('modal-load-title').textContent=id?'Editar load':'Nuevo load';
+  const comms=getAdminCommodities();
+  document.getElementById('load-commodity').innerHTML=comms.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  document.getElementById('load-fecha').value=TODAY;
+  document.getElementById('load-peso').value='';
+  document.getElementById('load-valor-preview').textContent='';
+  if(id){const ld=pState.loads.find(x=>x.id===id);if(ld){document.getElementById('load-commodity').value=ld.commodityId;document.getElementById('load-peso').value=ld.peso;document.getElementById('load-fecha').value=ld.fecha;}}
+  // Live valor preview
+  document.getElementById('load-peso').addEventListener('input',updateLoadValor);
+  document.getElementById('load-commodity').addEventListener('change',updateLoadValor);
+  openModal('modal-load');
+}
+function updateLoadValor(){
+  const commId=document.getElementById('load-commodity').value;
+  const peso=parseFloat(document.getElementById('load-peso').value)||0;
+  const comm=getAdminCommodities().find(x=>x.id===commId);
+  if(comm&&peso>0)document.getElementById('load-valor-preview').textContent=`Valor estimado: $${(comm.valor*peso).toFixed(2)}`;
+  else document.getElementById('load-valor-preview').textContent='';
+}
+function saveLoad(){
+  const id=document.getElementById('load-edit-id').value;
+  const commodityId=document.getElementById('load-commodity').value;
+  const peso=parseFloat(document.getElementById('load-peso').value)||0;
+  const fecha=document.getElementById('load-fecha').value;
+  if(!commodityId||!peso||!fecha){alert('Completa todos los campos.');return;}
+  const num=id?(pState.loads.find(x=>x.id===id)||{}).num||pNextId.ld:pNextId.ld;
+  if(!id)pNextId.ld++;
+  const obj={id:id||puid('ld'),num,commodityId,peso,fecha,estado:'disponible',pesoVendido:0};
+  if(id){const i=pState.loads.findIndex(x=>x.id===id);if(i>=0)pState.loads[i]={...pState.loads[i],...obj};}else pState.loads.push(obj);
+  savePState();closeModal('modal-load');renderLoads();
+}
+function renderLoads(){
+  const tb=document.getElementById('loads-table');
+  const srch=(document.getElementById('loads-search')||{}).value||'';
+  const comms=getAdminCommodities();
+  let loads=pState.loads;
+  if(srch)loads=loads.filter(ld=>{const c=comms.find(x=>x.id===ld.commodityId);return c&&c.nombre.toLowerCase().includes(srch.toLowerCase());});
+  if(!loads.length){tb.innerHTML='<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin loads</td></tr>';return;}
+  tb.innerHTML=loads.map(ld=>{
+    const comm=comms.find(x=>x.id===ld.commodityId);
+    const pesoDisp=ld.peso-(ld.pesoVendido||0);
+    const valor=comm?(comm.valor*pesoDisp).toFixed(2):'N/A';
+    const estBadge=ld.estado==='vendido'?'<span class="badge neutral">Vendido</span>':pesoDisp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';
+    return`<tr><td><strong>L-${String(ld.num).padStart(4,'0')}</strong></td><td>${comm?comm.nombre:'—'}</td>
+    <td>${pesoDisp.toFixed(2)} / ${ld.peso.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${estBadge}</td>
+    <td class="${comm&&comm.valor>0?'price-ok':''}">$${valor}</td>
+    <td style="text-align:right"><button class="btn small" onclick="openModalLoad('${ld.id}')">Editar</button> <button class="btn small danger" onclick="deleteLoad('${ld.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+function deleteLoad(id){if(!confirm('¿Eliminar?'))return;pState.loads=pState.loads.filter(x=>x.id!==id);savePState();renderLoads();}
+
+// ── ASSETS ────────────────────────────────────────────────
+let _soSelectedAssets=new Set();
+
+function openModalAsset(id){
+  document.getElementById('asset-edit-id').value=id||'';
+  document.getElementById('modal-asset-title').textContent=id?'Editar asset':'Nuevo asset';
+  const lotes=getLotesGanados();
+  document.getElementById('asset-lote').innerHTML=lotes.map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
+  const cats=getAdminCatARS();
+  document.getElementById('asset-categoria').innerHTML=cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  ['asset-num-cliente','asset-serial','asset-marca','asset-modelo','asset-grado'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('asset-peso').value='';
+  document.getElementById('asset-precio').value='';
+  document.getElementById('asset-destino').value='Reventa';
+  document.getElementById('asset-match-info').innerHTML='';
+  document.getElementById('asset-precio-warning').innerHTML='';
+  document.getElementById('asset-template-fields').innerHTML='';
+  if(id){
+    const a=pState.assets.find(x=>x.id===id);
+    if(a){
+      document.getElementById('asset-lote').value=a.loteId;
+      document.getElementById('asset-num-cliente').value=a.assetCliente||'';
+      document.getElementById('asset-serial').value=a.serial||'';
+      document.getElementById('asset-marca').value=a.marca||'';
+      document.getElementById('asset-modelo').value=a.modelo||'';
+      document.getElementById('asset-peso').value=a.pesoNeto||'';
+      document.getElementById('asset-grado').value=a.grado||'';
+      document.getElementById('asset-destino').value=a.destino||'Reventa';
+      document.getElementById('asset-precio').value=a.precio||'';
+      document.getElementById('asset-categoria').value=a.catId;
+      onAssetCatChange(a.templateData||{});
+    }
+  } else {
+    onAssetCatChange({});
+  }
+  checkAssetMatch();
+  openModal('modal-asset');
+}
+
+function onAssetLoteChange(){}
+
+function onAssetCatChange(existingData){
+  existingData=existingData||{};
+  const catId=document.getElementById('asset-categoria').value;
+  const cats=getAdminCatARS();
+  const cat=cats.find(x=>x.id===catId);
+  const container=document.getElementById('asset-template-fields');
+  if(!cat||!cat.template||!cat.template.length){container.innerHTML='';return;}
+  container.innerHTML='<div style="font-weight:600;font-size:13px;margin-bottom:8px;border-top:1px solid #e0e0d8;padding-top:12px">Campos específicos de la categoría</div>'+
+    cat.template.map(field=>{
+      const val=existingData[field.id]||'';
+      if(field.tipo==='checkbox'){
+        return`<div class="template-field"><label>${field.label}</label><div style="display:flex;gap:16px;margin-top:6px"><label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1a1a"><input type="radio" name="tf_${field.id}" value="si" ${val==='si'?'checked':''}> Sí</label><label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1a1a"><input type="radio" name="tf_${field.id}" value="no" ${val==='no'||!val?'checked':''}> No</label></div></div>`;
+      }
+      if(field.tipo==='dropdown'){
+        return`<div class="template-field"><label>${field.label}</label><select id="tf_${field.id}" style="margin-top:4px">${field.opciones.map(op=>`<option value="${op}" ${val===op?'selected':''}>${op}</option>`).join('')}</select></div>`;
+      }
+      if(field.tipo==='texto'){
+        return`<div class="template-field"><label>${field.label}</label><input type="text" id="tf_${field.id}" value="${val}" placeholder="${field.label}" style="margin-top:4px"></div>`;
+      }
+      return'';
+    }).join('');
+  checkAssetMatch();
+}
+
+function getTemplateData(){
+  const catId=document.getElementById('asset-categoria').value;
+  const cats=getAdminCatARS();const cat=cats.find(x=>x.id===catId);
+  if(!cat||!cat.template)return{};
+  const data={};
+  cat.template.forEach(field=>{
+    if(field.tipo==='checkbox'){
+      const radios=document.querySelectorAll(`[name="tf_${field.id}"]`);
+      radios.forEach(r=>{if(r.checked)data[field.id]=r.value;});
+    } else {
+      const el=document.getElementById('tf_'+field.id);
+      if(el)data[field.id]=el.value;
+    }
+  });
+  return data;
+}
+
+function checkAssetMatch(){
+  const marca=(document.getElementById('asset-marca')||{}).value||'';
+  const modelo=(document.getElementById('asset-modelo')||{}).value||'';
+  const catId=(document.getElementById('asset-categoria')||{}).value||'';
+  const items=getAdminItemsFuncionales();
+  const match=items.find(it=>it.catId===catId&&it.marca.toLowerCase()===marca.toLowerCase()&&it.modelo.toLowerCase()===modelo.toLowerCase());
+  const infoEl=document.getElementById('asset-match-info');
+  const precioEl=document.getElementById('asset-precio');
+  if(!infoEl||!precioEl)return;
+  if(match){
+    infoEl.innerHTML=`<div class="alert success" style="margin-bottom:8px">✓ Match encontrado: <strong>${match.marca} ${match.modelo}</strong> — Precio mínimo: <strong>$${match.precio.toFixed(2)}</strong></div>`;
+    if(!precioEl.value||parseFloat(precioEl.value)<match.precio)precioEl.value=match.precio.toFixed(2);
+    precioEl.dataset.minPrecio=match.precio;
+  } else if(marca&&modelo){
+    infoEl.innerHTML=`<div class="alert warning" style="margin-bottom:8px">⚠ Sin match en catálogo. Asigna precio manualmente.</div>`;
+    precioEl.dataset.minPrecio='';
+  } else {
+    infoEl.innerHTML='';precioEl.dataset.minPrecio='';
+  }
+  checkAssetPrecio();
+}
+
+function checkAssetPrecio(){
+  const precioEl=document.getElementById('asset-precio');
+  const warnEl=document.getElementById('asset-precio-warning');
+  if(!precioEl||!warnEl)return;
+  const minPrecio=parseFloat(precioEl.dataset.minPrecio)||0;
+  const precio=parseFloat(precioEl.value)||0;
+  if(minPrecio>0&&precio<minPrecio){
+    warnEl.innerHTML=`<div class="alert danger" style="margin-top:4px">Precio inferior al mínimo autorizado ($${minPrecio.toFixed(2)})</div>`;
+  } else {
+    warnEl.innerHTML='';
+  }
+}
+
+function saveAsset(){
+  const id=document.getElementById('asset-edit-id').value;
+  const loteId=document.getElementById('asset-lote').value;
+  const catId=document.getElementById('asset-categoria').value;
+  const serial=document.getElementById('asset-serial').value.trim();
+  const marca=document.getElementById('asset-marca').value.trim();
+  const modelo=document.getElementById('asset-modelo').value.trim();
+  if(!loteId||!catId||!marca||!modelo){alert('Completa lote, categoría, marca y modelo.');return;}
+  const precio=parseFloat(document.getElementById('asset-precio').value)||0;
+  const minPrecio=parseFloat(document.getElementById('asset-precio').dataset.minPrecio)||0;
+  if(minPrecio>0&&precio<minPrecio){if(!confirm(`Precio $${precio} es menor al mínimo autorizado $${minPrecio}. ¿Continuar?`))return;}
+  if(!precio&&!confirm('Sin precio asignado. ¿Continuar?'))return;
+  const num=id?(pState.assets.find(x=>x.id===id)||{}).num||pNextId.a:pNextId.a;
+  if(!id)pNextId.a++;
+  const templateData=getTemplateData();
+  const destino=document.getElementById('asset-destino').value;
+  const obj={
+    id:id||puid('a'),num,loteId,catId,
+    assetCliente:document.getElementById('asset-num-cliente').value.trim(),
+    serial,marca,modelo,
+    pesoNeto:parseFloat(document.getElementById('asset-peso').value)||0,
+    grado:document.getElementById('asset-grado').value.trim(),
+    destino,precio,
+    precioManual:!minPrecio,
+    templateData,
+    estado:destino==='Scrap'?'scrap_pendiente':'disponible'
+  };
+  if(id){const i=pState.assets.findIndex(x=>x.id===id);if(i>=0)pState.assets[i]=obj;}else pState.assets.push(obj);
+  savePState();closeModal('modal-asset');renderAssets();renderScrap();
+}
+
+function populateAssetLoteFiltro(){
+  const st=getAdminState();const sel=document.getElementById('assets-filtro-lote');if(!sel)return;
+  const loteIds=[...new Set(pState.assets.map(a=>a.loteId))];
+  sel.innerHTML='<option value="">Todos los lotes</option>'+loteIds.map(id=>{const l=st&&(st.lotes||[]).find(x=>x.id===id);return`<option value="${id}">${l?l.nombre:id}</option>`;}).join('');
+}
+
+function renderAssets(){
+  const tb=document.getElementById('assets-table');
+  const srch=(document.getElementById('assets-search')||{}).value||'';
+  const filtroLote=(document.getElementById('assets-filtro-lote')||{}).value||'';
+  const filtroDest=(document.getElementById('assets-filtro-destino')||{}).value||'';
+  const st=getAdminState();const cats=getAdminCatARS();
+  let assets=pState.assets;
+  if(srch)assets=assets.filter(a=>(a.serial+' '+a.marca+' '+a.modelo+' '+(a.templateData&&a.templateData.procesador||'')).toLowerCase().includes(srch.toLowerCase()));
+  if(filtroLote)assets=assets.filter(a=>a.loteId===filtroLote);
+  if(filtroDest)assets=assets.filter(a=>a.destino===filtroDest);
+  if(!assets.length){tb.innerHTML='<tr><td colspan="10" style="color:#888;text-align:center;padding:32px">Sin assets</td></tr>';return;}
+  tb.innerHTML=assets.map(a=>{
+    const l=st&&(st.lotes||[]).find(x=>x.id===a.loteId);
+    const cat=cats.find(x=>x.id===a.catId);
+    const estBadge=a.estado==='vendido'?'<span class="badge neutral">Vendido</span>':a.estado==='scrap_pendiente'?'<span class="badge scrap">Scrap</span>':a.estado==='scrap_enviado'?'<span class="badge danger">Scrap enviado</span>':'<span class="badge success">Disponible</span>';
+    const pWarn=a.precioManual&&!a.precio?'<span class="badge danger" style="font-size:10px">Sin precio</span>':'';
+    return`<tr>
+      <td><strong>A-${String(a.num).padStart(5,'0')}</strong></td>
+      <td>${a.assetCliente||'—'}</td>
+      <td>${l?l.nombre:'—'}</td>
+      <td>${cat?cat.nombre:'—'}</td>
+      <td>${a.marca} ${a.modelo}</td>
+      <td><code style="font-size:11px">${a.serial||'—'}</code></td>
+      <td>${a.grado||'—'}</td>
+      <td><span class="badge ${a.destino==='Reventa'?'reventa':'scrap'}">${a.destino}</span></td>
+      <td>${a.precio?`$${a.precio.toFixed(2)}`:''} ${pWarn}</td>
+      <td style="text-align:right"><button class="btn small" onclick="openModalAsset('${a.id}')">Editar</button> <button class="btn small danger" onclick="deleteAsset('${a.id}')">Eliminar</button></td>
+    </tr>`;
+  }).join('');
+}
+function deleteAsset(id){if(!confirm('¿Eliminar?'))return;pState.assets=pState.assets.filter(x=>x.id!==id);savePState();renderAssets();renderScrap();}
+
+// ── SCRAP ─────────────────────────────────────────────────
+function renderScrap(){
+  const tb=document.getElementById('scrap-table');
+  const st=getAdminState();const cats=getAdminCatARS();
+  const scraps=pState.assets.filter(a=>a.destino==='Scrap');
+  if(!scraps.length){tb.innerHTML='<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin assets de scrap</td></tr>';}
+  else tb.innerHTML=scraps.map(a=>{
+    const l=st&&(st.lotes||[]).find(x=>x.id===a.loteId);const cat=cats.find(x=>x.id===a.catId);
+    const est=a.estado==='scrap_enviado'?'<span class="badge danger">Enviado a EOL</span>':'<span class="badge warning">Pendiente</span>';
+    return`<tr><td>A-${String(a.num).padStart(5,'0')}</td><td>${l?l.nombre:'—'}</td><td>${cat?cat.nombre:'—'}</td><td>${a.marca} ${a.modelo}</td><td><code style="font-size:11px">${a.serial||'—'}</code></td><td>${est}</td><td style="text-align:right"><button class="btn small" onclick="openModalAsset('${a.id}')">Editar</button></td></tr>`;
+  }).join('');
+  // Lotes scrap enviados
+  const el=document.getElementById('lotes-scrap-list');
+  if(!pState.lotesScraps.length){el.innerHTML='<p style="font-size:13px;color:#888">Sin lotes scrap creados.</p>';return;}
+  el.innerHTML=pState.lotesScraps.map(ls=>{
+    const assets=ls.assetIds.map(aid=>pState.assets.find(x=>x.id===aid)).filter(Boolean);
+    return`<div style="padding:10px;background:#f8f8f4;border-radius:8px;margin-bottom:8px;border:1px solid #e8e8e0">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px">Lote Scrap — ${ls.fecha}</div>
+      <div style="font-size:12px;color:#888">${assets.length} assets · Lotes origen: ${[...new Set(assets.map(a=>a.loteId))].map(lid=>{const l=st&&(st.lotes||[]).find(x=>x.id===lid);return l?l.nombre:lid;}).join(', ')}</div>
+      <span class="badge ${ls.estadoEol==='finalizado'?'success':'warning'}">${ls.estadoEol==='finalizado'?'Finalizado en EOL':'Pendiente destruction EOL'}</span>
+    </div>`;
+  }).join('');
+}
+function openModalLoteScrap(){
+  const disponibles=pState.assets.filter(a=>a.destino==='Scrap'&&a.estado==='scrap_pendiente');
+  if(!disponibles.length){alert('Sin assets de scrap pendientes.');return;}
+  const st=getAdminState();const cats=getAdminCatARS();
+  document.getElementById('scrap-disponibles').innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:8px">Selecciona assets para el lote scrap:</div>`+
+    disponibles.map(a=>{const cat=cats.find(x=>x.id===a.catId);const l=st&&(st.lotes||[]).find(x=>x.id===a.loteId);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px;border-bottom:1px solid #f0f0ea"><input type="checkbox" id="scrap_cb_${a.id}" value="${a.id}"> <label for="scrap_cb_${a.id}" style="font-size:13px;cursor:pointer">A-${String(a.num).padStart(5,'0')} · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'} · de: ${l?l.nombre:'—'}</label></div>`;
+  }).join('');
+  openModal('modal-lote-scrap');
+}
+function crearLoteScrap(){
+  const checkboxes=document.querySelectorAll('#scrap-disponibles input[type=checkbox]:checked');
+  if(!checkboxes.length){alert('Selecciona al menos un asset.');return;}
+  const assetIds=Array.from(checkboxes).map(cb=>cb.value);
+  const ls={id:puid('ls'),assetIds,fecha:TODAY,estadoEol:'pendiente'};
+  pState.lotesScraps.push(ls);
+  assetIds.forEach(aid=>{const i=pState.assets.findIndex(x=>x.id===aid);if(i>=0)pState.assets[i].estado='scrap_enviado';});
+  savePState();closeModal('modal-lote-scrap');renderScrap();
+}
+
+// ── INVENTARIO EOL ────────────────────────────────────────
+function renderInvEOL(){
+  const comms=getAdminCommodities();
+  const el=document.getElementById('inv-eol-content');
+  const metricsEl=document.getElementById('inv-eol-metrics');
+  // Group loads by commodity
+  const byCommodity={};
+  pState.loads.forEach(ld=>{if(!byCommodity[ld.commodityId])byCommodity[ld.commodityId]=[];byCommodity[ld.commodityId].push(ld);});
+  let totalValor=0;let totalKg=0;
+  let html='';
+  comms.forEach(comm=>{
+    const loads=(byCommodity[comm.id]||[]);
+    if(!loads.length)return;
+    const kgDisp=loads.reduce((a,ld)=>a+(ld.peso-(ld.pesoVendido||0)),0);
+    const valor=comm.valor*kgDisp;totalValor+=valor;totalKg+=kgDisp;
+    html+=`<div class="card"><div class="row center" style="margin-bottom:10px">
+      <div style="flex:1"><strong style="font-size:15px">${comm.nombre}</strong></div>
+      <div style="text-align:right"><span style="font-size:15px;font-weight:600">$${valor.toFixed(2)}</span><br><span style="font-size:12px;color:#888">${kgDisp.toFixed(2)} kg disponibles</span></div>
+    </div>
+    <table><thead><tr><th>#Load</th><th>Peso total</th><th>Vendido</th><th>Disponible</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
+    ${loads.map(ld=>{const disp=ld.peso-(ld.pesoVendido||0);const est=disp<=0?'<span class="badge neutral">Vendido</span>':disp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';return`<tr><td>L-${String(ld.num).padStart(4,'0')}</td><td>${ld.peso.toFixed(2)} kg</td><td>${(ld.pesoVendido||0).toFixed(2)} kg</td><td>${disp.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${est}</td></tr>`;}).join('')}
+    </tbody></table></div>`;
+  });
+  metricsEl.innerHTML=`
+    <div class="metric eol-metric"><div class="label">Valor total inventario EOL</div><div class="value">$${totalValor.toFixed(0)}</div></div>
+    <div class="metric eol-metric"><div class="label">Kg totales disponibles</div><div class="value">${totalKg.toFixed(0)} kg</div></div>
+    <div class="metric eol-metric"><div class="label">Loads activos</div><div class="value">${pState.loads.filter(ld=>ld.estado!=='vendido').length}</div></div>`;
+  el.innerHTML=html||'<div class="card" style="text-align:center;padding:32px;color:#888">Sin loads en inventario.</div>';
+}
+
+// ── INVENTARIO ARS ────────────────────────────────────────
+function renderInvARS(){
+  const tb=document.getElementById('inv-ars-table');
+  const cats=getAdminCatARS();
+  const srch=(document.getElementById('inv-ars-search')||{}).value||'';
+  const filtCat=(document.getElementById('inv-ars-cat')||{}).value||'';
+  // Populate cat filter
+  const catSel=document.getElementById('inv-ars-cat');
+  if(catSel&&!catSel.dataset.populated){
+    catSel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+    catSel.dataset.populated='1';
+  }
+  let assets=pState.assets.filter(a=>a.destino==='Reventa');
+  if(srch)assets=assets.filter(a=>(a.marca+' '+a.modelo+' '+a.serial+' '+(a.templateData&&Object.values(a.templateData).join(' ')||'')).toLowerCase().includes(srch.toLowerCase()));
+  if(filtCat)assets=assets.filter(a=>a.catId===filtCat);
+  const totalValor=assets.reduce((a,x)=>a+(x.precio||0),0);
+  const metricsEl=document.getElementById('inv-ars-metrics');
+  metricsEl.innerHTML=`
+    <div class="metric ars-metric"><div class="label">Valor total inventario ARS</div><div class="value">$${totalValor.toFixed(0)}</div></div>
+    <div class="metric ars-metric"><div class="label">Assets disponibles</div><div class="value">${assets.filter(a=>a.estado==='disponible').length}</div></div>
+    <div class="metric ars-metric"><div class="label">Assets vendidos</div><div class="value">${assets.filter(a=>a.estado==='vendido').length}</div></div>`;
+  if(!assets.length){tb.innerHTML='<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin assets</td></tr>';return;}
+  tb.innerHTML=assets.map(a=>{
+    const cat=cats.find(x=>x.id===a.catId);
+    const est=a.estado==='vendido'?'<span class="badge neutral">Vendido</span>':'<span class="badge success">Disponible</span>';
+    return`<tr><td>A-${String(a.num).padStart(5,'0')}</td><td>${cat?cat.nombre:'—'}</td><td>${a.marca} ${a.modelo}</td><td><code style="font-size:11px">${a.serial||'—'}</code></td><td>${a.grado||'—'}</td><td>${est}</td><td class="price-ok">$${(a.precio||0).toFixed(2)}</td></tr>`;
+  }).join('');
+}
+
+// ── SALES ORDERS ─────────────────────────────────────────
+let _soTab='loads';
+function showSoTab(tab){
+  _soTab=tab;
+  document.querySelectorAll('.so-tab').forEach(t=>t.style.display='none');
+  document.querySelectorAll('#modal-so .tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('so-tab-'+tab).style.display='block';
+  event.target.classList.add('active');
+  if(tab==='assets')renderSoAssetsDisponibles();
+  updateSoTotal();
+}
+
+function openModalSalesOrder(){
+  document.getElementById('so-edit-id').value='';
+  document.getElementById('so-fecha').value=TODAY;
+  _soSelectedAssets=new Set();
+  document.getElementById('so-comprador').innerHTML=pState.compradores.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  if(!pState.compradores.length){alert('Primero crea un comprador.');return;}
+  document.getElementById('so-load-rows').innerHTML='';
+  document.getElementById('so-assets-seleccionados').innerHTML='';
+  document.getElementById('so-total-preview').innerHTML='';
+  document.getElementById('so-precio-alert').innerHTML='';
+  document.querySelectorAll('#modal-so .so-tab').forEach(t=>t.style.display='none');
+  document.querySelectorAll('#modal-so .tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('so-tab-loads').style.display='block';
+  document.querySelector('#modal-so .tab').classList.add('active');
+  _soTab='loads';
+  addSoLoadRow();
+  openModal('modal-so');
+}
+
+function addSoLoadRow(){
+  const loadsDisp=pState.loads.filter(ld=>ld.estado!=='vendido'&&(ld.peso-(ld.pesoVendido||0))>0);
+  if(!loadsDisp.length){alert('Sin loads disponibles.');return;}
+  const comms=getAdminCommodities();
+  const row=document.createElement('div');row.className='sorting-row';
+  row.innerHTML=`<select style="flex:2" onchange="updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);return`<option value="${ld.id}">L-${String(ld.num).padStart(4,'0')} ${c?c.nombre:''} (${disp.toFixed(2)} kg disp.)</option>`;}).join('')}</select>
+  <input type="number" placeholder="kg a vender" min="0" step="0.01" style="flex:1;max-width:110px" oninput="updateSoTotal()">
+  <input type="number" placeholder="$/kg" min="0" step="0.01" style="flex:1;max-width:90px" oninput="updateSoTotal()">
+  <button class="btn small danger" onclick="this.parentElement.remove();updateSoTotal()">✕</button>`;
+  document.getElementById('so-load-rows').appendChild(row);updateSoTotal();
+}
+
+function renderSoAssetsDisponibles(){
+  const disponibles=pState.assets.filter(a=>a.destino==='Reventa'&&a.estado==='disponible');
+  const cats=getAdminCatARS();const srch=(document.getElementById('so-asset-search')||{}).value||'';
+  let filtered=disponibles;
+  if(srch)filtered=filtered.filter(a=>(a.marca+' '+a.modelo+' '+a.serial).toLowerCase().includes(srch.toLowerCase()));
+  document.getElementById('so-assets-disponibles').innerHTML=filtered.map(a=>{
+    const cat=cats.find(x=>x.id===a.catId);const sel=_soSelectedAssets.has(a.id);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px;border-bottom:1px solid #f0f0ea;background:${sel?'#e8f0fe':''}">
+      <input type="checkbox" id="so_a_${a.id}" ${sel?'checked':''} onchange="toggleSoAsset('${a.id}')">
+      <label for="so_a_${a.id}" style="flex:1;font-size:13px;cursor:pointer">A-${String(a.num).padStart(5,'0')} · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'} · Serial: ${a.serial||'—'} · $${(a.precio||0).toFixed(2)}</label>
+    </div>`;
+  }).join('');
+  renderSoAssetsSeleccionados();
+}
+function filterSoAssets(){renderSoAssetsDisponibles();}
+function toggleSoAsset(id){
+  if(_soSelectedAssets.has(id))_soSelectedAssets.delete(id);else _soSelectedAssets.add(id);
+  renderSoAssetsDisponibles();updateSoTotal();
+}
+function renderSoAssetsSeleccionados(){
+  const sel=Array.from(_soSelectedAssets).map(id=>pState.assets.find(x=>x.id===id)).filter(Boolean);
+  const el=document.getElementById('so-assets-seleccionados');
+  if(!sel.length){el.innerHTML='';return;}
+  const total=sel.reduce((a,x)=>a+(x.precio||0),0);
+  el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:6px">${sel.length} assets seleccionados — Total: $${total.toFixed(2)}</div>`;
+}
+function updateSoTotal(){
+  let total=0;let valid=true;
+  if(_soTab==='loads'){
+    const rows=document.querySelectorAll('#so-load-rows .sorting-row');
+    rows.forEach(row=>{
+      const inputs=row.querySelectorAll('input[type=number]');
+      const sel=row.querySelector('select');if(!sel)return;
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
+      const ld=pState.loads.find(x=>x.id===loadId);
+      if(ld){
+        const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
+        const minPrecio=comm?comm.valor:0;
+        if(pxkg<minPrecio&&pxkg>0)valid=false;
+        total+=kg*pxkg;
+      }
+    });
+  } else {
+    total=Array.from(_soSelectedAssets).reduce((a,id)=>{const ast=pState.assets.find(x=>x.id===id);return a+(ast?ast.precio||0:0);},0);
+  }
+  document.getElementById('so-total-preview').innerHTML=`<strong>Total estimado: $${total.toFixed(2)}</strong>`;
+  document.getElementById('so-precio-alert').innerHTML=!valid?'<div class="alert danger">⚠ Uno o más precios están por debajo del mínimo autorizado.</div>':'';
+}
+
+function saveSalesOrder(){
+  const compradorId=document.getElementById('so-comprador').value;const fecha=document.getElementById('so-fecha').value;
+  if(!compradorId||!fecha){alert('Completa comprador y fecha.');return;}
+  let items=[];let monto=0;let tipo=_soTab;
+  if(_soTab==='loads'){
+    const rows=document.querySelectorAll('#so-load-rows .sorting-row');
+    rows.forEach(row=>{
+      const inputs=row.querySelectorAll('input[type=number]');const sel=row.querySelector('select');if(!sel)return;
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
+      if(!loadId||!kg||!pxkg)return;
+      const ld=pState.loads.find(x=>x.id===loadId);if(!ld)return;
+      const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
+      const minPrecio=comm?comm.valor:0;
+      if(pxkg<minPrecio){if(!confirm(`Precio $${pxkg}/kg es menor al mínimo $${minPrecio}/kg. ¿Continuar?`))return;}
+      const subtotal=kg*pxkg;monto+=subtotal;
+      items.push({loadId,kg,pxkg,subtotal,commodityId:ld.commodityId});
+      // Update load
+      const li=pState.loads.findIndex(x=>x.id===loadId);
+      if(li>=0){pState.loads[li].pesoVendido=(pState.loads[li].pesoVendido||0)+kg;if(pState.loads[li].pesoVendido>=pState.loads[li].peso)pState.loads[li].estado='vendido';}
+    });
+  } else {
+    Array.from(_soSelectedAssets).forEach(id=>{
+      const ast=pState.assets.find(x=>x.id===id);if(!ast)return;
+      items.push({assetId:id,precio:ast.precio||0});monto+=ast.precio||0;
+      const ai=pState.assets.findIndex(x=>x.id===id);if(ai>=0)pState.assets[ai].estado='vendido';
+    });
+  }
+  if(!items.length){alert('Agrega items a la sales order.');return;}
+  const num=pNextId.so++;
+  pState.salesOrders.push({id:puid('so'),num,compradorId,fecha,tipo,items,monto});
+  savePState();closeModal('modal-so');renderSalesOrders();renderLoads();renderAssets();renderInvEOL();renderInvARS();
+}
+
+function renderSalesOrders(){
+  const tb=document.getElementById('so-table');
+  const srch=(document.getElementById('so-search')||{}).value||'';
+  const comms=getAdminCommodities();const cats=getAdminCatARS();
+  let sos=pState.salesOrders;
+  if(srch)sos=sos.filter(so=>{const comp=pState.compradores.find(x=>x.id===so.compradorId);return(comp&&comp.nombre.toLowerCase().includes(srch.toLowerCase()));});
+  if(!sos.length){tb.innerHTML='<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin sales orders</td></tr>';return;}
+  tb.innerHTML=[...sos].reverse().map(so=>{
+    const comp=pState.compradores.find(x=>x.id===so.compradorId);
+    let material='';
+    if(so.tipo==='loads'){
+      const commIds=[...new Set(so.items.map(it=>it.commodityId))];
+      material=commIds.map(cid=>{const c=comms.find(x=>x.id===cid);return c?c.nombre:'—';}).join(', ');
+    } else {
+      const catIds=[...new Set(so.items.map(it=>{const a=pState.assets.find(x=>x.id===it.assetId);return a?a.catId:'';}).filter(Boolean))];
+      material=catIds.map(cid=>{const c=cats.find(x=>x.id===cid);return c?c.nombre:'—';}).join(', ');
+    }
+    return`<tr>
+      <td><strong>SO-${String(so.num).padStart(4,'0')}</strong></td>
+      <td>${so.fecha}</td>
+      <td>${comp?comp.nombre:'—'}</td>
+      <td><span class="badge ${so.tipo==='loads'?'eol':'ars'}">${so.tipo==='loads'?'EOL — Loads':'ARS — Assets'}</span> ${material}</td>
+      <td class="price-ok"><strong>$${so.monto.toFixed(2)}</strong></td>
+      <td><span class="badge success">Completada</span></td>
+      <td style="text-align:right"><button class="btn small" onclick="viewSO('${so.id}')">Ver detalle</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function viewSO(id){
+  const so=pState.salesOrders.find(x=>x.id===id);if(!so)return;
+  const comp=pState.compradores.find(x=>x.id===so.compradorId);
+  const comms=getAdminCommodities();const cats=getAdminCatARS();
+  let itemsHtml='';
+  if(so.tipo==='loads'){
+    itemsHtml=`<table><thead><tr><th>#Load</th><th>Commodity</th><th>Kg vendidos</th><th>$/kg</th><th>Subtotal</th></tr></thead><tbody>${
+      so.items.map(it=>{const ld=pState.loads.find(x=>x.id===it.loadId);const c=comms.find(x=>x.id===it.commodityId);return`<tr><td>L-${ld?String(ld.num).padStart(4,'0'):'—'}</td><td>${c?c.nombre:'—'}</td><td>${it.kg.toFixed(2)} kg</td><td>$${it.pxkg.toFixed(2)}</td><td>$${it.subtotal.toFixed(2)}</td></tr>`;}).join('')
+    }</tbody></table>`;
+  } else {
+    itemsHtml=`<table><thead><tr><th>Asset #</th><th>Categoría</th><th>Marca/Modelo</th><th>Serial</th><th>Precio</th></tr></thead><tbody>${
+      so.items.map(it=>{const a=pState.assets.find(x=>x.id===it.assetId);const cat=a?cats.find(x=>x.id===a.catId):null;return`<tr><td>A-${a?String(a.num).padStart(5,'0'):'—'}</td><td>${cat?cat.nombre:'—'}</td><td>${a?a.marca+' '+a.modelo:'—'}</td><td>${a?a.serial||'—':'—'}</td><td>$${it.precio.toFixed(2)}</td></tr>`;}).join('')
+    }</tbody></table>`;
+  }
+  document.getElementById('modal-detail-title').textContent=`SO-${String(so.num).padStart(4,'0')} — ${comp?comp.nombre:'—'}`;
+  document.getElementById('modal-detail-content').innerHTML=`
+    <div class="metric-grid"><div class="metric"><div class="label">Fecha</div><div class="value" style="font-size:16px">${so.fecha}</div></div><div class="metric"><div class="label">Tipo</div><div class="value" style="font-size:14px">${so.tipo==='loads'?'EOL Loads':'ARS Assets'}</div></div><div class="metric"><div class="label">Monto total</div><div class="value" style="color:#1a7a3c">$${so.monto.toFixed(2)}</div></div></div>
+    ${itemsHtml}`;
+  openModal('modal-detail');
+}
+
+// ── COMPRADORES ───────────────────────────────────────────
+function saveComprador(){
+  const id=document.getElementById('comp-edit-id').value;
+  const nombre=document.getElementById('comp-nombre').value.trim();if(!nombre){alert('Ingresa nombre.');return;}
+  const obj={id:id||puid('cp'),nombre,contacto:document.getElementById('comp-contacto').value.trim(),email:document.getElementById('comp-email').value.trim(),tel:document.getElementById('comp-tel').value.trim()};
+  if(id){const i=pState.compradores.findIndex(x=>x.id===id);if(i>=0)pState.compradores[i]=obj;}else pState.compradores.push(obj);
+  savePState();closeModal('modal-comprador');renderCompradores();
+}
+function editComprador(id){
+  const c=pState.compradores.find(x=>x.id===id);if(!c)return;
+  document.getElementById('comp-edit-id').value=c.id;document.getElementById('comp-nombre').value=c.nombre;
+  document.getElementById('comp-contacto').value=c.contacto||'';document.getElementById('comp-email').value=c.email||'';document.getElementById('comp-tel').value=c.tel||'';
+  document.getElementById('modal-comprador-title').textContent='Editar comprador';openModal('modal-comprador');
+}
+function deleteComprador(id){if(!confirm('¿Eliminar?'))return;pState.compradores=pState.compradores.filter(x=>x.id!==id);savePState();renderCompradores();}
+function renderCompradores(){
+  const tb=document.getElementById('compradores-table');
+  if(!pState.compradores.length){tb.innerHTML='<tr><td colspan="5" style="color:#888;text-align:center;padding:32px">Sin compradores</td></tr>';return;}
+  tb.innerHTML=pState.compradores.map(c=>{
+    const sos=pState.salesOrders.filter(so=>so.compradorId===c.id).length;
+    return`<tr><td><strong>${c.nombre}</strong></td><td>${c.contacto||'—'}</td><td>${c.email||'—'}</td><td>${sos}</td>
+    <td style="text-align:right"><button class="btn small" onclick="editComprador('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteComprador('${c.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+
+// ── INIT ─────────────────────────────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.style.display='none';});});
+checkAuth();loadPState();
+// Initial render
+renderSortings();renderDestructions();renderLoads();
+</script>
+</body>
+</html>
