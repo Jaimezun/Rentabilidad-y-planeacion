@@ -1621,7 +1621,7 @@ function minUsadosDia(ds,area){
   if(!dias[ds])return 0;
   let total=0;
   Object.values(dias[ds]).forEach(asigs=>asigs.forEach(a=>total+=a.minutos));
-  return total;
+  return total; // May exceed capacity if stale data exists — renderCalendar handles display
 }
 
 // Minutos que un operador usa en un día
@@ -1806,7 +1806,12 @@ function renderCalendar(area){
       lotesEnDia.forEach(lId=>{const l=state.lotes.find(x=>x.id===lId);const color=loteColorMap[lId]||'#888';chips+=`<div class="lote-chip" style="background:${color}22;color:${color}">${l?l.nombre.substring(0,12):lId}</div>`;});
     }
     let barHtml='';
-    if(!inh&&capDia>0){const pct=Math.min(100,used/capDia*100);const bc=pct>90?'#c0392b':pct>70?'#a05a00':accentColor;barHtml=`<div class="cap-bar-wrap"><div class="cap-bar" style="width:${pct.toFixed(0)}%;background:${bc}"></div></div><div class="cap-label">${used}/${capDia} min</div>`;}
+    if(!inh&&capDia>0){
+      const overCap=used>capDia;
+      const pct=Math.min(100,used/capDia*100);
+      const bc=overCap||pct>90?'#c0392b':pct>70?'#a05a00':accentColor;
+      barHtml=`<div class="cap-bar-wrap"><div class="cap-bar" style="width:${pct.toFixed(0)}%;background:${bc}"></div></div><div class="cap-label" style="${overCap?'color:#c0392b;font-weight:700':''}">${used}/${capDia} min${overCap?' ⚠':''}</div>`;
+    }
     html+=`<div class="cal-day${inh?' weekend':''}${isToday?' today':''}${isSel?' '+selClass:''}" ${!inh?`onclick="onCalDayClick('${ds}','${area}')"`:''}>
       <div class="day-num">${d}</div>${chips}${barHtml}</div>`;
   }
@@ -1892,22 +1897,20 @@ function renderModalDiaContent(area,ds){
 
   // Operadores
   html+=`<div style="font-weight:600;font-size:13px;margin-bottom:8px">Operadores — haz clic en el operador, luego en el lote para asignarlo</div>`;
+  // Pre-calcular previews en pase secuencial (igual que guardarDia)
+  // Esto garantiza que cada op ve correctamente lo que los anteriores ya tomaron
+  const _previewMap={};
+  const _trabajadoAcum={};
+  ops.forEach(o=>{
+    const oa=[...(modalDiaState.asignaciones[o.id]||[])].sort((x,y)=>x.orden-y.orden);
+    const res=calcOpDayMinutes(o.id,area,ds,oa,_trabajadoAcum);
+    _previewMap[o.id]=res;
+    oa.forEach((a,i)=>{_trabajadoAcum[a.loteId]=(_trabajadoAcum[a.loteId]||0)+(res.detalle[i]||0);});
+  });
+
   ops.forEach((op,idx)=>{
     const asigs=modalDiaState.asignaciones[op.id]||[];
-    // Calculate available minutes for this op today (excluding current modal assignments)
-    const diasArea=area==='eol'?state.diasEOL:state.diasARS;
-    // Simulate minutes for display
-    // Preview: compute trabajadoExterno from other ops in modal
-    const trabajadoExterno={};
-    Object.entries(modalDiaState.asignaciones).forEach(([othOpId,othAsigs])=>{
-      if(othOpId===op.id)return;
-      const othSorted=[...othAsigs].sort((a,b)=>a.orden-b.orden);
-      const othResult=calcOpDayMinutes(othOpId,area,ds,othAsigs,{});
-      othSorted.forEach((oa,i)=>{
-        trabajadoExterno[oa.loteId]=(trabajadoExterno[oa.loteId]||0)+(othResult.detalle[i]||0);
-      });
-    });
-    const preview=calcOpDayMinutes(op.id,area,ds,asigs,trabajadoExterno);
+    const preview=_previewMap[op.id]||{usado:0,detalle:[]};
     const usadoMin=preview.usado;const libreMin=MIN_DIA-usadoMin;
     const pctUsado=Math.min(100,usadoMin/MIN_DIA*100);
     const bc=pctUsado>90?'#c0392b':pctUsado>70?'#a05a00':accentColor;

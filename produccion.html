@@ -703,11 +703,13 @@ function renderLoads(){
   tb.innerHTML=loads.map(ld=>{
     const comm=comms.find(x=>x.id===ld.commodityId);
     const pesoDisp=ld.peso-(ld.pesoVendido||0);
-    const valor=comm?(comm.valor*pesoDisp).toFixed(2):'N/A';
+    const valorNum=comm?comm.valor*pesoDisp:0;
+    const esDisp=comm&&comm.tipo==='disposicion';
     const estBadge=ld.estado==='vendido'?'<span class="badge neutral">Vendido</span>':pesoDisp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';
-    return`<tr><td><strong>L-${String(ld.num).padStart(4,'0')}</strong></td><td>${comm?comm.nombre:'—'}</td>
+    const valorColor=esDisp?'color:#c0392b':'color:#1a7a3c';
+    return`<tr><td><strong>L-${String(ld.num).padStart(4,'0')}</strong></td><td>${comm?comm.nombre:'—'}${esDisp?' <span class="badge warning" style="font-size:10px">Disp.</span>':''}</td>
     <td>${pesoDisp.toFixed(2)} / ${ld.peso.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${estBadge}</td>
-    <td class="${comm&&comm.valor>0?'price-ok':''}">$${valor}</td>
+    <td style="${valorColor};font-weight:600">${comm?'$'+valorNum.toFixed(2):'N/A'}</td>
     <td style="text-align:right"><button class="btn small" onclick="openModalLoad('${ld.id}')">Editar</button> <button class="btn small danger" onclick="deleteLoad('${ld.id}')">Eliminar</button></td></tr>`;
   }).join('');
 }
@@ -956,18 +958,33 @@ function renderInvEOL(){
     const loads=(byCommodity[comm.id]||[]);
     if(!loads.length)return;
     const kgDisp=loads.reduce((a,ld)=>a+(ld.peso-(ld.pesoVendido||0)),0);
-    const valor=comm.valor*kgDisp;totalValor+=valor;totalKg+=kgDisp;
+    const valor=comm.valor*kgDisp;
+    const esDisp=comm.tipo==='disposicion';
+    if(!esDisp)totalValor+=valor; // solo suma ingresos al total positivo
+    totalKg+=kgDisp;
+    const valorColor=esDisp?'color:#c0392b':'color:#1a7a3c';
+    const dispTag=esDisp?' <span class="badge warning" style="font-size:11px">Disposición</span>':'';
     html+=`<div class="card"><div class="row center" style="margin-bottom:10px">
-      <div style="flex:1"><strong style="font-size:15px">${comm.nombre}</strong></div>
-      <div style="text-align:right"><span style="font-size:15px;font-weight:600">$${valor.toFixed(2)}</span><br><span style="font-size:12px;color:#888">${kgDisp.toFixed(2)} kg disponibles</span></div>
+      <div style="flex:1"><strong style="font-size:15px">${comm.nombre}</strong>${dispTag}</div>
+      <div style="text-align:right"><span style="font-size:15px;font-weight:600;${valorColor}">$${valor.toFixed(2)}</span><br><span style="font-size:12px;color:#888">${kgDisp.toFixed(2)} kg disponibles</span></div>
     </div>
     <table><thead><tr><th>#Load</th><th>Peso total</th><th>Vendido</th><th>Disponible</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
     ${loads.map(ld=>{const disp=ld.peso-(ld.pesoVendido||0);const est=disp<=0?'<span class="badge neutral">Vendido</span>':disp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';return`<tr><td>L-${String(ld.num).padStart(4,'0')}</td><td>${ld.peso.toFixed(2)} kg</td><td>${(ld.pesoVendido||0).toFixed(2)} kg</td><td>${disp.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${est}</td></tr>`;}).join('')}
     </tbody></table></div>`;
   });
+  // Calculate disposition total separately
+  let totalDisposicion=0;
+  comms.forEach(comm=>{
+    if(comm.tipo!=='disposicion')return;
+    const loads=(byCommodity[comm.id]||[]);
+    const kgDisp=loads.reduce((a,ld)=>a+(ld.peso-(ld.pesoVendido||0)),0);
+    totalDisposicion+=comm.valor*kgDisp;
+  });
   metricsEl.innerHTML=`
-    <div class="metric eol-metric"><div class="label">Valor total inventario EOL</div><div class="value">$${totalValor.toFixed(0)}</div></div>
-    <div class="metric eol-metric"><div class="label">Kg totales disponibles</div><div class="value">${totalKg.toFixed(0)} kg</div></div>
+    <div class="metric eol-metric"><div class="label">Valor neto inventario</div><div class="value" style="color:#1a7a3c">$${(totalValor+totalDisposicion).toFixed(0)}</div></div>
+    <div class="metric eol-metric"><div class="label">Ingresos</div><div class="value" style="font-size:16px;color:#1a7a3c">$${totalValor.toFixed(0)}</div></div>
+    <div class="metric eol-metric"><div class="label">Disposición (costo)</div><div class="value" style="font-size:16px;color:#c0392b">$${totalDisposicion.toFixed(0)}</div></div>
+    <div class="metric eol-metric"><div class="label">Kg totales</div><div class="value">${totalKg.toFixed(0)} kg</div></div>
     <div class="metric eol-metric"><div class="label">Loads activos</div><div class="value">${pState.loads.filter(ld=>ld.estado!=='vendido').length}</div></div>`;
   el.innerHTML=html||'<div class="card" style="text-align:center;padding:32px;color:#888">Sin loads en inventario.</div>';
 }
@@ -1037,9 +1054,9 @@ function addSoLoadRow(){
   if(!loadsDisp.length){alert('Sin loads disponibles.');return;}
   const comms=getAdminCommodities();
   const row=document.createElement('div');row.className='sorting-row';
-  row.innerHTML=`<select style="flex:2" onchange="updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);return`<option value="${ld.id}">L-${String(ld.num).padStart(4,'0')} ${c?c.nombre:''} (${disp.toFixed(2)} kg disp.)</option>`;}).join('')}</select>
+  row.innerHTML=`<select style="flex:2" onchange="onSoLoadSelectChange(this);updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);const esDisp=c&&c.tipo==='disposicion';return`<option value="${ld.id}" data-min="${c?c.valor:0}" data-disp="${esDisp?1:0}">L-${String(ld.num).padStart(4,'0')} ${c?c.nombre:''}${esDisp?' [Disp]':''} (${disp.toFixed(2)} kg)</option>`;}).join('')}</select>
   <input type="number" placeholder="kg a vender" min="0" step="0.01" style="flex:1;max-width:110px" oninput="updateSoTotal()">
-  <input type="number" placeholder="$/kg" min="0" step="0.01" style="flex:1;max-width:90px" oninput="updateSoTotal()">
+  <input type="number" placeholder="$/kg (puede ser neg.)" step="0.01" style="flex:1;max-width:120px" oninput="updateSoTotal()">
   <button class="btn small danger" onclick="this.parentElement.remove();updateSoTotal()">✕</button>`;
   document.getElementById('so-load-rows').appendChild(row);updateSoTotal();
 }
@@ -1067,30 +1084,66 @@ function renderSoAssetsSeleccionados(){
   const sel=Array.from(_soSelectedAssets).map(id=>pState.assets.find(x=>x.id===id)).filter(Boolean);
   const el=document.getElementById('so-assets-seleccionados');
   if(!sel.length){el.innerHTML='';return;}
-  const total=sel.reduce((a,x)=>a+(x.precio||0),0);
-  el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:6px">${sel.length} assets seleccionados — Total: $${total.toFixed(2)}</div>`;
+  const cats=getAdminCatARS();
+  el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:8px;padding-top:8px;border-top:1px solid #e0e0d8">${sel.length} assets seleccionados — ajusta precios si es necesario:</div>`+
+    sel.map(a=>{
+      const cat=cats.find(x=>x.id===a.catId);
+      const minPrecio=a.precio||0;
+      return`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:#f8f8f4;border-radius:6px;margin-bottom:4px">
+        <div style="flex:2;font-size:13px"><strong>A-${String(a.num).padStart(5,'0')}</strong> · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'}</div>
+        <div style="flex:1;min-width:100px">
+          <input type="number" id="so_precio_${a.id}" value="${minPrecio.toFixed(2)}" min="${minPrecio}" step="0.01"
+            style="font-size:13px;padding:4px 8px" oninput="updateSoTotal()">
+          <div style="font-size:10px;color:#888">mín $${minPrecio.toFixed(2)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  updateSoTotal();
+}
+function onSoLoadSelectChange(sel){
+  // Pre-fill min price when commodity changes
+  const opt=sel.options[sel.selectedIndex];if(!opt)return;
+  const minVal=parseFloat(opt.dataset.min)||0;
+  const row=sel.closest('.sorting-row');if(!row)return;
+  const priceInp=row.querySelectorAll('input[type=number]')[1];
+  if(priceInp)priceInp.value=minVal.toFixed(2);
+  updateSoTotal();
 }
 function updateSoTotal(){
-  let total=0;let valid=true;
+  let total=0;let valid=true;let warnings=[];
   if(_soTab==='loads'){
     const rows=document.querySelectorAll('#so-load-rows .sorting-row');
     rows.forEach(row=>{
       const inputs=row.querySelectorAll('input[type=number]');
       const sel=row.querySelector('select');if(!sel)return;
-      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;
+      const pxkg=parseFloat(inputs[1].value)||0;
       const ld=pState.loads.find(x=>x.id===loadId);
-      if(ld){
+      if(ld&&kg){
         const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
         const minPrecio=comm?comm.valor:0;
-        if(pxkg<minPrecio&&pxkg>0)valid=false;
+        const esDisposicion=comm&&comm.tipo==='disposicion';
+        // Regla: precio >= minPrecio siempre (funciona para positivos y negativos)
+        if(pxkg<minPrecio){
+          valid=false;
+          warnings.push(`${comm?comm.nombre:'Commodity'}: precio $${pxkg}/kg ${esDisposicion?'más negativo que':'menor al'} mínimo $${minPrecio}/kg`);
+        }
         total+=kg*pxkg;
       }
     });
   } else {
-    total=Array.from(_soSelectedAssets).reduce((a,id)=>{const ast=pState.assets.find(x=>x.id===id);return a+(ast?ast.precio||0:0);},0);
+    Array.from(_soSelectedAssets).forEach(id=>{
+      const ast=pState.assets.find(x=>x.id===id);if(!ast)return;
+      const inp=document.getElementById('so_precio_'+id);
+      const precio=inp?parseFloat(inp.value)||0:ast.precio||0;
+      const minPrecio=ast.precio||0;
+      if(precio<minPrecio){valid=false;warnings.push(`A-${String(ast.num).padStart(5,'0')}: precio $${precio} menor al mínimo $${minPrecio}`);}
+      total+=precio;
+    });
   }
   document.getElementById('so-total-preview').innerHTML=`<strong>Total estimado: $${total.toFixed(2)}</strong>`;
-  document.getElementById('so-precio-alert').innerHTML=!valid?'<div class="alert danger">⚠ Uno o más precios están por debajo del mínimo autorizado.</div>':'';
+  document.getElementById('so-precio-alert').innerHTML=!valid
+    ?`<div class="alert danger">⚠ Precios fuera de rango:<br>${warnings.map(w=>`· ${w}`).join('<br>')}</div>`:'';
 }
 
 function saveSalesOrder(){
@@ -1106,7 +1159,9 @@ function saveSalesOrder(){
       const ld=pState.loads.find(x=>x.id===loadId);if(!ld)return;
       const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
       const minPrecio=comm?comm.valor:0;
-      if(pxkg<minPrecio){if(!confirm(`Precio $${pxkg}/kg es menor al mínimo $${minPrecio}/kg. ¿Continuar?`))return;}
+      const esDisp=comm&&comm.tipo==='disposicion';
+      // precio >= minPrecio: para disposición ambos negativos, para ingreso ambos positivos
+      if(pxkg<minPrecio){if(!confirm(`Precio $${pxkg}/kg es ${esDisp?'más negativo que':'menor al'} mínimo autorizado $${minPrecio}/kg. ¿Continuar?`))return;}
       const subtotal=kg*pxkg;monto+=subtotal;
       items.push({loadId,kg,pxkg,subtotal,commodityId:ld.commodityId});
       // Update load
@@ -1114,11 +1169,17 @@ function saveSalesOrder(){
       if(li>=0){pState.loads[li].pesoVendido=(pState.loads[li].pesoVendido||0)+kg;if(pState.loads[li].pesoVendido>=pState.loads[li].peso)pState.loads[li].estado='vendido';}
     });
   } else {
+    let precioInvalido=false;
     Array.from(_soSelectedAssets).forEach(id=>{
       const ast=pState.assets.find(x=>x.id===id);if(!ast)return;
-      items.push({assetId:id,precio:ast.precio||0});monto+=ast.precio||0;
+      const inp=document.getElementById('so_precio_'+id);
+      const precio=inp?parseFloat(inp.value)||0:ast.precio||0;
+      const minPrecio=ast.precio||0;
+      if(precio<minPrecio)precioInvalido=true;
+      items.push({assetId:id,precio});monto+=precio;
       const ai=pState.assets.findIndex(x=>x.id===id);if(ai>=0)pState.assets[ai].estado='vendido';
     });
+    if(precioInvalido){if(!confirm('Uno o más precios están por debajo del mínimo autorizado. ¿Continuar?'))return;}
   }
   if(!items.length){alert('Agrega items a la sales order.');return;}
   const num=pNextId.so++;
