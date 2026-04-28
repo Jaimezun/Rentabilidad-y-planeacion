@@ -87,6 +87,18 @@ tr:hover td{background:#fafaf8}
 .inv-row{display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #f0f0ea}
 .inv-row:last-child{border-bottom:none}
 .load-chip{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:#e8f0fe;color:#1a56db;margin:2px}
+/* DIAGNÓSTICO */
+.diag-banner{position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;color:#fff;padding:12px 20px;z-index:100;display:flex;align-items:center;gap:12px;font-size:13px}
+.diag-banner .diag-icon{font-size:20px}
+.diag-banner .diag-data{flex:1;font-size:12px;color:#aaa}
+.diag-banner .diag-data strong{color:#fff}
+.diag-chip{display:inline-block;background:#333;padding:2px 8px;border-radius:4px;margin:2px;font-size:11px}
+.diag-chip.ok{background:#1a4a2e;color:#7ef0a8}
+.diag-chip.warn{background:#4a3000;color:#f0c040}
+.diag-chip.bad{background:#4a1a1a;color:#f07070}
+/* Pre-fill animation */
+@keyframes prefill{from{background:#fffbe8}to{background:#fff}}
+.prefilled{animation:prefill 1.5s ease-out}
 </style>
 </head>
 <body>
@@ -256,6 +268,18 @@ tr:hover td{background:#fafaf8}
   </div>
 </div>
 
+<!-- DIAGNÓSTICO BANNER (visible cuando viene del USB) -->
+<div id="diag-banner" class="diag-banner" style="display:none">
+  <div class="diag-icon">🔬</div>
+  <div style="flex:1">
+    <div style="font-weight:600;margin-bottom:4px">Diagnóstico detectado — datos pre-cargados del hardware</div>
+    <div class="diag-data" id="diag-data-chips"></div>
+  </div>
+  <button class="btn small" style="background:#333;color:#fff;border-color:#555" onclick="abrirAssetDesdeQR()">
+    Crear asset con estos datos
+  </button>
+  <button class="btn small danger" style="background:transparent;border-color:#555;color:#aaa" onclick="document.getElementById('diag-banner').style.display='none'">✕</button>
+</div>
 </div></div><!-- end content/app -->
 
 <!-- ===== MODALS ===== -->
@@ -474,7 +498,15 @@ function showPage(id){
   if(id==='compradores'){renderCompradores();}
 }
 function openModal(id){document.getElementById(id).style.display='flex';}
-function closeModal(id){document.getElementById(id).style.display='none';}
+function closeModal(id){
+  document.getElementById(id).style.display='none';
+  // Al cerrar el modal de asset, limpiar datos de diagnóstico para que no contaminen el siguiente asset
+  if(id==='modal-asset'){
+    window._diagForTemplate=null;
+    const diagInfo=document.getElementById('diag-modal-info');
+    if(diagInfo)diagInfo.remove();
+  }
+}
 function showSection(id){
   const el=document.getElementById(id);
   const parent=el.closest('.page')||document.body;
@@ -703,13 +735,11 @@ function renderLoads(){
   tb.innerHTML=loads.map(ld=>{
     const comm=comms.find(x=>x.id===ld.commodityId);
     const pesoDisp=ld.peso-(ld.pesoVendido||0);
-    const valorNum=comm?comm.valor*pesoDisp:0;
-    const esDisp=comm&&comm.tipo==='disposicion';
+    const valor=comm?(comm.valor*pesoDisp).toFixed(2):'N/A';
     const estBadge=ld.estado==='vendido'?'<span class="badge neutral">Vendido</span>':pesoDisp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';
-    const valorColor=esDisp?'color:#c0392b':'color:#1a7a3c';
-    return`<tr><td><strong>L-${String(ld.num).padStart(4,'0')}</strong></td><td>${comm?comm.nombre:'—'}${esDisp?' <span class="badge warning" style="font-size:10px">Disp.</span>':''}</td>
+    return`<tr><td><strong>L-${String(ld.num).padStart(4,'0')}</strong></td><td>${comm?comm.nombre:'—'}</td>
     <td>${pesoDisp.toFixed(2)} / ${ld.peso.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${estBadge}</td>
-    <td style="${valorColor};font-weight:600">${comm?'$'+valorNum.toFixed(2):'N/A'}</td>
+    <td class="${comm&&comm.valor>0?'price-ok':''}">$${valor}</td>
     <td style="text-align:right"><button class="btn small" onclick="openModalLoad('${ld.id}')">Editar</button> <button class="btn small danger" onclick="deleteLoad('${ld.id}')">Eliminar</button></td></tr>`;
   }).join('');
 }
@@ -762,7 +792,7 @@ function onAssetCatChange(existingData){
   const cats=getAdminCatARS();
   const cat=cats.find(x=>x.id===catId);
   const container=document.getElementById('asset-template-fields');
-  if(!cat||!cat.template||!cat.template.length){container.innerHTML='';return;}
+  if(!cat||!cat.template||!cat.template.length){container.innerHTML='';checkAssetMatch();return;}
   container.innerHTML='<div style="font-weight:600;font-size:13px;margin-bottom:8px;border-top:1px solid #e0e0d8;padding-top:12px">Campos específicos de la categoría</div>'+
     cat.template.map(field=>{
       const val=existingData[field.id]||'';
@@ -778,6 +808,8 @@ function onAssetCatChange(existingData){
       return'';
     }).join('');
   checkAssetMatch();
+  // Si hay datos de diagnóstico pendientes, inyectarlos en los campos del template
+  injectDiagToTemplate();
 }
 
 function getTemplateData(){
@@ -860,7 +892,12 @@ function saveAsset(){
     estado:destino==='Scrap'?'scrap_pendiente':'disponible'
   };
   if(id){const i=pState.assets.findIndex(x=>x.id===id);if(i>=0)pState.assets[i]=obj;}else pState.assets.push(obj);
-  savePState();closeModal('modal-asset');renderAssets();renderScrap();
+  savePState();
+  // Limpiar datos de diagnóstico al guardar
+  window._diagForTemplate=null;
+  const diagInfo=document.getElementById('diag-modal-info');
+  if(diagInfo)diagInfo.remove();
+  closeModal('modal-asset');renderAssets();renderScrap();
 }
 
 function populateAssetLoteFiltro(){
@@ -958,33 +995,18 @@ function renderInvEOL(){
     const loads=(byCommodity[comm.id]||[]);
     if(!loads.length)return;
     const kgDisp=loads.reduce((a,ld)=>a+(ld.peso-(ld.pesoVendido||0)),0);
-    const valor=comm.valor*kgDisp;
-    const esDisp=comm.tipo==='disposicion';
-    if(!esDisp)totalValor+=valor; // solo suma ingresos al total positivo
-    totalKg+=kgDisp;
-    const valorColor=esDisp?'color:#c0392b':'color:#1a7a3c';
-    const dispTag=esDisp?' <span class="badge warning" style="font-size:11px">Disposición</span>':'';
+    const valor=comm.valor*kgDisp;totalValor+=valor;totalKg+=kgDisp;
     html+=`<div class="card"><div class="row center" style="margin-bottom:10px">
-      <div style="flex:1"><strong style="font-size:15px">${comm.nombre}</strong>${dispTag}</div>
-      <div style="text-align:right"><span style="font-size:15px;font-weight:600;${valorColor}">$${valor.toFixed(2)}</span><br><span style="font-size:12px;color:#888">${kgDisp.toFixed(2)} kg disponibles</span></div>
+      <div style="flex:1"><strong style="font-size:15px">${comm.nombre}</strong></div>
+      <div style="text-align:right"><span style="font-size:15px;font-weight:600">$${valor.toFixed(2)}</span><br><span style="font-size:12px;color:#888">${kgDisp.toFixed(2)} kg disponibles</span></div>
     </div>
     <table><thead><tr><th>#Load</th><th>Peso total</th><th>Vendido</th><th>Disponible</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
     ${loads.map(ld=>{const disp=ld.peso-(ld.pesoVendido||0);const est=disp<=0?'<span class="badge neutral">Vendido</span>':disp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';return`<tr><td>L-${String(ld.num).padStart(4,'0')}</td><td>${ld.peso.toFixed(2)} kg</td><td>${(ld.pesoVendido||0).toFixed(2)} kg</td><td>${disp.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${est}</td></tr>`;}).join('')}
     </tbody></table></div>`;
   });
-  // Calculate disposition total separately
-  let totalDisposicion=0;
-  comms.forEach(comm=>{
-    if(comm.tipo!=='disposicion')return;
-    const loads=(byCommodity[comm.id]||[]);
-    const kgDisp=loads.reduce((a,ld)=>a+(ld.peso-(ld.pesoVendido||0)),0);
-    totalDisposicion+=comm.valor*kgDisp;
-  });
   metricsEl.innerHTML=`
-    <div class="metric eol-metric"><div class="label">Valor neto inventario</div><div class="value" style="color:#1a7a3c">$${(totalValor+totalDisposicion).toFixed(0)}</div></div>
-    <div class="metric eol-metric"><div class="label">Ingresos</div><div class="value" style="font-size:16px;color:#1a7a3c">$${totalValor.toFixed(0)}</div></div>
-    <div class="metric eol-metric"><div class="label">Disposición (costo)</div><div class="value" style="font-size:16px;color:#c0392b">$${totalDisposicion.toFixed(0)}</div></div>
-    <div class="metric eol-metric"><div class="label">Kg totales</div><div class="value">${totalKg.toFixed(0)} kg</div></div>
+    <div class="metric eol-metric"><div class="label">Valor total inventario EOL</div><div class="value">$${totalValor.toFixed(0)}</div></div>
+    <div class="metric eol-metric"><div class="label">Kg totales disponibles</div><div class="value">${totalKg.toFixed(0)} kg</div></div>
     <div class="metric eol-metric"><div class="label">Loads activos</div><div class="value">${pState.loads.filter(ld=>ld.estado!=='vendido').length}</div></div>`;
   el.innerHTML=html||'<div class="card" style="text-align:center;padding:32px;color:#888">Sin loads en inventario.</div>';
 }
@@ -1054,9 +1076,9 @@ function addSoLoadRow(){
   if(!loadsDisp.length){alert('Sin loads disponibles.');return;}
   const comms=getAdminCommodities();
   const row=document.createElement('div');row.className='sorting-row';
-  row.innerHTML=`<select style="flex:2" onchange="onSoLoadSelectChange(this);updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);const esDisp=c&&c.tipo==='disposicion';return`<option value="${ld.id}" data-min="${c?c.valor:0}" data-disp="${esDisp?1:0}">L-${String(ld.num).padStart(4,'0')} ${c?c.nombre:''}${esDisp?' [Disp]':''} (${disp.toFixed(2)} kg)</option>`;}).join('')}</select>
+  row.innerHTML=`<select style="flex:2" onchange="updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);return`<option value="${ld.id}">L-${String(ld.num).padStart(4,'0')} ${c?c.nombre:''} (${disp.toFixed(2)} kg disp.)</option>`;}).join('')}</select>
   <input type="number" placeholder="kg a vender" min="0" step="0.01" style="flex:1;max-width:110px" oninput="updateSoTotal()">
-  <input type="number" placeholder="$/kg (puede ser neg.)" step="0.01" style="flex:1;max-width:120px" oninput="updateSoTotal()">
+  <input type="number" placeholder="$/kg" min="0" step="0.01" style="flex:1;max-width:90px" oninput="updateSoTotal()">
   <button class="btn small danger" onclick="this.parentElement.remove();updateSoTotal()">✕</button>`;
   document.getElementById('so-load-rows').appendChild(row);updateSoTotal();
 }
@@ -1084,66 +1106,30 @@ function renderSoAssetsSeleccionados(){
   const sel=Array.from(_soSelectedAssets).map(id=>pState.assets.find(x=>x.id===id)).filter(Boolean);
   const el=document.getElementById('so-assets-seleccionados');
   if(!sel.length){el.innerHTML='';return;}
-  const cats=getAdminCatARS();
-  el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:8px;padding-top:8px;border-top:1px solid #e0e0d8">${sel.length} assets seleccionados — ajusta precios si es necesario:</div>`+
-    sel.map(a=>{
-      const cat=cats.find(x=>x.id===a.catId);
-      const minPrecio=a.precio||0;
-      return`<div style="display:flex;align-items:center;gap:8px;padding:6px;background:#f8f8f4;border-radius:6px;margin-bottom:4px">
-        <div style="flex:2;font-size:13px"><strong>A-${String(a.num).padStart(5,'0')}</strong> · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'}</div>
-        <div style="flex:1;min-width:100px">
-          <input type="number" id="so_precio_${a.id}" value="${minPrecio.toFixed(2)}" min="${minPrecio}" step="0.01"
-            style="font-size:13px;padding:4px 8px" oninput="updateSoTotal()">
-          <div style="font-size:10px;color:#888">mín $${minPrecio.toFixed(2)}</div>
-        </div>
-      </div>`;
-    }).join('');
-  updateSoTotal();
-}
-function onSoLoadSelectChange(sel){
-  // Pre-fill min price when commodity changes
-  const opt=sel.options[sel.selectedIndex];if(!opt)return;
-  const minVal=parseFloat(opt.dataset.min)||0;
-  const row=sel.closest('.sorting-row');if(!row)return;
-  const priceInp=row.querySelectorAll('input[type=number]')[1];
-  if(priceInp)priceInp.value=minVal.toFixed(2);
-  updateSoTotal();
+  const total=sel.reduce((a,x)=>a+(x.precio||0),0);
+  el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:6px">${sel.length} assets seleccionados — Total: $${total.toFixed(2)}</div>`;
 }
 function updateSoTotal(){
-  let total=0;let valid=true;let warnings=[];
+  let total=0;let valid=true;
   if(_soTab==='loads'){
     const rows=document.querySelectorAll('#so-load-rows .sorting-row');
     rows.forEach(row=>{
       const inputs=row.querySelectorAll('input[type=number]');
       const sel=row.querySelector('select');if(!sel)return;
-      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;
-      const pxkg=parseFloat(inputs[1].value)||0;
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
       const ld=pState.loads.find(x=>x.id===loadId);
-      if(ld&&kg){
+      if(ld){
         const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
         const minPrecio=comm?comm.valor:0;
-        const esDisposicion=comm&&comm.tipo==='disposicion';
-        // Regla: precio >= minPrecio siempre (funciona para positivos y negativos)
-        if(pxkg<minPrecio){
-          valid=false;
-          warnings.push(`${comm?comm.nombre:'Commodity'}: precio $${pxkg}/kg ${esDisposicion?'más negativo que':'menor al'} mínimo $${minPrecio}/kg`);
-        }
+        if(pxkg<minPrecio&&pxkg>0)valid=false;
         total+=kg*pxkg;
       }
     });
   } else {
-    Array.from(_soSelectedAssets).forEach(id=>{
-      const ast=pState.assets.find(x=>x.id===id);if(!ast)return;
-      const inp=document.getElementById('so_precio_'+id);
-      const precio=inp?parseFloat(inp.value)||0:ast.precio||0;
-      const minPrecio=ast.precio||0;
-      if(precio<minPrecio){valid=false;warnings.push(`A-${String(ast.num).padStart(5,'0')}: precio $${precio} menor al mínimo $${minPrecio}`);}
-      total+=precio;
-    });
+    total=Array.from(_soSelectedAssets).reduce((a,id)=>{const ast=pState.assets.find(x=>x.id===id);return a+(ast?ast.precio||0:0);},0);
   }
   document.getElementById('so-total-preview').innerHTML=`<strong>Total estimado: $${total.toFixed(2)}</strong>`;
-  document.getElementById('so-precio-alert').innerHTML=!valid
-    ?`<div class="alert danger">⚠ Precios fuera de rango:<br>${warnings.map(w=>`· ${w}`).join('<br>')}</div>`:'';
+  document.getElementById('so-precio-alert').innerHTML=!valid?'<div class="alert danger">⚠ Uno o más precios están por debajo del mínimo autorizado.</div>':'';
 }
 
 function saveSalesOrder(){
@@ -1159,9 +1145,7 @@ function saveSalesOrder(){
       const ld=pState.loads.find(x=>x.id===loadId);if(!ld)return;
       const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
       const minPrecio=comm?comm.valor:0;
-      const esDisp=comm&&comm.tipo==='disposicion';
-      // precio >= minPrecio: para disposición ambos negativos, para ingreso ambos positivos
-      if(pxkg<minPrecio){if(!confirm(`Precio $${pxkg}/kg es ${esDisp?'más negativo que':'menor al'} mínimo autorizado $${minPrecio}/kg. ¿Continuar?`))return;}
+      if(pxkg<minPrecio){if(!confirm(`Precio $${pxkg}/kg es menor al mínimo $${minPrecio}/kg. ¿Continuar?`))return;}
       const subtotal=kg*pxkg;monto+=subtotal;
       items.push({loadId,kg,pxkg,subtotal,commodityId:ld.commodityId});
       // Update load
@@ -1169,17 +1153,11 @@ function saveSalesOrder(){
       if(li>=0){pState.loads[li].pesoVendido=(pState.loads[li].pesoVendido||0)+kg;if(pState.loads[li].pesoVendido>=pState.loads[li].peso)pState.loads[li].estado='vendido';}
     });
   } else {
-    let precioInvalido=false;
     Array.from(_soSelectedAssets).forEach(id=>{
       const ast=pState.assets.find(x=>x.id===id);if(!ast)return;
-      const inp=document.getElementById('so_precio_'+id);
-      const precio=inp?parseFloat(inp.value)||0:ast.precio||0;
-      const minPrecio=ast.precio||0;
-      if(precio<minPrecio)precioInvalido=true;
-      items.push({assetId:id,precio});monto+=precio;
+      items.push({assetId:id,precio:ast.precio||0});monto+=ast.precio||0;
       const ai=pState.assets.findIndex(x=>x.id===id);if(ai>=0)pState.assets[ai].estado='vendido';
     });
-    if(precioInvalido){if(!confirm('Uno o más precios están por debajo del mínimo autorizado. ¿Continuar?'))return;}
   }
   if(!items.length){alert('Agrega items a la sales order.');return;}
   const num=pNextId.so++;
@@ -1262,11 +1240,153 @@ function renderCompradores(){
   }).join('');
 }
 
+// ── DIAGNÓSTICO DESDE QR ──────────────────────────────────
+function parseDiagQR(){
+  const params=new URLSearchParams(window.location.search);
+  if(!params.get('diag'))return null;
+  return{
+    marca:params.get('marca')||'',
+    modelo:params.get('modelo')||'',
+    serial:params.get('serial')||'',
+    cpu:params.get('cpu')||'',
+    ram:params.get('ram')||'',
+    disco:params.get('disco')||'',
+    discoTipo:params.get('discoTipo')||'',
+    gpu:params.get('gpu')||'',
+    batSalud:params.get('batSalud')||'',
+    smart:params.get('smart')||'',
+    fecha:params.get('fecha')||''
+  };
+}
+
+let _diagData=null;
+
+// Inyecta los datos del diagnóstico en los campos del template DESPUÉS de que se rendericen
+// Es llamada desde onAssetCatChange al final — sin override, sin recursión
+function injectDiagToTemplate(){
+  const d=window._diagForTemplate;
+  if(!d)return;
+  const templateRows=document.querySelectorAll('#asset-template-fields .template-field');
+  templateRows.forEach(row=>{
+    const labelEl=row.querySelector('label');
+    if(!labelEl)return;
+    const label=labelEl.textContent.toLowerCase();
+    let value='';
+    if(label.includes('procesador')||label.includes('cpu')||label.includes('processor'))value=d.cpu;
+    else if(label.includes('ram')||label.includes('memoria'))value=d.ram+' GB';
+    else if(label.includes('disco')||label.includes('hd')||label.includes('storage')||label.includes('almacenamiento'))value=d.disco+' GB '+d.discoTipo;
+    else if(label.includes('gpu')||label.includes('video')||label.includes('gráfico'))value=d.gpu;
+    else if(label.includes('batería')||label.includes('bateria')||label.includes('battery'))value=d.batSalud;
+    else if(label.includes('smart'))value=d.smart;
+    if(value&&value!=='N/A'){
+      const inp=row.querySelector('input[type=text],textarea');
+      if(inp&&!inp.value){
+        inp.value=value;
+        inp.classList.add('prefilled');
+        inp.addEventListener('animationend',()=>inp.classList.remove('prefilled'),{once:true});
+      }
+      const sel=row.querySelector('select');
+      if(sel){
+        Array.from(sel.options).forEach(opt=>{
+          if(opt.text.toLowerCase().includes(value.toLowerCase().substring(0,6)))sel.value=opt.value;
+        });
+      }
+    }
+  });
+}
+
+function mostrarDiagBanner(d){
+  const el=document.getElementById('diag-banner');
+  const chips=document.getElementById('diag-data-chips');
+  if(!el||!chips)return;
+  const smartOk=d.smart&&d.smart.includes('PASSED');
+  const smartChip=d.smart&&d.smart!=='N/A'
+    ?`<span class="diag-chip ${smartOk?'ok':'bad'}">${smartOk?'✓ SMART OK':'✗ SMART FAIL'}</span>`:'';
+  const batPct=parseInt(d.batSalud)||0;
+  chips.innerHTML=`
+    <span class="diag-chip ok">${d.marca} ${d.modelo}</span>
+    ${d.serial&&d.serial!=='N/A'?`<span class="diag-chip">S/N: ${d.serial}</span>`:''}
+    ${d.cpu&&d.cpu!=='N/A'?`<span class="diag-chip">${d.cpu}</span>`:''}
+    ${d.ram&&d.ram!=='N/A'?`<span class="diag-chip ok">${d.ram} GB RAM</span>`:''}
+    ${d.disco&&d.disco!=='N/A'?`<span class="diag-chip ok">${d.disco} GB ${d.discoTipo}</span>`:''}
+    ${smartChip}
+    ${d.batSalud&&d.batSalud!=='N/A'?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}">Bat: ${d.batSalud}</span>`:''}
+    <span style="font-size:10px;color:#888;margin-left:8px">Diagnóstico: ${d.fecha}</span>`;
+  el.style.display='flex';
+  // Navegar automáticamente a ARS
+  document.querySelectorAll('.nav button').forEach(btn=>{
+    if(btn.textContent.trim()==='ARS')btn.click();
+  });
+}
+
+function abrirAssetDesdeQR(){
+  if(!_diagData)return;
+  const d=_diagData;
+
+  // Guardar para inyección en template
+  window._diagForTemplate=d;
+
+  // Abrir modal de nuevo asset
+  openModalAsset();
+
+  // Pre-llenar campos principales con animación
+  [['asset-serial',d.serial],['asset-marca',d.marca],['asset-modelo',d.modelo]].forEach(([id,val])=>{
+    if(!val||val==='N/A')return;
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.value=val;
+    el.classList.add('prefilled');
+    el.addEventListener('animationend',()=>el.classList.remove('prefilled'),{once:true});
+  });
+
+  // Intentar auto-seleccionar categoría por keywords
+  const cats=getAdminCatARS();
+  const catSel=document.getElementById('asset-categoria');
+  if(catSel&&cats.length){
+    const keywords=['laptop','notebook','computadora','pc','desktop','all-in-one'];
+    const match=cats.find(cat=>keywords.some(kw=>cat.nombre.toLowerCase().includes(kw)));
+    if(match){
+      catSel.value=match.id;
+      onAssetCatChange(); // esto llama injectDiagToTemplate al final
+    } else {
+      // Aunque no haya match de categoría, intentar inyectar en lo que ya está renderizado
+      injectDiagToTemplate();
+    }
+  }
+
+  checkAssetMatch();
+
+  // Mostrar recuadro de datos de diagnóstico dentro del modal (solo si no existe ya)
+  if(!document.getElementById('diag-modal-info')){
+    const diagSection=document.createElement('div');
+    diagSection.id='diag-modal-info';
+    diagSection.style.cssText='margin-bottom:12px;padding:12px;background:#f0f8f4;border-radius:8px;border:1px solid #a0d8b0;font-size:12px';
+    diagSection.innerHTML=`
+      <div style="font-weight:600;color:#1a7a3c;margin-bottom:6px">✓ Datos del diagnóstico hardware</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;line-height:1.8">
+        ${d.cpu&&d.cpu!=='N/A'?`<div><span style="color:#888">CPU:</span> ${d.cpu}</div>`:''}
+        ${d.ram&&d.ram!=='N/A'?`<div><span style="color:#888">RAM:</span> ${d.ram} GB</div>`:''}
+        ${d.disco&&d.disco!=='N/A'?`<div><span style="color:#888">Disco:</span> ${d.disco} GB ${d.discoTipo}</div>`:''}
+        ${d.gpu&&d.gpu!=='N/A'?`<div><span style="color:#888">GPU:</span> ${d.gpu}</div>`:''}
+        ${d.batSalud&&d.batSalud!=='N/A'?`<div><span style="color:#888">Batería:</span> ${d.batSalud}</div>`:''}
+        ${d.smart&&d.smart!=='N/A'?`<div><span style="color:#888">SMART:</span> ${d.smart}</div>`:''}
+      </div>`;
+    const modalTitle=document.querySelector('#modal-asset h3');
+    if(modalTitle)modalTitle.after(diagSection);
+  }
+
+  // Ocultar banner ahora que el modal está abierto
+  document.getElementById('diag-banner').style.display='none';
+}
+
 // ── INIT ─────────────────────────────────────────────────
-document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.style.display='none';});});
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)closeModal(o.id);});});
 checkAuth();loadPState();
 // Initial render
 renderSortings();renderDestructions();renderLoads();
+// Check for QR diagnostic data
+_diagData=parseDiagQR();
+if(_diagData)mostrarDiagBanner(_diagData);
 </script>
 </body>
 </html>
