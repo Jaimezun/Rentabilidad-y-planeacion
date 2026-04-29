@@ -1842,10 +1842,12 @@ function abrirModalDia(ds,area){
 
   modalDiaState={area,fecha:ds,asignaciones:{}};
 
-  // Load existing assignments for this day
+  // Load existing assignments for this day — solo para operadores activos del área
+  const activeOpIds=new Set(ops.map(o=>o.id));
   if(dias[ds]){
     Object.entries(dias[ds]).forEach(([opId,asigs])=>{
-      modalDiaState.asignaciones[opId]=asigs.map((a,i)=>({loteId:a.loteId,orden:i}));
+      if(activeOpIds.has(opId))
+        modalDiaState.asignaciones[opId]=asigs.map((a,i)=>({loteId:a.loteId,orden:i}));
     });
   }
 
@@ -2012,8 +2014,9 @@ function guardarDia(){
   // Process operators sequentially, tracking minutes committed per lote today
   const trabajadoHoy={}; // loteId -> total mins committed so far this day across all ops
   const diasArea=area==='eol'?state.diasEOL:state.diasARS;
+  const validOpIds=new Set((area==='eol'?state.operadoresEOL:state.operadoresARS).filter(o=>o.activo!==false).map(o=>o.id));
 
-  const allOps=Object.keys(modalDiaState.asignaciones);
+  const allOps=Object.keys(modalDiaState.asignaciones).filter(opId=>validOpIds.has(opId));
   allOps.forEach(opId=>{
     const asigOrden=modalDiaState.asignaciones[opId];
     if(!asigOrden||!asigOrden.length)return;
