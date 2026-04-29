@@ -710,7 +710,7 @@ function updateLoadValor(){
   const commId=document.getElementById('load-commodity').value;
   const peso=parseFloat(document.getElementById('load-peso').value)||0;
   const comm=getAdminCommodities().find(x=>x.id===commId);
-  if(comm&&peso>0)document.getElementById('load-valor-preview').textContent=`Valor estimado: $${(comm.valor*peso).toFixed(2)}`;
+  if(comm&&peso>0){const vs=comm.tipo==='disposicion'?-1:1;document.getElementById('load-valor-preview').textContent=`Valor estimado: $${(vs*comm.valor*peso).toFixed(2)}`;}
   else document.getElementById('load-valor-preview').textContent='';
 }
 function saveLoad(){
@@ -720,7 +720,6 @@ function saveLoad(){
   const fecha=document.getElementById('load-fecha').value;
   if(!commodityId||!peso||!fecha){alert('Completa todos los campos.');return;}
   const num=id?(pState.loads.find(x=>x.id===id)||{}).num||pNextId.ld:pNextId.ld;
-  if(!id)pNextId.ld++;
   const obj={id:id||puid('ld'),num,commodityId,peso,fecha,estado:'disponible',pesoVendido:0};
   if(id){const i=pState.loads.findIndex(x=>x.id===id);if(i>=0)pState.loads[i]={...pState.loads[i],...obj};}else pState.loads.push(obj);
   savePState();closeModal('modal-load');renderLoads();
@@ -735,11 +734,12 @@ function renderLoads(){
   tb.innerHTML=loads.map(ld=>{
     const comm=comms.find(x=>x.id===ld.commodityId);
     const pesoDisp=ld.peso-(ld.pesoVendido||0);
-    const valor=comm?(comm.valor*pesoDisp).toFixed(2):'N/A';
+    const vs=comm&&comm.tipo==='disposicion'?-1:1;
+    const valor=comm?(vs*comm.valor*pesoDisp).toFixed(2):'N/A';
     const estBadge=ld.estado==='vendido'?'<span class="badge neutral">Vendido</span>':pesoDisp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';
-    return`<tr><td><strong>L-${String(ld.num).padStart(4,'0')}</strong></td><td>${comm?comm.nombre:'—'}</td>
+    return`<tr><td><strong>L-${String(ld.num).padStart(7,'0')}</strong></td><td>${comm?comm.nombre:'—'}</td>
     <td>${pesoDisp.toFixed(2)} / ${ld.peso.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${estBadge}</td>
-    <td class="${comm&&comm.valor>0?'price-ok':''}">$${valor}</td>
+    <td class="${vs*comm?.valor>0?'price-ok':'price-warn'}">$${valor}</td>
     <td style="text-align:right"><button class="btn small" onclick="openModalLoad('${ld.id}')">Editar</button> <button class="btn small danger" onclick="deleteLoad('${ld.id}')">Eliminar</button></td></tr>`;
   }).join('');
 }
@@ -877,7 +877,6 @@ function saveAsset(){
   if(minPrecio>0&&precio<minPrecio){if(!confirm(`Precio $${precio} es menor al mínimo autorizado $${minPrecio}. ¿Continuar?`))return;}
   if(!precio&&!confirm('Sin precio asignado. ¿Continuar?'))return;
   const num=id?(pState.assets.find(x=>x.id===id)||{}).num||pNextId.a:pNextId.a;
-  if(!id)pNextId.a++;
   const templateData=getTemplateData();
   const destino=document.getElementById('asset-destino').value;
   const obj={
@@ -923,7 +922,7 @@ function renderAssets(){
     const estBadge=a.estado==='vendido'?'<span class="badge neutral">Vendido</span>':a.estado==='scrap_pendiente'?'<span class="badge scrap">Scrap</span>':a.estado==='scrap_enviado'?'<span class="badge danger">Scrap enviado</span>':'<span class="badge success">Disponible</span>';
     const pWarn=a.precioManual&&!a.precio?'<span class="badge danger" style="font-size:10px">Sin precio</span>':'';
     return`<tr>
-      <td><strong>A-${String(a.num).padStart(5,'0')}</strong></td>
+      <td><strong>A-${String(a.num).padStart(7,'0')}</strong></td>
       <td>${a.assetCliente||'—'}</td>
       <td>${l?l.nombre:'—'}</td>
       <td>${cat?cat.nombre:'—'}</td>
@@ -947,7 +946,7 @@ function renderScrap(){
   else tb.innerHTML=scraps.map(a=>{
     const l=st&&(st.lotes||[]).find(x=>x.id===a.loteId);const cat=cats.find(x=>x.id===a.catId);
     const est=a.estado==='scrap_enviado'?'<span class="badge danger">Enviado a EOL</span>':'<span class="badge warning">Pendiente</span>';
-    return`<tr><td>A-${String(a.num).padStart(5,'0')}</td><td>${l?l.nombre:'—'}</td><td>${cat?cat.nombre:'—'}</td><td>${a.marca} ${a.modelo}</td><td><code style="font-size:11px">${a.serial||'—'}</code></td><td>${est}</td><td style="text-align:right"><button class="btn small" onclick="openModalAsset('${a.id}')">Editar</button></td></tr>`;
+    return`<tr><td>A-${String(a.num).padStart(7,'0')}</td><td>${l?l.nombre:'—'}</td><td>${cat?cat.nombre:'—'}</td><td>${a.marca} ${a.modelo}</td><td><code style="font-size:11px">${a.serial||'—'}</code></td><td>${est}</td><td style="text-align:right"><button class="btn small" onclick="openModalAsset('${a.id}')">Editar</button></td></tr>`;
   }).join('');
   // Lotes scrap enviados
   const el=document.getElementById('lotes-scrap-list');
@@ -967,7 +966,7 @@ function openModalLoteScrap(){
   const st=getAdminState();const cats=getAdminCatARS();
   document.getElementById('scrap-disponibles').innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:8px">Selecciona assets para el lote scrap:</div>`+
     disponibles.map(a=>{const cat=cats.find(x=>x.id===a.catId);const l=st&&(st.lotes||[]).find(x=>x.id===a.loteId);
-    return`<div style="display:flex;align-items:center;gap:8px;padding:6px;border-bottom:1px solid #f0f0ea"><input type="checkbox" id="scrap_cb_${a.id}" value="${a.id}"> <label for="scrap_cb_${a.id}" style="font-size:13px;cursor:pointer">A-${String(a.num).padStart(5,'0')} · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'} · de: ${l?l.nombre:'—'}</label></div>`;
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px;border-bottom:1px solid #f0f0ea"><input type="checkbox" id="scrap_cb_${a.id}" value="${a.id}"> <label for="scrap_cb_${a.id}" style="font-size:13px;cursor:pointer">A-${String(a.num).padStart(7,'0')} · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'} · de: ${l?l.nombre:'—'}</label></div>`;
   }).join('');
   openModal('modal-lote-scrap');
 }
@@ -995,13 +994,14 @@ function renderInvEOL(){
     const loads=(byCommodity[comm.id]||[]);
     if(!loads.length)return;
     const kgDisp=loads.reduce((a,ld)=>a+(ld.peso-(ld.pesoVendido||0)),0);
-    const valor=comm.valor*kgDisp;totalValor+=valor;totalKg+=kgDisp;
+    const vs=comm.tipo==='disposicion'?-1:1;
+    const valor=vs*comm.valor*kgDisp;totalValor+=valor;totalKg+=kgDisp;
     html+=`<div class="card"><div class="row center" style="margin-bottom:10px">
       <div style="flex:1"><strong style="font-size:15px">${comm.nombre}</strong></div>
       <div style="text-align:right"><span style="font-size:15px;font-weight:600">$${valor.toFixed(2)}</span><br><span style="font-size:12px;color:#888">${kgDisp.toFixed(2)} kg disponibles</span></div>
     </div>
     <table><thead><tr><th>#Load</th><th>Peso total</th><th>Vendido</th><th>Disponible</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
-    ${loads.map(ld=>{const disp=ld.peso-(ld.pesoVendido||0);const est=disp<=0?'<span class="badge neutral">Vendido</span>':disp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';return`<tr><td>L-${String(ld.num).padStart(4,'0')}</td><td>${ld.peso.toFixed(2)} kg</td><td>${(ld.pesoVendido||0).toFixed(2)} kg</td><td>${disp.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${est}</td></tr>`;}).join('')}
+    ${loads.map(ld=>{const disp=ld.peso-(ld.pesoVendido||0);const est=disp<=0?'<span class="badge neutral">Vendido</span>':disp<ld.peso?'<span class="badge warning">Parcial</span>':'<span class="badge success">Disponible</span>';return`<tr><td>L-${String(ld.num).padStart(7,'0')}</td><td>${ld.peso.toFixed(2)} kg</td><td>${(ld.pesoVendido||0).toFixed(2)} kg</td><td>${disp.toFixed(2)} kg</td><td>${ld.fecha}</td><td>${est}</td></tr>`;}).join('')}
     </tbody></table></div>`;
   });
   metricsEl.innerHTML=`
@@ -1026,7 +1026,7 @@ function renderInvARS(){
   let assets=pState.assets.filter(a=>a.destino==='Reventa');
   if(srch)assets=assets.filter(a=>(a.marca+' '+a.modelo+' '+a.serial+' '+(a.templateData&&Object.values(a.templateData).join(' ')||'')).toLowerCase().includes(srch.toLowerCase()));
   if(filtCat)assets=assets.filter(a=>a.catId===filtCat);
-  const totalValor=assets.reduce((a,x)=>a+(x.precio||0),0);
+  const totalValor=assets.filter(a=>a.estado==='disponible').reduce((a,x)=>a+(x.precio||0),0);
   const metricsEl=document.getElementById('inv-ars-metrics');
   metricsEl.innerHTML=`
     <div class="metric ars-metric"><div class="label">Valor total inventario ARS</div><div class="value">$${totalValor.toFixed(0)}</div></div>
@@ -1036,7 +1036,7 @@ function renderInvARS(){
   tb.innerHTML=assets.map(a=>{
     const cat=cats.find(x=>x.id===a.catId);
     const est=a.estado==='vendido'?'<span class="badge neutral">Vendido</span>':'<span class="badge success">Disponible</span>';
-    return`<tr><td>A-${String(a.num).padStart(5,'0')}</td><td>${cat?cat.nombre:'—'}</td><td>${a.marca} ${a.modelo}</td><td><code style="font-size:11px">${a.serial||'—'}</code></td><td>${a.grado||'—'}</td><td>${est}</td><td class="price-ok">$${(a.precio||0).toFixed(2)}</td></tr>`;
+    return`<tr><td>A-${String(a.num).padStart(7,'0')}</td><td>${cat?cat.nombre:'—'}</td><td>${a.marca} ${a.modelo}</td><td><code style="font-size:11px">${a.serial||'—'}</code></td><td>${a.grado||'—'}</td><td>${est}</td><td class="price-ok">$${(a.precio||0).toFixed(2)}</td></tr>`;
   }).join('');
 }
 
@@ -1076,9 +1076,9 @@ function addSoLoadRow(){
   if(!loadsDisp.length){alert('Sin loads disponibles.');return;}
   const comms=getAdminCommodities();
   const row=document.createElement('div');row.className='sorting-row';
-  row.innerHTML=`<select style="flex:2" onchange="updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);return`<option value="${ld.id}">L-${String(ld.num).padStart(4,'0')} ${c?c.nombre:''} (${disp.toFixed(2)} kg disp.)</option>`;}).join('')}</select>
+  row.innerHTML=`<select style="flex:2" onchange="updateSoTotal()">${loadsDisp.map(ld=>{const c=comms.find(x=>x.id===ld.commodityId);const disp=ld.peso-(ld.pesoVendido||0);return`<option value="${ld.id}">L-${String(ld.num).padStart(7,'0')} ${c?c.nombre:''} (${disp.toFixed(2)} kg disp.)</option>`;}).join('')}</select>
   <input type="number" placeholder="kg a vender" min="0" step="0.01" style="flex:1;max-width:110px" oninput="updateSoTotal()">
-  <input type="number" placeholder="$/kg" min="0" step="0.01" style="flex:1;max-width:90px" oninput="updateSoTotal()">
+  <input type="number" placeholder="$/kg" step="0.01" style="flex:1;max-width:90px" oninput="updateSoTotal()">
   <button class="btn small danger" onclick="this.parentElement.remove();updateSoTotal()">✕</button>`;
   document.getElementById('so-load-rows').appendChild(row);updateSoTotal();
 }
@@ -1092,7 +1092,7 @@ function renderSoAssetsDisponibles(){
     const cat=cats.find(x=>x.id===a.catId);const sel=_soSelectedAssets.has(a.id);
     return`<div style="display:flex;align-items:center;gap:8px;padding:6px;border-bottom:1px solid #f0f0ea;background:${sel?'#e8f0fe':''}">
       <input type="checkbox" id="so_a_${a.id}" ${sel?'checked':''} onchange="toggleSoAsset('${a.id}')">
-      <label for="so_a_${a.id}" style="flex:1;font-size:13px;cursor:pointer">A-${String(a.num).padStart(5,'0')} · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'} · Serial: ${a.serial||'—'} · $${(a.precio||0).toFixed(2)}</label>
+      <label for="so_a_${a.id}" style="flex:1;font-size:13px;cursor:pointer">A-${String(a.num).padStart(7,'0')} · ${a.marca} ${a.modelo} · ${cat?cat.nombre:'—'} · Serial: ${a.serial||'—'} · $${(a.precio||0).toFixed(2)}</label>
     </div>`;
   }).join('');
   renderSoAssetsSeleccionados();
@@ -1120,8 +1120,9 @@ function updateSoTotal(){
       const ld=pState.loads.find(x=>x.id===loadId);
       if(ld){
         const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
-        const minPrecio=comm?comm.valor:0;
-        if(pxkg<minPrecio&&pxkg>0)valid=false;
+        const isDisp=comm&&comm.tipo==='disposicion';
+        const minPrecio=comm?(isDisp?-comm.valor:comm.valor):0;
+        if(isDisp?pxkg<minPrecio:(pxkg>0&&pxkg<minPrecio))valid=false;
         total+=kg*pxkg;
       }
     });
@@ -1144,8 +1145,9 @@ function saveSalesOrder(){
       if(!loadId||!kg||!pxkg)return;
       const ld=pState.loads.find(x=>x.id===loadId);if(!ld)return;
       const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
-      const minPrecio=comm?comm.valor:0;
-      if(pxkg<minPrecio){if(!confirm(`Precio $${pxkg}/kg es menor al mínimo $${minPrecio}/kg. ¿Continuar?`))return;}
+      const isDisp=comm&&comm.tipo==='disposicion';
+      const minPrecio=comm?(isDisp?-comm.valor:comm.valor):0;
+      if(isDisp?pxkg<minPrecio:(pxkg>0&&pxkg<minPrecio)){if(!confirm(`Precio $${pxkg}/kg está fuera del mínimo autorizado $${minPrecio}/kg. ¿Continuar?`))return;}
       const subtotal=kg*pxkg;monto+=subtotal;
       items.push({loadId,kg,pxkg,subtotal,commodityId:ld.commodityId});
       // Update load
@@ -1183,7 +1185,7 @@ function renderSalesOrders(){
       material=catIds.map(cid=>{const c=cats.find(x=>x.id===cid);return c?c.nombre:'—';}).join(', ');
     }
     return`<tr>
-      <td><strong>SO-${String(so.num).padStart(4,'0')}</strong></td>
+      <td><strong>SO-${String(so.num).padStart(7,'0')}</strong></td>
       <td>${so.fecha}</td>
       <td>${comp?comp.nombre:'—'}</td>
       <td><span class="badge ${so.tipo==='loads'?'eol':'ars'}">${so.tipo==='loads'?'EOL — Loads':'ARS — Assets'}</span> ${material}</td>
@@ -1201,14 +1203,14 @@ function viewSO(id){
   let itemsHtml='';
   if(so.tipo==='loads'){
     itemsHtml=`<table><thead><tr><th>#Load</th><th>Commodity</th><th>Kg vendidos</th><th>$/kg</th><th>Subtotal</th></tr></thead><tbody>${
-      so.items.map(it=>{const ld=pState.loads.find(x=>x.id===it.loadId);const c=comms.find(x=>x.id===it.commodityId);return`<tr><td>L-${ld?String(ld.num).padStart(4,'0'):'—'}</td><td>${c?c.nombre:'—'}</td><td>${it.kg.toFixed(2)} kg</td><td>$${it.pxkg.toFixed(2)}</td><td>$${it.subtotal.toFixed(2)}</td></tr>`;}).join('')
+      so.items.map(it=>{const ld=pState.loads.find(x=>x.id===it.loadId);const c=comms.find(x=>x.id===it.commodityId);return`<tr><td>L-${ld?String(ld.num).padStart(7,'0'):'—'}</td><td>${c?c.nombre:'—'}</td><td>${it.kg.toFixed(2)} kg</td><td>$${it.pxkg.toFixed(2)}</td><td>$${it.subtotal.toFixed(2)}</td></tr>`;}).join('')
     }</tbody></table>`;
   } else {
     itemsHtml=`<table><thead><tr><th>Asset #</th><th>Categoría</th><th>Marca/Modelo</th><th>Serial</th><th>Precio</th></tr></thead><tbody>${
-      so.items.map(it=>{const a=pState.assets.find(x=>x.id===it.assetId);const cat=a?cats.find(x=>x.id===a.catId):null;return`<tr><td>A-${a?String(a.num).padStart(5,'0'):'—'}</td><td>${cat?cat.nombre:'—'}</td><td>${a?a.marca+' '+a.modelo:'—'}</td><td>${a?a.serial||'—':'—'}</td><td>$${it.precio.toFixed(2)}</td></tr>`;}).join('')
+      so.items.map(it=>{const a=pState.assets.find(x=>x.id===it.assetId);const cat=a?cats.find(x=>x.id===a.catId):null;return`<tr><td>A-${a?String(a.num).padStart(7,'0'):'—'}</td><td>${cat?cat.nombre:'—'}</td><td>${a?a.marca+' '+a.modelo:'—'}</td><td>${a?a.serial||'—':'—'}</td><td>$${it.precio.toFixed(2)}</td></tr>`;}).join('')
     }</tbody></table>`;
   }
-  document.getElementById('modal-detail-title').textContent=`SO-${String(so.num).padStart(4,'0')} — ${comp?comp.nombre:'—'}`;
+  document.getElementById('modal-detail-title').textContent=`SO-${String(so.num).padStart(7,'0')} — ${comp?comp.nombre:'—'}`;
   document.getElementById('modal-detail-content').innerHTML=`
     <div class="metric-grid"><div class="metric"><div class="label">Fecha</div><div class="value" style="font-size:16px">${so.fecha}</div></div><div class="metric"><div class="label">Tipo</div><div class="value" style="font-size:14px">${so.tipo==='loads'?'EOL Loads':'ARS Assets'}</div></div><div class="metric"><div class="label">Monto total</div><div class="value" style="color:#1a7a3c">$${so.monto.toFixed(2)}</div></div></div>
     ${itemsHtml}`;

@@ -673,7 +673,7 @@ tr:hover td{background:#fafaf8}
   <h3 id="modal-lote-title">Nuevo lote</h3>
   <input type="hidden" id="lote-edit-id">
   <div class="row">
-    <div class="field" style="flex:2"><label>Nombre del lote</label><input type="text" id="lote-nombre"></div>
+    <div class="field" style="flex:2"><label>Número de lote</label><input type="text" id="lote-nombre" readonly style="background:#f5f5f0;color:#888;cursor:default"></div>
     <div class="field"><label>Fecha de arribo</label><input type="date" id="lote-arribo"></div>
     <div class="field"><label>Deadline</label><input type="date" id="lote-deadline"></div>
   </div>
@@ -1450,7 +1450,9 @@ function updateLotePreview(){
     <div class="metric"><div class="label">Costo refacc.</div><div class="value" style="color:#c0392b">$${costoRefTotal.toFixed(0)}</div></div>`;
 }
 function openNewLote(){
-  document.getElementById('lote-edit-id').value='';document.getElementById('lote-nombre').value='';document.getElementById('lote-arribo').value='';document.getElementById('lote-deadline').value='';
+  document.getElementById('lote-edit-id').value='';
+  document.getElementById('lote-nombre').value=String(nextId.l).padStart(5,'0');
+  document.getElementById('lote-arribo').value='';document.getElementById('lote-deadline').value='';
   document.getElementById('lote-item-rows').innerHTML='';document.getElementById('lote-ars-rows').innerHTML='';document.getElementById('lote-ref-rows').innerHTML='';
   document.getElementById('lote-preview').innerHTML='';document.getElementById('modal-lote-title').textContent='Nuevo lote';
   document.getElementById('lote-cliente').innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
@@ -1458,9 +1460,10 @@ function openNewLote(){
 }
 function saveLote(){
   const id=document.getElementById('lote-edit-id').value;
-  const nombre=document.getElementById('lote-nombre').value.trim();const fechaArribo=document.getElementById('lote-arribo').value;const deadline=document.getElementById('lote-deadline').value;
+  const nombre=id?document.getElementById('lote-nombre').value.trim():String(nextId.l).padStart(5,'0');
+  const fechaArribo=document.getElementById('lote-arribo').value;const deadline=document.getElementById('lote-deadline').value;
   const clienteId=document.getElementById('lote-cliente').value;
-  if(!nombre||!deadline){alert('Completa nombre y deadline.');return;}
+  if(!deadline){alert('Completa el deadline.');return;}
   const items=Array.from(document.querySelectorAll('#lote-item-rows .row')).map(r=>({hoeId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
   const itemsARS=Array.from(document.querySelectorAll('#lote-ars-rows .row')).map(r=>({itemId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
   const refacciones=Array.from(document.querySelectorAll('#lote-ref-rows .row')).map(r=>({refId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
