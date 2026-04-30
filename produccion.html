@@ -342,39 +342,192 @@ tr:hover td{background:#fafaf8}
 </div></div>
 
 <!-- MODAL ASSET -->
-<div id="modal-asset" class="modal-overlay" style="display:none"><div class="modal wide">
+<div id="modal-asset" class="modal-overlay" style="display:none"><div class="modal wide" style="max-width:820px">
   <h3 id="modal-asset-title">Nuevo asset</h3>
   <input type="hidden" id="asset-edit-id">
-  <div class="row">
-    <div class="field"><label>Lote</label><select id="asset-lote" onchange="onAssetLoteChange()"></select></div>
-    <div class="field"><label>Categoría</label><select id="asset-categoria" onchange="onAssetCatChange()"></select></div>
-  </div>
-  <div class="row">
-    <div class="field"><label># Cliente (opcional)</label><input type="text" id="asset-num-cliente" placeholder="ID del cliente"></div>
-    <div class="field"><label>Serial #</label><input type="text" id="asset-serial"></div>
-  </div>
-  <div class="row">
-    <div class="field"><label>Marca</label><input type="text" id="asset-marca" oninput="checkAssetMatch()"></div>
-    <div class="field"><label>Modelo</label><input type="text" id="asset-modelo" oninput="checkAssetMatch()"></div>
-  </div>
-  <div class="row">
-    <div class="field"><label>Peso neto (kg)</label><input type="number" id="asset-peso" min="0" step="0.01"></div>
-    <div class="field"><label>Grado</label><input type="text" id="asset-grado" placeholder="A, B, C..."></div>
-  </div>
-  <div class="field"><label>Destino</label>
-    <select id="asset-destino">
-      <option value="Reventa">Reventa</option>
-      <option value="Scrap">Scrap</option>
-    </select>
-  </div>
-  <!-- Precio -->
-  <div id="asset-precio-section" style="margin-bottom:12px">
+
+  <!-- SECCIÓN: GENERAL -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#1a1a1a;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">General</div>
+    <div class="row">
+      <div class="field" style="max-width:140px"><label>Asset #</label><input type="text" id="asset-num-display" readonly style="background:#f0f0ea;color:#888;cursor:default"></div>
+      <div class="field"><label>Serial (QR)</label><input type="text" id="asset-serial" oninput="checkAssetMatch()"></div>
+      <div class="field"><label># Serial cliente</label><input type="text" id="asset-num-cliente" placeholder="ID del cliente"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Marca (QR)</label><input type="text" id="asset-marca" oninput="checkAssetMatch()"></div>
+      <div class="field"><label>Modelo (QR)</label><input type="text" id="asset-modelo" oninput="checkAssetMatch()"></div>
+      <div class="field"><label>Part Number (QR)</label><input type="text" id="asset-part-number"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Lote</label><select id="asset-lote"></select></div>
+      <div class="field"><label>Categoría</label><select id="asset-categoria"></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Destino</label>
+        <select id="asset-destino">
+          <option value="Reventa">Reventa</option>
+          <option value="Scrap">Scrap</option>
+        </select>
+      </div>
+      <div class="field"><label>Grado</label><input type="text" id="asset-grado" placeholder="A, B, C..."></div>
+    </div>
     <div id="asset-match-info"></div>
-    <div class="field"><label>Precio ($)</label><input type="number" id="asset-precio" min="0" step="0.01" oninput="checkAssetPrecio()"></div>
+    <div class="row">
+      <div class="field"><label>Precio ($)</label><input type="number" id="asset-precio" min="0" step="0.01" oninput="checkAssetPrecio()"></div>
+    </div>
     <div id="asset-precio-warning"></div>
   </div>
-  <!-- Template fields -->
-  <div id="asset-template-fields"></div>
+
+  <!-- SECCIÓN: PROCESADOR -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Procesador</div>
+    <div class="row">
+      <div class="field" style="flex:2"><label>Tipo de procesador (QR)</label><input type="text" id="asset-cpu" oninput="checkAssetMatch()"></div>
+      <div class="field"><label>Socket (QR)</label><input type="text" id="asset-socket"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: MEMORIA -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Memoria</div>
+    <div class="row">
+      <div class="field"><label>Tamaño (QR)</label><input type="text" id="asset-mem-tamano" placeholder="Ej. 16 GB" oninput="checkAssetMatch()"></div>
+      <div class="field"><label>Velocidad (QR)</label><input type="text" id="asset-mem-velocidad" placeholder="Ej. DDR4-2400"></div>
+      <div class="field"><label>Tipo (QR)</label><input type="text" id="asset-mem-tipo" placeholder="Ej. DDR4"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: DISCO DURO -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Disco Duro</div>
+    <div class="row">
+      <div class="field"><label>HD Removed (QR)</label>
+        <select id="asset-hd-removed">
+          <option value="No">No</option>
+          <option value="Si">Sí</option>
+        </select>
+      </div>
+      <div class="field"><label>Services Performed (manual)</label><input type="text" id="asset-hd-services" placeholder="Ej. Hard Drive Wipe X1"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Manufacturer (QR)</label><input type="text" id="asset-hd-manufacturer"></div>
+      <div class="field"><label>Model (QR)</label><input type="text" id="asset-hd-model"></div>
+      <div class="field"><label>Interface (QR)</label><input type="text" id="asset-hd-interface" placeholder="NVME / SATA"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>HD Serial # (QR)</label><input type="text" id="asset-hd-serial"></div>
+      <div class="field"><label>Source Serial # (QR)</label><input type="text" id="asset-hd-source-serial"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Speed (QR)</label><input type="text" id="asset-hd-speed"></div>
+      <div class="field"><label>Capacity (QR)</label><input type="text" id="asset-hd-capacity" oninput="checkAssetMatch()"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: GPU -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">GPU</div>
+    <div class="row">
+      <div class="field"><label>Fabricante (QR)</label><input type="text" id="asset-gpu-fabricante"></div>
+      <div class="field"><label>Modelo (QR)</label><input type="text" id="asset-gpu-modelo"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>VRAM (QR)</label><input type="text" id="asset-gpu-vram" placeholder="Ej. 4096 MB"></div>
+      <div class="field"><label>Tipo (QR)</label><input type="text" id="asset-gpu-tipo" placeholder="Integrated / Discrete"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: BATERÍA -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Batería</div>
+    <div class="row" style="align-items:center">
+      <div class="field" style="max-width:140px"><label>% Salud (QR)</label><input type="number" id="asset-bat-pct" min="0" max="100" oninput="onBatPctChange()"></div>
+      <div class="field"><label>Categoría (auto)</label><input type="text" id="asset-bat-categoria" readonly style="background:#f0f0ea;color:#888;cursor:default"></div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: DIAGNÓSTICO -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#6b21a8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Diagnóstico</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Teclado</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-teclado" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-teclado" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-teclado" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Display</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-display" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-display" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-display" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Cámara</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camara" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camara" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camara" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Bocinas</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-bocinas" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-bocinas" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-bocinas" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Micrófono</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-microfono" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-microfono" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-microfono" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: COSMÉTICO -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#a05a00;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Cosmético</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-carcasa-rota" style="width:auto"> Carcasa rota</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-carcasa-descolorada" style="width:auto"> Carcasa descolorada</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-cracks-mayores" style="width:auto"> Cracks mayores</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-cracks-menores" style="width:auto"> Cracks menores</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-rallones-pantalla" style="width:auto"> Rallones en pantalla</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-rallones-menores" style="width:auto"> Rallones menores</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="cosm-rallones-mayores" style="width:auto"> Rallones mayores</label>
+    </div>
+  </div>
+
+  <!-- SECCIÓN: FUNCIONAL -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:13px;color:#c0392b;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Funcional</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-ventilador-malo" style="width:auto"> Ventilador malo</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-disco-malo" style="width:auto"> Disco duro malo</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-memoria-mala" style="width:auto"> Memoria mala</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-lcd-crakeado" style="width:auto"> Panel LCD craqueado</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-funcional" style="width:auto"> Funcional</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-sin-disco" style="width:auto"> Sin disco duro</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-sin-poder" style="width:auto"> Sin poder</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-obsoleto" style="width:auto"> Obsoleto</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-motherboard" style="width:auto"> Mother board defectuosa</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-fallido" style="width:auto"> Fallido</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-sin-fuente" style="width:auto"> Sin fuente de alimentación</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-sin-video" style="width:auto"> Sin video</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px;background:#fff;border-radius:6px;border:1px solid #e0e0d8;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="func-password" style="width:auto"> Protegido por password</label>
+    </div>
+  </div>
+
   <div class="modal-footer">
     <button class="btn" onclick="closeModal('modal-asset')">Cancelar</button>
     <button class="btn ars" onclick="saveAsset()">Guardar asset</button>
@@ -748,98 +901,144 @@ function deleteLoad(id){if(!confirm('¿Eliminar?'))return;pState.loads=pState.lo
 // ── ASSETS ────────────────────────────────────────────────
 let _soSelectedAssets=new Set();
 
-function openModalAsset(id){
-  document.getElementById('asset-edit-id').value=id||'';
-  document.getElementById('modal-asset-title').textContent=id?'Editar asset':'Nuevo asset';
-  const lotes=getLotesGanados();
-  document.getElementById('asset-lote').innerHTML=lotes.map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
-  const cats=getAdminCatARS();
-  document.getElementById('asset-categoria').innerHTML=cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
-  ['asset-num-cliente','asset-serial','asset-marca','asset-modelo','asset-grado'].forEach(x=>document.getElementById(x).value='');
-  document.getElementById('asset-peso').value='';
+// Helper: convierte % de batería a categoría
+function getBatCategoria(pct){
+  const n=parseInt(pct)||0;
+  if(n>=80)return'Buena';
+  if(n>=50)return'Media';
+  if(n>=20)return'Mala';
+  return'No funcional';
+}
+
+function clearAssetForm(){
+  // General
+  ['asset-serial','asset-num-cliente','asset-marca','asset-modelo','asset-part-number','asset-grado'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
   document.getElementById('asset-precio').value='';
   document.getElementById('asset-destino').value='Reventa';
   document.getElementById('asset-match-info').innerHTML='';
   document.getElementById('asset-precio-warning').innerHTML='';
-  document.getElementById('asset-template-fields').innerHTML='';
-  if(id){
-    const a=pState.assets.find(x=>x.id===id);
-    if(a){
-      document.getElementById('asset-lote').value=a.loteId;
-      document.getElementById('asset-num-cliente').value=a.assetCliente||'';
-      document.getElementById('asset-serial').value=a.serial||'';
-      document.getElementById('asset-marca').value=a.marca||'';
-      document.getElementById('asset-modelo').value=a.modelo||'';
-      document.getElementById('asset-peso').value=a.pesoNeto||'';
-      document.getElementById('asset-grado').value=a.grado||'';
-      document.getElementById('asset-destino').value=a.destino||'Reventa';
-      document.getElementById('asset-precio').value=a.precio||'';
-      document.getElementById('asset-categoria').value=a.catId;
-      onAssetCatChange(a.templateData||{});
-    }
-  } else {
-    onAssetCatChange({});
-  }
+  // Procesador
+  ['asset-cpu','asset-socket'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  // Memoria
+  ['asset-mem-tamano','asset-mem-velocidad','asset-mem-tipo'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  // HD
+  document.getElementById('asset-hd-removed').value='No';
+  ['asset-hd-services','asset-hd-manufacturer','asset-hd-model','asset-hd-interface','asset-hd-serial','asset-hd-source-serial','asset-hd-speed','asset-hd-capacity'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  // GPU
+  ['asset-gpu-fabricante','asset-gpu-modelo','asset-gpu-vram','asset-gpu-tipo'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  // Batería
+  document.getElementById('asset-bat-pct').value='';
+  document.getElementById('asset-bat-categoria').value='';
+  // Diagnóstico
+  ['teclado','display','camara','bocinas','microfono'].forEach(k=>{
+    const el=document.querySelector(`input[name="asset-diag-${k}"][value="na"]`);if(el)el.checked=true;
+  });
+  // Cosmético
+  ['cosm-carcasa-rota','cosm-carcasa-descolorada','cosm-cracks-mayores','cosm-cracks-menores','cosm-rallones-pantalla','cosm-rallones-menores','cosm-rallones-mayores'].forEach(x=>{const el=document.getElementById(x);if(el)el.checked=false;});
+  // Funcional
+  ['func-ventilador-malo','func-disco-malo','func-memoria-mala','func-lcd-crakeado','func-funcional','func-sin-disco','func-sin-poder','func-obsoleto','func-motherboard','func-fallido','func-sin-fuente','func-sin-video','func-password'].forEach(x=>{const el=document.getElementById(x);if(el)el.checked=false;});
+}
+
+function fillAssetForm(a){
+  document.getElementById('asset-lote').value=a.loteId||'';
+  document.getElementById('asset-categoria').value=a.catId||'';
+  document.getElementById('asset-num-cliente').value=a.assetCliente||'';
+  document.getElementById('asset-serial').value=a.serial||'';
+  document.getElementById('asset-marca').value=a.marca||'';
+  document.getElementById('asset-modelo').value=a.modelo||'';
+  document.getElementById('asset-part-number').value=a.partNumber||'';
+  document.getElementById('asset-grado').value=a.grado||'';
+  document.getElementById('asset-destino').value=a.destino||'Reventa';
+  document.getElementById('asset-precio').value=a.precio||'';
+  // Procesador
+  document.getElementById('asset-cpu').value=a.cpu||'';
+  document.getElementById('asset-socket').value=a.socket||'';
+  // Memoria
+  document.getElementById('asset-mem-tamano').value=a.memTamano||'';
+  document.getElementById('asset-mem-velocidad').value=a.memVelocidad||'';
+  document.getElementById('asset-mem-tipo').value=a.memTipo||'';
+  // HD
+  document.getElementById('asset-hd-removed').value=a.hdRemoved||'No';
+  document.getElementById('asset-hd-services').value=a.hdServices||'';
+  document.getElementById('asset-hd-manufacturer').value=a.hdManufacturer||'';
+  document.getElementById('asset-hd-model').value=a.hdModel||'';
+  document.getElementById('asset-hd-interface').value=a.hdInterface||'';
+  document.getElementById('asset-hd-serial').value=a.hdSerial||'';
+  document.getElementById('asset-hd-source-serial').value=a.hdSourceSerial||'';
+  document.getElementById('asset-hd-speed').value=a.hdSpeed||'';
+  document.getElementById('asset-hd-capacity').value=a.hdCapacity||'';
+  // GPU
+  document.getElementById('asset-gpu-fabricante').value=a.gpuFabricante||'';
+  document.getElementById('asset-gpu-modelo').value=a.gpuModelo||'';
+  document.getElementById('asset-gpu-vram').value=a.gpuVRAM||'';
+  document.getElementById('asset-gpu-tipo').value=a.gpuTipo||'';
+  // Batería
+  document.getElementById('asset-bat-pct').value=a.batPct||'';
+  document.getElementById('asset-bat-categoria').value=a.batCategoria||'';
+  // Diagnóstico
+  ['teclado','display','camara','bocinas','microfono'].forEach(k=>{
+    const val=(a.diag||{})[k]||'na';
+    const el=document.querySelector(`input[name="asset-diag-${k}"][value="${val}"]`);if(el)el.checked=true;
+  });
+  // Cosmético
+  const cosm=a.cosmetico||{};
+  [['cosm-carcasa-rota','carcasaRota'],['cosm-carcasa-descolorada','carcasaDescolorada'],['cosm-cracks-mayores','cracksMayores'],['cosm-cracks-menores','cracksMinores'],['cosm-rallones-pantalla','rallonesPantalla'],['cosm-rallones-menores','rallonesMinores'],['cosm-rallones-mayores','rallonesMayores']].forEach(([elId,key])=>{const el=document.getElementById(elId);if(el)el.checked=!!cosm[key];});
+  // Funcional
+  const func=a.funcional||{};
+  [['func-ventilador-malo','ventiladorMalo'],['func-disco-malo','discoDuroMalo'],['func-memoria-mala','memoriaMala'],['func-lcd-crakeado','lcdCrakeado'],['func-funcional','funcional'],['func-sin-disco','sinDiscoDuro'],['func-sin-poder','sinPoder'],['func-obsoleto','obsoleto'],['func-motherboard','motherboard'],['func-fallido','fallido'],['func-sin-fuente','sinFuente'],['func-sin-video','sinVideo'],['func-password','passwordProtegido']].forEach(([elId,key])=>{const el=document.getElementById(elId);if(el)el.checked=!!func[key];});
+}
+
+function openModalAsset(id){
+  document.getElementById('asset-edit-id').value=id||'';
+  document.getElementById('modal-asset-title').textContent=id?'Editar asset':'Nuevo asset';
+  // Populate selects
+  const lotes=getLotesGanados();
+  document.getElementById('asset-lote').innerHTML=lotes.map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
+  const cats=getAdminCatARS();
+  document.getElementById('asset-categoria').innerHTML=cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  // Set asset number preview
+  const nextNum=id?(pState.assets.find(x=>x.id===id)||{}).num||pNextId.a:pNextId.a;
+  document.getElementById('asset-num-display').value=`A-${String(nextNum).padStart(7,'0')}`;
+  clearAssetForm();
+  if(id){const a=pState.assets.find(x=>x.id===id);if(a)fillAssetForm(a);}
   checkAssetMatch();
   openModal('modal-asset');
 }
 
-function onAssetLoteChange(){}
-
-function onAssetCatChange(existingData){
-  existingData=existingData||{};
-  const catId=document.getElementById('asset-categoria').value;
-  const cats=getAdminCatARS();
-  const cat=cats.find(x=>x.id===catId);
-  const container=document.getElementById('asset-template-fields');
-  if(!cat||!cat.template||!cat.template.length){container.innerHTML='';checkAssetMatch();return;}
-  container.innerHTML='<div style="font-weight:600;font-size:13px;margin-bottom:8px;border-top:1px solid #e0e0d8;padding-top:12px">Campos específicos de la categoría</div>'+
-    cat.template.map(field=>{
-      const val=existingData[field.id]||'';
-      if(field.tipo==='checkbox'){
-        return`<div class="template-field"><label>${field.label}</label><div style="display:flex;gap:16px;margin-top:6px"><label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1a1a"><input type="radio" name="tf_${field.id}" value="si" ${val==='si'?'checked':''}> Sí</label><label style="display:flex;align-items:center;gap:6px;font-weight:400;color:#1a1a1a"><input type="radio" name="tf_${field.id}" value="no" ${val==='no'||!val?'checked':''}> No</label></div></div>`;
-      }
-      if(field.tipo==='dropdown'){
-        return`<div class="template-field"><label>${field.label}</label><select id="tf_${field.id}" style="margin-top:4px">${field.opciones.map(op=>`<option value="${op}" ${val===op?'selected':''}>${op}</option>`).join('')}</select></div>`;
-      }
-      if(field.tipo==='texto'){
-        return`<div class="template-field"><label>${field.label}</label><input type="text" id="tf_${field.id}" value="${val}" placeholder="${field.label}" style="margin-top:4px"></div>`;
-      }
-      return'';
-    }).join('');
+function onBatPctChange(){
+  const pct=document.getElementById('asset-bat-pct').value;
+  if(pct!=='')document.getElementById('asset-bat-categoria').value=getBatCategoria(pct);
+  else document.getElementById('asset-bat-categoria').value='';
   checkAssetMatch();
-  // Si hay datos de diagnóstico pendientes, inyectarlos en los campos del template
-  injectDiagToTemplate();
-}
-
-function getTemplateData(){
-  const catId=document.getElementById('asset-categoria').value;
-  const cats=getAdminCatARS();const cat=cats.find(x=>x.id===catId);
-  if(!cat||!cat.template)return{};
-  const data={};
-  cat.template.forEach(field=>{
-    if(field.tipo==='checkbox'){
-      const radios=document.querySelectorAll(`[name="tf_${field.id}"]`);
-      radios.forEach(r=>{if(r.checked)data[field.id]=r.value;});
-    } else {
-      const el=document.getElementById('tf_'+field.id);
-      if(el)data[field.id]=el.value;
-    }
-  });
-  return data;
 }
 
 function checkAssetMatch(){
   const marca=(document.getElementById('asset-marca')||{}).value||'';
   const modelo=(document.getElementById('asset-modelo')||{}).value||'';
-  const catId=(document.getElementById('asset-categoria')||{}).value||'';
+  const cpu=(document.getElementById('asset-cpu')||{}).value||'';
+  const ramRaw=(document.getElementById('asset-mem-tamano')||{}).value||'';
+  const ramGB=parseFloat(ramRaw)||0;
+  const discoRaw=(document.getElementById('asset-hd-capacity')||{}).value||'';
+  const discoGB=parseFloat(discoRaw)||0;
+  const batCat=(document.getElementById('asset-bat-categoria')||{}).value||'';
   const items=getAdminItemsFuncionales();
-  const match=items.find(it=>it.catId===catId&&it.marca.toLowerCase()===marca.toLowerCase()&&it.modelo.toLowerCase()===modelo.toLowerCase());
   const infoEl=document.getElementById('asset-match-info');
   const precioEl=document.getElementById('asset-precio');
   if(!infoEl||!precioEl)return;
+
+  const match=items.find(it=>{
+    const mMarca=it.marca.toLowerCase()===marca.toLowerCase();
+    const mModelo=it.modelo.toLowerCase()===modelo.toLowerCase();
+    const mCPU=!cpu||!it.procesador||it.procesador.toLowerCase()===cpu.toLowerCase();
+    const mRAM=!ramGB||!it.ram||it.ram===ramGB;
+    const mDisco=!discoGB||!it.disco||it.disco===discoGB;
+    const mBat=!batCat||!it.bateria||it.bateria===batCat;
+    return mMarca&&mModelo&&mCPU&&mRAM&&mDisco&&mBat;
+  });
+
   if(match){
-    infoEl.innerHTML=`<div class="alert success" style="margin-bottom:8px">✓ Match encontrado: <strong>${match.marca} ${match.modelo}</strong> — Precio mínimo: <strong>$${match.precio.toFixed(2)}</strong></div>`;
+    const batBadge=match.bateria?`<span class="badge ${match.bateria==='Buena'?'success':match.bateria==='Media'?'warning':'danger'}">${match.bateria}</span>`:'';
+    infoEl.innerHTML=`<div class="alert success" style="margin-bottom:8px">✓ Match: <strong>${match.marca} ${match.modelo}</strong>${match.procesador?' · '+match.procesador:''} · ${match.ram?match.ram+' GB RAM':''} · ${match.disco?match.disco+' GB':''} ${batBadge} — Precio mín: <strong>$${match.precio.toFixed(2)}</strong></div>`;
     if(!precioEl.value||parseFloat(precioEl.value)<match.precio)precioEl.value=match.precio.toFixed(2);
     precioEl.dataset.minPrecio=match.precio;
   } else if(marca&&modelo){
@@ -859,16 +1058,22 @@ function checkAssetPrecio(){
   const precio=parseFloat(precioEl.value)||0;
   if(minPrecio>0&&precio<minPrecio){
     warnEl.innerHTML=`<div class="alert danger" style="margin-top:4px">Precio inferior al mínimo autorizado ($${minPrecio.toFixed(2)})</div>`;
-  } else {
-    warnEl.innerHTML='';
-  }
+  } else {warnEl.innerHTML='';}
+}
+
+function readDiagFromForm(){
+  const diag={};
+  ['teclado','display','camara','bocinas','microfono'].forEach(k=>{
+    const sel=document.querySelector(`input[name="asset-diag-${k}"]:checked`);
+    diag[k]=sel?sel.value:'na';
+  });
+  return diag;
 }
 
 function saveAsset(){
   const id=document.getElementById('asset-edit-id').value;
   const loteId=document.getElementById('asset-lote').value;
   const catId=document.getElementById('asset-categoria').value;
-  const serial=document.getElementById('asset-serial').value.trim();
   const marca=document.getElementById('asset-marca').value.trim();
   const modelo=document.getElementById('asset-modelo').value.trim();
   if(!loteId||!catId||!marca||!modelo){alert('Completa lote, categoría, marca y modelo.');return;}
@@ -876,26 +1081,76 @@ function saveAsset(){
   const minPrecio=parseFloat(document.getElementById('asset-precio').dataset.minPrecio)||0;
   if(minPrecio>0&&precio<minPrecio){if(!confirm(`Precio $${precio} es menor al mínimo autorizado $${minPrecio}. ¿Continuar?`))return;}
   if(!precio&&!confirm('Sin precio asignado. ¿Continuar?'))return;
-  const num=id?(pState.assets.find(x=>x.id===id)||{}).num||pNextId.a:pNextId.a;
-  const templateData=getTemplateData();
   const destino=document.getElementById('asset-destino').value;
+  const num=id?(pState.assets.find(x=>x.id===id)||{}).num||pNextId.a:pNextId.a;
+  const batPct=document.getElementById('asset-bat-pct').value;
+  // Cosmético
+  const cosmetico={
+    carcasaRota:document.getElementById('cosm-carcasa-rota').checked,
+    carcasaDescolorada:document.getElementById('cosm-carcasa-descolorada').checked,
+    cracksMayores:document.getElementById('cosm-cracks-mayores').checked,
+    cracksMinores:document.getElementById('cosm-cracks-menores').checked,
+    rallonesPantalla:document.getElementById('cosm-rallones-pantalla').checked,
+    rallonesMinores:document.getElementById('cosm-rallones-menores').checked,
+    rallonesMayores:document.getElementById('cosm-rallones-mayores').checked
+  };
+  // Funcional
+  const funcional={
+    ventiladorMalo:document.getElementById('func-ventilador-malo').checked,
+    discoDuroMalo:document.getElementById('func-disco-malo').checked,
+    memoriaMala:document.getElementById('func-memoria-mala').checked,
+    lcdCrakeado:document.getElementById('func-lcd-crakeado').checked,
+    funcional:document.getElementById('func-funcional').checked,
+    sinDiscoDuro:document.getElementById('func-sin-disco').checked,
+    sinPoder:document.getElementById('func-sin-poder').checked,
+    obsoleto:document.getElementById('func-obsoleto').checked,
+    motherboard:document.getElementById('func-motherboard').checked,
+    fallido:document.getElementById('func-fallido').checked,
+    sinFuente:document.getElementById('func-sin-fuente').checked,
+    sinVideo:document.getElementById('func-sin-video').checked,
+    passwordProtegido:document.getElementById('func-password').checked
+  };
   const obj={
     id:id||puid('a'),num,loteId,catId,
     assetCliente:document.getElementById('asset-num-cliente').value.trim(),
-    serial,marca,modelo,
-    pesoNeto:parseFloat(document.getElementById('asset-peso').value)||0,
+    serial:document.getElementById('asset-serial').value.trim(),
+    marca,modelo,
+    partNumber:document.getElementById('asset-part-number').value.trim(),
     grado:document.getElementById('asset-grado').value.trim(),
-    destino,precio,
-    precioManual:!minPrecio,
-    templateData,
+    destino,precio,precioManual:!minPrecio,
+    // Procesador
+    cpu:document.getElementById('asset-cpu').value.trim(),
+    socket:document.getElementById('asset-socket').value.trim(),
+    // Memoria
+    memTamano:document.getElementById('asset-mem-tamano').value.trim(),
+    memVelocidad:document.getElementById('asset-mem-velocidad').value.trim(),
+    memTipo:document.getElementById('asset-mem-tipo').value.trim(),
+    // HD
+    hdRemoved:document.getElementById('asset-hd-removed').value,
+    hdServices:document.getElementById('asset-hd-services').value.trim(),
+    hdManufacturer:document.getElementById('asset-hd-manufacturer').value.trim(),
+    hdModel:document.getElementById('asset-hd-model').value.trim(),
+    hdInterface:document.getElementById('asset-hd-interface').value.trim(),
+    hdSerial:document.getElementById('asset-hd-serial').value.trim(),
+    hdSourceSerial:document.getElementById('asset-hd-source-serial').value.trim(),
+    hdSpeed:document.getElementById('asset-hd-speed').value.trim(),
+    hdCapacity:document.getElementById('asset-hd-capacity').value.trim(),
+    // GPU
+    gpuFabricante:document.getElementById('asset-gpu-fabricante').value.trim(),
+    gpuModelo:document.getElementById('asset-gpu-modelo').value.trim(),
+    gpuVRAM:document.getElementById('asset-gpu-vram').value.trim(),
+    gpuTipo:document.getElementById('asset-gpu-tipo').value.trim(),
+    // Batería
+    batPct:batPct,
+    batCategoria:batPct?getBatCategoria(batPct):'',
+    // Diagnóstico, cosmético, funcional
+    diag:readDiagFromForm(),cosmetico,funcional,
     estado:destino==='Scrap'?'scrap_pendiente':'disponible'
   };
   if(id){const i=pState.assets.findIndex(x=>x.id===id);if(i>=0)pState.assets[i]=obj;}else pState.assets.push(obj);
   savePState();
-  // Limpiar datos de diagnóstico al guardar
   window._diagForTemplate=null;
-  const diagInfo=document.getElementById('diag-modal-info');
-  if(diagInfo)diagInfo.remove();
+  const diagInfo=document.getElementById('diag-modal-info');if(diagInfo)diagInfo.remove();
   closeModal('modal-asset');renderAssets();renderScrap();
 }
 
@@ -912,7 +1167,7 @@ function renderAssets(){
   const filtroDest=(document.getElementById('assets-filtro-destino')||{}).value||'';
   const st=getAdminState();const cats=getAdminCatARS();
   let assets=pState.assets;
-  if(srch)assets=assets.filter(a=>(a.serial+' '+a.marca+' '+a.modelo+' '+(a.templateData&&a.templateData.procesador||'')).toLowerCase().includes(srch.toLowerCase()));
+  if(srch)assets=assets.filter(a=>(a.serial+' '+a.marca+' '+a.modelo+' '+(a.cpu||'')+' '+(a.memTamano||'')).toLowerCase().includes(srch.toLowerCase()));
   if(filtroLote)assets=assets.filter(a=>a.loteId===filtroLote);
   if(filtroDest)assets=assets.filter(a=>a.destino===filtroDest);
   if(!assets.length){tb.innerHTML='<tr><td colspan="10" style="color:#888;text-align:center;padding:32px">Sin assets</td></tr>';return;}
@@ -1024,7 +1279,7 @@ function renderInvARS(){
     catSel.dataset.populated='1';
   }
   let assets=pState.assets.filter(a=>a.destino==='Reventa');
-  if(srch)assets=assets.filter(a=>(a.marca+' '+a.modelo+' '+a.serial+' '+(a.templateData&&Object.values(a.templateData).join(' ')||'')).toLowerCase().includes(srch.toLowerCase()));
+  if(srch)assets=assets.filter(a=>(a.marca+' '+a.modelo+' '+a.serial+' '+(a.cpu||'')+' '+(a.memTamano||'')).toLowerCase().includes(srch.toLowerCase()));
   if(filtCat)assets=assets.filter(a=>a.catId===filtCat);
   const totalValor=assets.filter(a=>a.estado==='disponible').reduce((a,x)=>a+(x.precio||0),0);
   const metricsEl=document.getElementById('inv-ars-metrics');
@@ -1249,13 +1504,38 @@ function parseDiagQR(){
   return{
     marca:params.get('marca')||'',
     modelo:params.get('modelo')||'',
+    partNumber:params.get('partNumber')||'',
     serial:params.get('serial')||'',
+    // Procesador
     cpu:params.get('cpu')||'',
+    socket:params.get('socket')||'',
+    // Memoria
     ram:params.get('ram')||'',
-    disco:params.get('disco')||'',
-    discoTipo:params.get('discoTipo')||'',
-    gpu:params.get('gpu')||'',
+    ramVelocidad:params.get('ramVelocidad')||'',
+    ramTipo:params.get('ramTipo')||'',
+    // HD
+    hdRemoved:params.get('hdRemoved')||'No',
+    hdManufacturer:params.get('hdManufacturer')||'',
+    hdModel:params.get('hdModel')||'',
+    hdInterface:params.get('hdInterface')||'',
+    hdSerial:params.get('hdSerial')||'',
+    hdSourceSerial:params.get('hdSourceSerial')||'',
+    hdSpeed:params.get('hdSpeed')||'',
+    hdCapacity:params.get('hdCapacity')||'',
+    // GPU
+    gpuFabricante:params.get('gpuFabricante')||'',
+    gpuModelo:params.get('gpuModelo')||'',
+    gpuVRAM:params.get('gpuVRAM')||'',
+    gpuTipo:params.get('gpuTipo')||'',
+    // Batería
     batSalud:params.get('batSalud')||'',
+    // Diagnóstico periféricos
+    diagTeclado:params.get('diagTeclado')||'na',
+    diagDisplay:params.get('diagDisplay')||'na',
+    diagCamara:params.get('diagCamara')||'na',
+    diagBocinas:params.get('diagBocinas')||'na',
+    diagMicrofono:params.get('diagMicrofono')||'na',
+    // Meta
     smart:params.get('smart')||'',
     fecha:params.get('fecha')||''
   };
@@ -1263,38 +1543,54 @@ function parseDiagQR(){
 
 let _diagData=null;
 
-// Inyecta los datos del diagnóstico en los campos del template DESPUÉS de que se rendericen
-// Es llamada desde onAssetCatChange al final — sin override, sin recursión
-function injectDiagToTemplate(){
-  const d=window._diagForTemplate;
+// Inyecta datos del QR directamente en los campos hardcodeados del formulario
+function injectDiagToForm(d){
   if(!d)return;
-  const templateRows=document.querySelectorAll('#asset-template-fields .template-field');
-  templateRows.forEach(row=>{
-    const labelEl=row.querySelector('label');
-    if(!labelEl)return;
-    const label=labelEl.textContent.toLowerCase();
-    let value='';
-    if(label.includes('procesador')||label.includes('cpu')||label.includes('processor'))value=d.cpu;
-    else if(label.includes('ram')||label.includes('memoria'))value=d.ram+' GB';
-    else if(label.includes('disco')||label.includes('hd')||label.includes('storage')||label.includes('almacenamiento'))value=d.disco+' GB '+d.discoTipo;
-    else if(label.includes('gpu')||label.includes('video')||label.includes('gráfico'))value=d.gpu;
-    else if(label.includes('batería')||label.includes('bateria')||label.includes('battery'))value=d.batSalud;
-    else if(label.includes('smart'))value=d.smart;
-    if(value&&value!=='N/A'){
-      const inp=row.querySelector('input[type=text],textarea');
-      if(inp&&!inp.value){
-        inp.value=value;
-        inp.classList.add('prefilled');
-        inp.addEventListener('animationend',()=>inp.classList.remove('prefilled'),{once:true});
-      }
-      const sel=row.querySelector('select');
-      if(sel){
-        Array.from(sel.options).forEach(opt=>{
-          if(opt.text.toLowerCase().includes(value.toLowerCase().substring(0,6)))sel.value=opt.value;
-        });
-      }
-    }
+  const prefill=(id,val)=>{
+    if(!val||val==='N/A')return;
+    const el=document.getElementById(id);
+    if(!el||el.value)return;
+    el.value=val;
+    el.classList.add('prefilled');
+    el.addEventListener('animationend',()=>el.classList.remove('prefilled'),{once:true});
+  };
+  // General
+  prefill('asset-serial',d.serial);
+  prefill('asset-marca',d.marca);
+  prefill('asset-modelo',d.modelo);
+  prefill('asset-part-number',d.partNumber);
+  // Procesador
+  prefill('asset-cpu',d.cpu);
+  prefill('asset-socket',d.socket);
+  // Memoria
+  if(d.ram&&d.ram!=='N/A')prefill('asset-mem-tamano',d.ram+' GB');
+  prefill('asset-mem-velocidad',d.ramVelocidad);
+  prefill('asset-mem-tipo',d.ramTipo);
+  // HD
+  if(d.hdRemoved){const el=document.getElementById('asset-hd-removed');if(el)el.value=d.hdRemoved;}
+  prefill('asset-hd-manufacturer',d.hdManufacturer);
+  prefill('asset-hd-model',d.hdModel);
+  prefill('asset-hd-interface',d.hdInterface);
+  prefill('asset-hd-serial',d.hdSerial);
+  prefill('asset-hd-source-serial',d.hdSourceSerial);
+  prefill('asset-hd-speed',d.hdSpeed);
+  if(d.hdCapacity){const el=document.getElementById('asset-hd-capacity');if(el&&!el.value){el.value=d.hdCapacity+' GB';el.classList.add('prefilled');el.addEventListener('animationend',()=>el.classList.remove('prefilled'),{once:true});}}
+  // GPU
+  prefill('asset-gpu-fabricante',d.gpuFabricante);
+  prefill('asset-gpu-modelo',d.gpuModelo);
+  prefill('asset-gpu-vram',d.gpuVRAM);
+  prefill('asset-gpu-tipo',d.gpuTipo);
+  // Batería
+  if(d.batSalud&&d.batSalud!=='N/A'){
+    const pct=parseInt(d.batSalud)||0;
+    const el=document.getElementById('asset-bat-pct');if(el&&!el.value){el.value=pct;el.classList.add('prefilled');el.addEventListener('animationend',()=>el.classList.remove('prefilled'),{once:true});}
+    document.getElementById('asset-bat-categoria').value=getBatCategoria(pct);
+  }
+  // Diagnóstico periféricos
+  [['teclado',d.diagTeclado],['display',d.diagDisplay],['camara',d.diagCamara],['bocinas',d.diagBocinas],['microfono',d.diagMicrofono]].forEach(([k,v])=>{
+    if(v&&v!=='na'){const el=document.querySelector(`input[name="asset-diag-${k}"][value="${v}"]`);if(el)el.checked=true;}
   });
+  checkAssetMatch();
 }
 
 function mostrarDiagBanner(d){
@@ -1302,82 +1598,59 @@ function mostrarDiagBanner(d){
   const chips=document.getElementById('diag-data-chips');
   if(!el||!chips)return;
   const smartOk=d.smart&&d.smart.includes('PASSED');
-  const smartChip=d.smart&&d.smart!=='N/A'
-    ?`<span class="diag-chip ${smartOk?'ok':'bad'}">${smartOk?'✓ SMART OK':'✗ SMART FAIL'}</span>`:'';
+  const smartChip=d.smart&&d.smart!=='N/A'?`<span class="diag-chip ${smartOk?'ok':'bad'}">${smartOk?'✓ SMART OK':'✗ SMART FAIL'}</span>`:'';
   const batPct=parseInt(d.batSalud)||0;
+  const batCat=d.batSalud&&d.batSalud!=='N/A'?getBatCategoria(batPct):'';
+  // Diagnóstico periféricos
+  const diagChips=[['Teclado',d.diagTeclado],['Display',d.diagDisplay],['Cámara',d.diagCamara],['Bocinas',d.diagBocinas],['Micrófono',d.diagMicrofono]]
+    .filter(([,v])=>v&&v!=='na')
+    .map(([n,v])=>`<span class="diag-chip ${v==='pass'?'ok':'bad'}">${v==='pass'?'✓':'✗'} ${n}</span>`).join('');
   chips.innerHTML=`
     <span class="diag-chip ok">${d.marca} ${d.modelo}</span>
     ${d.serial&&d.serial!=='N/A'?`<span class="diag-chip">S/N: ${d.serial}</span>`:''}
     ${d.cpu&&d.cpu!=='N/A'?`<span class="diag-chip">${d.cpu}</span>`:''}
     ${d.ram&&d.ram!=='N/A'?`<span class="diag-chip ok">${d.ram} GB RAM</span>`:''}
-    ${d.disco&&d.disco!=='N/A'?`<span class="diag-chip ok">${d.disco} GB ${d.discoTipo}</span>`:''}
+    ${d.hdCapacity&&d.hdCapacity!=='N/A'?`<span class="diag-chip ok">${d.hdCapacity} GB ${d.hdInterface||''}</span>`:''}
     ${smartChip}
-    ${d.batSalud&&d.batSalud!=='N/A'?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}">Bat: ${d.batSalud}</span>`:''}
+    ${d.batSalud&&d.batSalud!=='N/A'?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}">Bat: ${d.batSalud} (${batCat})</span>`:''}
+    ${diagChips}
     <span style="font-size:10px;color:#888;margin-left:8px">Diagnóstico: ${d.fecha}</span>`;
   el.style.display='flex';
-  // Navegar automáticamente a ARS
-  document.querySelectorAll('.nav button').forEach(btn=>{
-    if(btn.textContent.trim()==='ARS')btn.click();
-  });
+  document.querySelectorAll('.nav button').forEach(btn=>{if(btn.textContent.trim()==='ARS')btn.click();});
 }
 
 function abrirAssetDesdeQR(){
   if(!_diagData)return;
   const d=_diagData;
-
-  // Guardar para inyección en template
   window._diagForTemplate=d;
-
-  // Abrir modal de nuevo asset
   openModalAsset();
-
-  // Pre-llenar campos principales con animación
-  [['asset-serial',d.serial],['asset-marca',d.marca],['asset-modelo',d.modelo]].forEach(([id,val])=>{
-    if(!val||val==='N/A')return;
-    const el=document.getElementById(id);
-    if(!el)return;
-    el.value=val;
-    el.classList.add('prefilled');
-    el.addEventListener('animationend',()=>el.classList.remove('prefilled'),{once:true});
-  });
-
-  // Intentar auto-seleccionar categoría por keywords
+  // Inyectar datos del QR directamente en los campos del formulario hardcodeado
+  injectDiagToForm(d);
+  // Auto-seleccionar categoría Laptop si existe
   const cats=getAdminCatARS();
   const catSel=document.getElementById('asset-categoria');
   if(catSel&&cats.length){
-    const keywords=['laptop','notebook','computadora','pc','desktop','all-in-one'];
+    const keywords=['laptop','notebook','computadora'];
     const match=cats.find(cat=>keywords.some(kw=>cat.nombre.toLowerCase().includes(kw)));
-    if(match){
-      catSel.value=match.id;
-      onAssetCatChange(); // esto llama injectDiagToTemplate al final
-    } else {
-      // Aunque no haya match de categoría, intentar inyectar en lo que ya está renderizado
-      injectDiagToTemplate();
-    }
+    if(match)catSel.value=match.id;
   }
-
   checkAssetMatch();
-
-  // Mostrar recuadro de datos de diagnóstico dentro del modal (solo si no existe ya)
   if(!document.getElementById('diag-modal-info')){
     const diagSection=document.createElement('div');
     diagSection.id='diag-modal-info';
     diagSection.style.cssText='margin-bottom:12px;padding:12px;background:#f0f8f4;border-radius:8px;border:1px solid #a0d8b0;font-size:12px';
-    diagSection.innerHTML=`
-      <div style="font-weight:600;color:#1a7a3c;margin-bottom:6px">✓ Datos del diagnóstico hardware</div>
+    diagSection.innerHTML=`<div style="font-weight:600;color:#1a7a3c;margin-bottom:6px">✓ Datos del diagnóstico hardware — campos pre-llenados</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;line-height:1.8">
         ${d.cpu&&d.cpu!=='N/A'?`<div><span style="color:#888">CPU:</span> ${d.cpu}</div>`:''}
         ${d.ram&&d.ram!=='N/A'?`<div><span style="color:#888">RAM:</span> ${d.ram} GB</div>`:''}
-        ${d.disco&&d.disco!=='N/A'?`<div><span style="color:#888">Disco:</span> ${d.disco} GB ${d.discoTipo}</div>`:''}
-        ${d.gpu&&d.gpu!=='N/A'?`<div><span style="color:#888">GPU:</span> ${d.gpu}</div>`:''}
-        ${d.batSalud&&d.batSalud!=='N/A'?`<div><span style="color:#888">Batería:</span> ${d.batSalud}</div>`:''}
+        ${d.hdCapacity&&d.hdCapacity!=='N/A'?`<div><span style="color:#888">HD:</span> ${d.hdCapacity} GB ${d.hdInterface}</div>`:''}
+        ${d.gpuFabricante&&d.gpuFabricante!=='N/A'?`<div><span style="color:#888">GPU:</span> ${d.gpuFabricante} ${d.gpuModelo}</div>`:''}
+        ${d.batSalud&&d.batSalud!=='N/A'?`<div><span style="color:#888">Bat:</span> ${d.batSalud} (${getBatCategoria(parseInt(d.batSalud)||0)})</div>`:''}
         ${d.smart&&d.smart!=='N/A'?`<div><span style="color:#888">SMART:</span> ${d.smart}</div>`:''}
       </div>`;
     const modalTitle=document.querySelector('#modal-asset h3');
     if(modalTitle)modalTitle.after(diagSection);
   }
-
-  // Ocultar banner ahora que el modal está abierto
   document.getElementById('diag-banner').style.display='none';
 }
 

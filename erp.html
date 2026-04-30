@@ -226,6 +226,7 @@ tr:hover td{background:#fafaf8}
 <div id="page-funcional" class="page">
   <div class="tabs">
     <button class="tab active" onclick="showSection('sec-func-categorias')">Categorías</button>
+    <button class="tab" onclick="showSection('sec-func-tipos')">Tipos de Servicio</button>
     <button class="tab" onclick="showSection('sec-func-items')">Items</button>
     <button class="tab" onclick="showSection('sec-func-refacciones')">Refacciones</button>
   </div>
@@ -234,10 +235,21 @@ tr:hover td{background:#fafaf8}
       <h2 style="margin:0;flex:1">Categorías ARS</h2>
       <button class="btn primary" onclick="openModalCategoria()">+ Nueva categoría</button>
     </div>
-    <div class="alert info">Define tipos de equipos funcionales y su tiempo de procesamiento en minutos.</div>
+    <div class="alert info">Define tipos de equipos funcionales (Laptop, Desktop, Monitor, etc.).</div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table><thead><tr><th>Nombre</th><th>Tiempo (min)</th><th>Items que la usan</th><th></th></tr></thead>
+      <table><thead><tr><th>Nombre</th><th>Items que la usan</th><th></th></tr></thead>
       <tbody id="categorias-table"></tbody></table>
+    </div>
+  </div>
+  <div id="sec-func-tipos" class="section">
+    <div class="row center" style="margin-bottom:20px">
+      <h2 style="margin:0;flex:1">Tipos de Servicio</h2>
+      <button class="btn primary" onclick="openModalTipoServicio()">+ Nuevo tipo</button>
+    </div>
+    <div class="alert info">Define los servicios posibles y su tiempo en minutos. Se usan en costeo y planeación.</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Nombre</th><th>Tiempo (min)</th><th>Items que lo usan</th><th></th></tr></thead>
+      <tbody id="tipos-servicio-table"></tbody></table>
     </div>
   </div>
   <div id="sec-func-items" class="section">
@@ -247,7 +259,7 @@ tr:hover td{background:#fafaf8}
     </div>
     <div class="search-wrap"><input type="text" class="search-box" id="items-func-search" placeholder="Buscar item..." oninput="renderItemsFunc()"></div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table><thead><tr><th>Marca / Modelo</th><th>Categoría</th><th>RAM (GB)</th><th>Disco (GB)</th><th>Grado</th><th>Precio venta</th><th></th></tr></thead>
+      <table><thead><tr><th>Marca / Modelo</th><th>Categoría</th><th>Tipo Servicio</th><th>Procesador</th><th>RAM</th><th>Disco</th><th>Batería</th><th>Grado</th><th>Precio</th><th></th></tr></thead>
       <tbody id="items-func-table"></tbody></table>
     </div>
   </div>
@@ -534,40 +546,50 @@ tr:hover td{background:#fafaf8}
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-commodity')">Cancelar</button><button class="btn primary" onclick="saveCommodity()">Guardar</button></div>
 </div></div>
 
-<div id="modal-categoria" class="modal-overlay" style="display:none"><div class="modal" style="max-width:640px">
+<div id="modal-categoria" class="modal-overlay" style="display:none"><div class="modal">
   <h3 id="modal-categoria-title">Nueva categoría ARS</h3>
   <input type="hidden" id="cat-edit-id">
   <div class="field"><label>Nombre</label><input type="text" id="cat-nombre" placeholder="Ej. Laptop"></div>
-  <div class="field"><label>Tiempo (min)</label><input type="number" id="cat-tiempo" min="1"></div>
-  <div style="border-top:1px solid #e0e0d8;padding-top:14px;margin-top:4px">
-    <div class="row center" style="margin-bottom:10px">
-      <label style="flex:1;margin:0;font-size:13px;font-weight:600">Template de campos específicos</label>
-      <button class="btn small" onclick="addTemplateField('checkbox')">+ Sí/No</button>
-      <button class="btn small" onclick="addTemplateField('dropdown')">+ Dropdown</button>
-      <button class="btn small" onclick="addTemplateField('texto')">+ Texto</button>
-    </div>
-    <div id="cat-template-rows"></div>
-  </div>
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-categoria')">Cancelar</button><button class="btn primary" onclick="saveCategoria()">Guardar</button></div>
 </div></div>
 
-<div id="modal-item-func" class="modal-overlay" style="display:none"><div class="modal">
+<!-- MODAL TIPO SERVICIO -->
+<div id="modal-tipo-servicio" class="modal-overlay" style="display:none"><div class="modal">
+  <h3 id="modal-tipo-servicio-title">Nuevo tipo de servicio</h3>
+  <input type="hidden" id="ts-edit-id">
+  <div class="field"><label>Nombre</label><input type="text" id="ts-nombre" placeholder="Ej. Procesamiento normal, DOA, Cambio de batería"></div>
+  <div class="field"><label>Tiempo (min)</label><input type="number" id="ts-tiempo" min="1" placeholder="Ej. 45"></div>
+  <div class="modal-footer"><button class="btn" onclick="closeModal('modal-tipo-servicio')">Cancelar</button><button class="btn primary" onclick="saveTipoServicio()">Guardar</button></div>
+</div></div>
+
+<div id="modal-item-func" class="modal-overlay" style="display:none"><div class="modal" style="max-width:640px">
   <h3 id="modal-item-func-title">Nuevo item funcional</h3>
   <input type="hidden" id="itemf-edit-id">
   <div class="row">
     <div class="field"><label>Marca</label><input type="text" id="itemf-marca" placeholder="Ej. Lenovo"></div>
-    <div class="field"><label>Modelo</label><input type="text" id="itemf-modelo" placeholder="Ej. ThinkPad"></div>
-  </div>
-  <div class="field"><label>Categoría</label><select id="itemf-categoria"></select></div>
-  <div class="row">
-    <div class="field"><label>RAM (GB)</label><input type="number" id="itemf-ram" min="0"></div>
-    <div class="field"><label>Disco (GB)</label><input type="number" id="itemf-disco" min="0"></div>
+    <div class="field"><label>Modelo</label><input type="text" id="itemf-modelo" placeholder="Ej. ThinkPad T490"></div>
   </div>
   <div class="row">
-    <div class="field"><label>Configuración</label><input type="text" id="itemf-config" placeholder="Ej. i5-8250U"></div>
+    <div class="field"><label>Categoría</label><select id="itemf-categoria"></select></div>
+    <div class="field"><label>Tipo de Servicio</label><select id="itemf-tipo-servicio"></select></div>
+  </div>
+  <div class="field"><label>Procesador</label><input type="text" id="itemf-procesador" placeholder="Ej. Intel Core i5-8250U"></div>
+  <div class="row">
+    <div class="field"><label>RAM (GB)</label><input type="number" id="itemf-ram" min="0" placeholder="Ej. 16"></div>
+    <div class="field"><label>Disco (GB)</label><input type="number" id="itemf-disco" min="0" placeholder="Ej. 512"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Batería</label>
+      <select id="itemf-bateria">
+        <option value="Buena">Buena (80-100%)</option>
+        <option value="Media">Media (50-79%)</option>
+        <option value="Mala">Mala (20-49%)</option>
+        <option value="No funcional">No funcional (0-19%)</option>
+      </select>
+    </div>
     <div class="field"><label>Grado</label><input type="text" id="itemf-grado" placeholder="Ej. A, B, C"></div>
   </div>
-  <div class="field"><label>Precio de venta ($)</label><input type="number" id="itemf-precio" min="0" step="0.01"></div>
+  <div class="field"><label>Precio de venta mínimo ($)</label><input type="number" id="itemf-precio" min="0" step="0.01"></div>
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-item-func')">Cancelar</button><button class="btn primary" onclick="saveItemFunc()">Guardar</button></div>
 </div></div>
 
@@ -815,7 +837,7 @@ let state={
   clientes:[],
   commodities:[],commoditiesCierre:[],
   hoes:[],catalogoCierre:[],
-  categorias:[],itemsFuncionales:[],refacciones:[],
+  categorias:[],itemsFuncionales:[],refacciones:[],tiposServicio:[],
   lotes:[],
   operadoresEOL:[],operadoresARS:[],
   diasEOL:{},diasARS:{},
@@ -869,7 +891,7 @@ function loadState(){
   }catch(e){}
   // Ensure arrays
   ['commodities','commoditiesCierre','hoes','catalogoCierre','categorias','itemsFuncionales',
-   'refacciones','lotes','operadoresEOL','operadoresARS','inhabiles'].forEach(k=>{
+   'refacciones','lotes','operadoresEOL','operadoresARS','inhabiles','tiposServicio'].forEach(k=>{
     state[k]=state[k]||[];
   });
   state.commodities=state.commodities.map(c=>({...c,tipo:c.tipo||'ingreso'}));
@@ -899,7 +921,7 @@ function showPage(id){
   if(id==='costeo')renderCosteoList();
   if(id==='clientes'){renderClientes();renderResumenClienteSelects();}
   if(id==='catalogo-cierre')renderCatalogoCierre();
-  if(id==='funcional'){renderCategorias();renderItemsFunc();renderRefacciones();}
+  if(id==='funcional'){renderCategorias();renderTiposServicio();renderItemsFunc();renderRefacciones();}
   if(id==='lotes')renderLotes();
 }
 function openModal(id){document.getElementById(id).style.display='flex';}
@@ -1133,64 +1155,67 @@ function renderCommoditiesCierre(){
 
 // ── FUNCIONAL ─────────────────────────────────────────────
 function openModalCategoria(){
-  document.getElementById('cat-edit-id').value='';document.getElementById('cat-nombre').value='';document.getElementById('cat-tiempo').value='';
-  document.getElementById('cat-template-rows').innerHTML='';
+  document.getElementById('cat-edit-id').value='';document.getElementById('cat-nombre').value='';
   document.getElementById('modal-categoria-title').textContent='Nueva categoría ARS';openModal('modal-categoria');
 }
 function saveCategoria(){
   const id=document.getElementById('cat-edit-id').value;
-  const nombre=document.getElementById('cat-nombre').value.trim();const tiempo=parseFloat(document.getElementById('cat-tiempo').value)||0;
-  if(!nombre||tiempo<=0){alert('Ingresa nombre y tiempo válido.');return;}
-  const template=getTemplateFieldsFromModal();
-  const obj={id:id||uid('cat'),nombre,tiempo,template};
+  const nombre=document.getElementById('cat-nombre').value.trim();
+  if(!nombre){alert('Ingresa un nombre.');return;}
+  const obj={id:id||uid('cat'),nombre};
   if(id){const i=state.categorias.findIndex(x=>x.id===id);if(i>=0)state.categorias[i]=obj;}else state.categorias.push(obj);
   saveState();closeModal('modal-categoria');renderCategorias();
 }
-function getTemplateFieldsFromModal(){
-  const rows=document.querySelectorAll('#cat-template-rows .template-row');
-  return Array.from(rows).map(row=>{
-    const tipo=row.dataset.tipo;const label=row.querySelector('.tf-label').value.trim();
-    if(!label)return null;
-    const field={id:'tf_'+Date.now()+'_'+Math.random().toString(36).substr(2,5),tipo,label};
-    if(tipo==='dropdown'){
-      const opts=row.querySelector('.tf-opciones').value.split('\n').map(x=>x.trim()).filter(Boolean);
-      field.opciones=opts;
-    }
-    return field;
-  }).filter(Boolean);
-}
-let _tfCounter=0;
-function addTemplateField(tipo,existing){
-  existing=existing||{};
-  const row=document.createElement('div');row.className='template-row';row.dataset.tipo=tipo;
-  row.style.cssText='padding:10px;background:#f8f8f4;border-radius:8px;border:1px solid #e8e8e0;margin-bottom:8px';
-  const badge=tipo==='checkbox'?'<span class="badge warning">Sí/No</span>':tipo==='dropdown'?'<span class="badge info">Dropdown</span>':'<span class="badge neutral">Texto</span>';
-  let extra='';
-  if(tipo==='dropdown'){extra=`<div style="margin-top:8px"><label style="font-size:11px;color:#666;font-weight:500">Opciones (una por línea)</label><textarea class="tf-opciones" rows="3" style="margin-top:4px;font-size:13px">${(existing.opciones||[]).join('\n')}</textarea></div>`;}
-  row.innerHTML=`<div class="row center" style="margin-bottom:6px"><span style="margin-right:8px">${badge}</span><input type="text" class="tf-label" value="${existing.label||''}" placeholder="Etiqueta del campo" style="flex:1"><button class="btn small danger" onclick="this.closest('.template-row').remove()" style="margin-left:8px">✕</button></div>${extra}`;
-  document.getElementById('cat-template-rows').appendChild(row);
-}
 function editCategoria(id){
   const c=state.categorias.find(x=>x.id===id);if(!c)return;
-  document.getElementById('cat-edit-id').value=c.id;document.getElementById('cat-nombre').value=c.nombre;document.getElementById('cat-tiempo').value=c.tiempo;
-  document.getElementById('cat-template-rows').innerHTML='';
-  (c.template||[]).forEach(f=>addTemplateField(f.tipo,f));
+  document.getElementById('cat-edit-id').value=c.id;document.getElementById('cat-nombre').value=c.nombre;
   document.getElementById('modal-categoria-title').textContent='Editar categoría';openModal('modal-categoria');
 }
 function deleteCategoria(id){if(!confirm('¿Eliminar?'))return;state.categorias=state.categorias.filter(x=>x.id!==id);saveState();renderCategorias();}
 function renderCategorias(){
   const tb=document.getElementById('categorias-table');
-  if(!state.categorias.length){tb.innerHTML='<tr><td colspan="4" style="color:#888;text-align:center;padding:32px">Sin categorías</td></tr>';return;}
+  if(!state.categorias.length){tb.innerHTML='<tr><td colspan="3" style="color:#888;text-align:center;padding:32px">Sin categorías</td></tr>';return;}
   tb.innerHTML=state.categorias.map(c=>{
     const uses=state.itemsFuncionales.filter(x=>x.catId===c.id).length;
-    return`<tr><td><strong>${c.nombre}</strong></td><td>${c.tiempo} min</td><td>${uses?`<span class="badge teal">${uses} items</span>`:'-'}</td>
+    return`<tr><td><strong>${c.nombre}</strong></td><td>${uses?`<span class="badge teal">${uses} items</span>`:'-'}</td>
     <td style="text-align:right"><button class="btn small" onclick="editCategoria('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteCategoria('${c.id}')">Eliminar</button></td></tr>`;
   }).join('');
 }
+// ── TIPOS DE SERVICIO ──────────────────────────────────────
+function openModalTipoServicio(id){
+  document.getElementById('ts-edit-id').value=id||'';
+  document.getElementById('ts-nombre').value='';document.getElementById('ts-tiempo').value='';
+  if(id){const t=state.tiposServicio.find(x=>x.id===id);if(t){document.getElementById('ts-nombre').value=t.nombre;document.getElementById('ts-tiempo').value=t.tiempo;}}
+  document.getElementById('modal-tipo-servicio-title').textContent=id?'Editar tipo de servicio':'Nuevo tipo de servicio';
+  openModal('modal-tipo-servicio');
+}
+function saveTipoServicio(){
+  const id=document.getElementById('ts-edit-id').value;
+  const nombre=document.getElementById('ts-nombre').value.trim();
+  const tiempo=parseFloat(document.getElementById('ts-tiempo').value)||0;
+  if(!nombre||tiempo<=0){alert('Ingresa nombre y tiempo válido.');return;}
+  const obj={id:id||uid('ts'),nombre,tiempo};
+  if(id){const i=state.tiposServicio.findIndex(x=>x.id===id);if(i>=0)state.tiposServicio[i]=obj;}else state.tiposServicio.push(obj);
+  saveState();closeModal('modal-tipo-servicio');renderTiposServicio();
+}
+function deleteTipoServicio(id){if(!confirm('¿Eliminar?'))return;state.tiposServicio=state.tiposServicio.filter(x=>x.id!==id);saveState();renderTiposServicio();}
+function renderTiposServicio(){
+  const tb=document.getElementById('tipos-servicio-table');
+  if(!state.tiposServicio.length){tb.innerHTML='<tr><td colspan="4" style="color:#888;text-align:center;padding:32px">Sin tipos de servicio</td></tr>';return;}
+  tb.innerHTML=state.tiposServicio.map(t=>{
+    const uses=(state.itemsFuncionales||[]).filter(x=>x.tipoServicioId===t.id).length;
+    return`<tr><td><strong>${t.nombre}</strong></td><td>${t.tiempo} min</td><td>${uses?`<span class="badge teal">${uses} items</span>`:'-'}</td>
+    <td style="text-align:right"><button class="btn small" onclick="openModalTipoServicio('${t.id}')">Editar</button> <button class="btn small danger" onclick="deleteTipoServicio('${t.id}')">Eliminar</button></td></tr>`;
+  }).join('');
+}
+// ── ITEMS FUNCIONALES ─────────────────────────────────────
 function openModalItemFunc(){
   document.getElementById('itemf-edit-id').value='';
-  ['itemf-marca','itemf-modelo','itemf-ram','itemf-disco','itemf-config','itemf-grado','itemf-precio'].forEach(x=>document.getElementById(x).value='');
+  ['itemf-marca','itemf-modelo','itemf-procesador','itemf-grado'].forEach(x=>document.getElementById(x).value='');
+  ['itemf-ram','itemf-disco','itemf-precio'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('itemf-bateria').value='Buena';
   document.getElementById('itemf-categoria').innerHTML=state.categorias.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  document.getElementById('itemf-tipo-servicio').innerHTML=(state.tiposServicio||[]).map(t=>`<option value="${t.id}">${t.nombre} (${t.tiempo} min)</option>`).join('');
   document.getElementById('modal-item-func-title').textContent='Nuevo item funcional';openModal('modal-item-func');
 }
 function saveItemFunc(){
@@ -1199,9 +1224,11 @@ function saveItemFunc(){
   const catId=document.getElementById('itemf-categoria').value;
   if(!marca||!modelo||!catId){alert('Ingresa marca, modelo y categoría.');return;}
   const obj={id:id||uid('itf'),marca,modelo,catId,
+    tipoServicioId:document.getElementById('itemf-tipo-servicio').value||'',
+    procesador:document.getElementById('itemf-procesador').value.trim(),
     ram:parseFloat(document.getElementById('itemf-ram').value)||0,
     disco:parseFloat(document.getElementById('itemf-disco').value)||0,
-    config:document.getElementById('itemf-config').value.trim(),
+    bateria:document.getElementById('itemf-bateria').value,
     grado:document.getElementById('itemf-grado').value.trim(),
     precio:parseFloat(document.getElementById('itemf-precio').value)||0};
   if(id){const i=state.itemsFuncionales.findIndex(x=>x.id===id);if(i>=0)state.itemsFuncionales[i]=obj;}else state.itemsFuncionales.push(obj);
@@ -1209,11 +1236,14 @@ function saveItemFunc(){
 }
 function editItemFunc(id){
   const it=state.itemsFuncionales.find(x=>x.id===id);if(!it)return;
-  document.getElementById('itemf-edit-id').value=it.id;document.getElementById('itemf-marca').value=it.marca;document.getElementById('itemf-modelo').value=it.modelo;
+  document.getElementById('itemf-edit-id').value=it.id;
+  document.getElementById('itemf-marca').value=it.marca;document.getElementById('itemf-modelo').value=it.modelo;
+  document.getElementById('itemf-procesador').value=it.procesador||'';
   document.getElementById('itemf-ram').value=it.ram;document.getElementById('itemf-disco').value=it.disco;
-  document.getElementById('itemf-config').value=it.config||'';document.getElementById('itemf-grado').value=it.grado||'';
-  document.getElementById('itemf-precio').value=it.precio;
+  document.getElementById('itemf-bateria').value=it.bateria||'Buena';
+  document.getElementById('itemf-grado').value=it.grado||'';document.getElementById('itemf-precio').value=it.precio;
   document.getElementById('itemf-categoria').innerHTML=state.categorias.map(c=>`<option value="${c.id}" ${c.id===it.catId?'selected':''}>${c.nombre}</option>`).join('');
+  document.getElementById('itemf-tipo-servicio').innerHTML=(state.tiposServicio||[]).map(t=>`<option value="${t.id}" ${t.id===it.tipoServicioId?'selected':''}>${t.nombre} (${t.tiempo} min)</option>`).join('');
   document.getElementById('modal-item-func-title').textContent='Editar item';openModal('modal-item-func');
 }
 function deleteItemFunc(id){if(!confirm('¿Eliminar?'))return;state.itemsFuncionales=state.itemsFuncionales.filter(x=>x.id!==id);saveState();renderItemsFunc();}
@@ -1221,14 +1251,23 @@ function renderItemsFunc(){
   const tb=document.getElementById('items-func-table');
   const srch=(document.getElementById('items-func-search')||{}).value||'';
   let items=state.itemsFuncionales;
-  if(srch)items=items.filter(it=>(it.marca+' '+it.modelo+' '+(it.config||'')).toLowerCase().includes(srch.toLowerCase()));
-  if(!items.length){tb.innerHTML='<tr><td colspan="7" style="color:#888;text-align:center;padding:32px">Sin items</td></tr>';return;}
+  if(srch)items=items.filter(it=>(it.marca+' '+it.modelo+' '+(it.procesador||'')).toLowerCase().includes(srch.toLowerCase()));
+  if(!items.length){tb.innerHTML='<tr><td colspan="10" style="color:#888;text-align:center;padding:32px">Sin items</td></tr>';return;}
   tb.innerHTML=items.map(it=>{
     const cat=state.categorias.find(x=>x.id===it.catId);
-    return`<tr><td><strong>${it.marca} ${it.modelo}</strong>${it.config?`<br><span style="font-size:11px;color:#888">${it.config}</span>`:''}</td>
-    <td>${cat?`<span class="badge teal">${cat.nombre}</span>`:'-'}</td><td>${it.ram||'-'}</td><td>${it.disco||'-'}</td>
-    <td>${it.grado?`<span class="badge neutral">${it.grado}</span>`:'-'}</td><td>$${it.precio.toFixed(2)}</td>
-    <td style="text-align:right"><button class="btn small" onclick="editItemFunc('${it.id}')">Editar</button> <button class="btn small danger" onclick="deleteItemFunc('${it.id}')">Eliminar</button></td></tr>`;
+    const ts=(state.tiposServicio||[]).find(x=>x.id===it.tipoServicioId);
+    const batColor=it.bateria==='Buena'?'success':it.bateria==='Media'?'warning':it.bateria==='Mala'?'danger':'neutral';
+    return`<tr>
+      <td><strong>${it.marca} ${it.modelo}</strong></td>
+      <td>${cat?`<span class="badge teal">${cat.nombre}</span>`:'-'}</td>
+      <td>${ts?`<span class="badge info">${ts.nombre}</span>`:'-'}</td>
+      <td style="font-size:12px">${it.procesador||'-'}</td>
+      <td>${it.ram?it.ram+' GB':'-'}</td>
+      <td>${it.disco?it.disco+' GB':'-'}</td>
+      <td><span class="badge ${batColor}">${it.bateria||'-'}</span></td>
+      <td>${it.grado?`<span class="badge neutral">${it.grado}</span>`:'-'}</td>
+      <td>$${it.precio.toFixed(2)}</td>
+      <td style="text-align:right"><button class="btn small" onclick="editItemFunc('${it.id}')">Editar</button> <button class="btn small danger" onclick="deleteItemFunc('${it.id}')">Eliminar</button></td></tr>`;
   }).join('');
 }
 function openModalRefaccion(){
@@ -1404,7 +1443,12 @@ function getLoteCalc(items){
 }
 function getLoteARSCalc(itemsARS){
   let tiempoARSTotal=0,valorARSTotal=0;
-  (itemsARS||[]).forEach(({itemId,qty})=>{const it=state.itemsFuncionales.find(x=>x.id===itemId);if(!it)return;const cat=state.categorias.find(x=>x.id===it.catId);if(!cat)return;tiempoARSTotal+=cat.tiempo*qty;valorARSTotal+=it.precio*qty;});
+  (itemsARS||[]).forEach(({itemId,qty})=>{
+    const it=state.itemsFuncionales.find(x=>x.id===itemId);if(!it)return;
+    const ts=(state.tiposServicio||[]).find(x=>x.id===it.tipoServicioId);
+    tiempoARSTotal+=(ts?ts.tiempo:0)*qty;
+    valorARSTotal+=it.precio*qty;
+  });
   return{tiempoARSTotal,valorARSTotal};
 }
 function getLoteRefaccionesCalc(refs){
@@ -1517,7 +1561,7 @@ function viewLote(id){
   let vI=0,vD=0;
   const cr=Object.entries(l.commAgg||{}).map(([cid,kg])=>{const c=state.commodities.find(x=>x.id===cid);if(!c)return'';const v=c.valor*kg;if(c.tipo==='disposicion')vD+=v;else vI+=v;return`<tr><td>${c.nombre}</td><td><span class="badge ${c.tipo==='disposicion'?'warning':'success'}">${c.tipo==='disposicion'?'Disposición':'Ingreso'}</span></td><td>${kg.toFixed(2)} kg</td><td>$${v.toFixed(2)}</td></tr>`;}).filter(Boolean).join('');
   const ir=(l.items||[]).map(it=>{const h=state.hoes.find(x=>x.id===it.hoeId);return h?`<tr><td>${h.modelo}</td><td>${it.qty}</td><td>${(h.tiempo*it.qty).toFixed(0)} min</td><td>${(h.peso*it.qty).toFixed(2)} kg</td></tr>`:''}).join('');
-  const arsR=(l.itemsARS||[]).map(it=>{const itf=state.itemsFuncionales.find(x=>x.id===it.itemId);const cat=itf?state.categorias.find(x=>x.id===itf.catId):null;return itf?`<tr><td>${itf.marca} ${itf.modelo}</td><td>${cat?cat.nombre:'-'}</td><td>${it.qty}</td><td>${cat?(cat.tiempo*it.qty)+' min':'-'}</td><td>$${(itf.precio*it.qty).toFixed(2)}</td></tr>`:''}).join('');
+  const arsR=(l.itemsARS||[]).map(it=>{const itf=state.itemsFuncionales.find(x=>x.id===it.itemId);const cat=itf?state.categorias.find(x=>x.id===itf.catId):null;const ts=itf?(state.tiposServicio||[]).find(x=>x.id===itf.tipoServicioId):null;return itf?`<tr><td>${itf.marca} ${itf.modelo}</td><td>${cat?cat.nombre:'-'}</td><td>${it.qty}</td><td>${ts?(ts.tiempo*it.qty)+' min':'-'}</td><td>$${(itf.precio*it.qty).toFixed(2)}</td></tr>`:''}).join('');
   const refR=(l.refacciones||[]).map(ref=>{const r=state.refacciones.find(x=>x.id===ref.refId);return r?`<tr><td>${r.nombre}</td><td>${ref.qty}</td><td style="color:#c0392b">$${(r.precio*ref.qty).toFixed(2)}</td></tr>`:''}).join('');
   const cliente=state.clientes.find(x=>x.id===l.clienteId);
   const trEOL=tiempoRestanteLote(l.id,'eol');const trARS=tiempoRestanteLote(l.id,'ars');
@@ -2692,7 +2736,7 @@ function importarDatos(){
 function renderAll(){
   renderCommodities();renderCommoditiesCierre();renderHoes();renderCatalogoCierre();
   renderLotes();renderClientes();renderInhabiles();renderDashboard();
-  renderCategorias();renderItemsFunc();renderRefacciones();
+  renderCategorias();renderTiposServicio();renderItemsFunc();renderRefacciones();
   renderCosteoList();renderCatHoes();
   document.getElementById('cfg-sueldo-eol').value=state.config.eol.sueldoDia||0;
   document.getElementById('cfg-gastos-eol').value=state.config.eol.gastosFijos||0;
