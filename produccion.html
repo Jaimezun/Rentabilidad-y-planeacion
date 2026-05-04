@@ -546,6 +546,14 @@ tr:hover td{background:#fafaf8}
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-microfono" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Touchpad</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchpad" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchpad" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchpad" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1028,7 +1036,7 @@ function clearAssetForm(){
   document.getElementById('asset-bat-pct').value='';
   document.getElementById('asset-bat-categoria').value='';
   // Diagnóstico
-  ['teclado','display','camara','bocinas','microfono'].forEach(k=>{
+  ['teclado','display','camara','bocinas','microfono','touchpad'].forEach(k=>{
     const el=document.querySelector(`input[name="asset-diag-${k}"][value="na"]`);if(el)el.checked=true;
   });
   // Cosmético
@@ -1085,7 +1093,7 @@ function fillAssetForm(a){
   document.getElementById('asset-bat-pct').value=a.batPct||'';
   document.getElementById('asset-bat-categoria').value=a.batCategoria||'';
   // Diagnóstico
-  ['teclado','display','camara','bocinas','microfono'].forEach(k=>{
+  ['teclado','display','camara','bocinas','microfono','touchpad'].forEach(k=>{
     const val=(a.diag||{})[k]||'na';
     const el=document.querySelector(`input[name="asset-diag-${k}"][value="${val}"]`);if(el)el.checked=true;
   });
@@ -1172,7 +1180,7 @@ function checkAssetPrecio(){
 
 function readDiagFromForm(){
   const diag={};
-  ['teclado','display','camara','bocinas','microfono'].forEach(k=>{
+  ['teclado','display','camara','bocinas','microfono','touchpad'].forEach(k=>{
     const sel=document.querySelector(`input[name="asset-diag-${k}"]:checked`);
     diag[k]=sel?sel.value:'na';
   });
@@ -1619,52 +1627,54 @@ function renderCompradores(){
 // ── DIAGNÓSTICO DESDE QR ──────────────────────────────────
 function parseDiagQR(){
   const params=new URLSearchParams(window.location.search);
-  if(!params.get('diag'))return null;
+  if(!params.get('dg')&&!params.get('diag'))return null;
+  const p=(n,s,d='')=>params.get(s)||params.get(n)||d;
   return{
-    marca:params.get('marca')||'',
-    modelo:params.get('modelo')||'',
-    partNumber:params.get('partNumber')||'',
-    serial:params.get('serial')||'',
+    marca:       p('marca','mk'),
+    modelo:      p('modelo','ml'),
+    partNumber:  p('partNumber','pn'),
+    serial:      p('serial','sn'),
     // Procesador
-    cpu:params.get('cpu')||'',
-    socket:params.get('socket')||'',
+    cpu:         p('cpu','cp'),
+    socket:      p('socket','sk'),
     // Memoria
-    ram:params.get('ram')||'',
-    ramVelocidad:params.get('ramVelocidad')||'',
-    ramTipo:params.get('ramTipo')||'',
+    ram:         p('ram','rm'),
+    ramVelocidad:p('ramVelocidad','rv'),
+    ramTipo:     p('ramTipo','rt'),
     // HD
-    hdRemoved:params.get('hdRemoved')||'No',
-    hdManufacturer:params.get('hdManufacturer')||'',
-    hdModel:params.get('hdModel')||'',
-    hdInterface:params.get('hdInterface')||'',
-    hdSerial:params.get('hdSerial')||'',
-    hdSourceSerial:params.get('hdSourceSerial')||'',
-    hdSpeed:params.get('hdSpeed')||'',
-    hdCapacity:params.get('hdCapacity')||'',
+    hdRemoved:   p('hdRemoved','hr','No'),
+    hdManufacturer:p('hdManufacturer','hm'),
+    hdModel:     p('hdModel','ho'),
+    hdInterface: p('hdInterface','hi'),
+    hdSerial:    p('hdSerial','hs'),
+    hdSourceSerial:p('hdSourceSerial','hx'),
+    hdSpeed:     p('hdSpeed','hq'),
+    hdCapacity:  p('hdCapacity','hc'),
     // GPU
-    gpuFabricante:params.get('gpuFabricante')||'',
-    gpuModelo:params.get('gpuModelo')||'',
-    gpuVRAM:params.get('gpuVRAM')||'',
-    gpuTipo:params.get('gpuTipo')||'',
+    gpuFabricante:p('gpuFabricante','gf'),
+    gpuModelo:   p('gpuModelo','gm'),
+    gpuVRAM:     p('gpuVRAM','gv'),
+    gpuTipo:     p('gpuTipo','gt'),
     // Batería
-    batSalud:params.get('batSalud')||'',
+    batSalud:    p('batSalud','ba'),
     // Diagnóstico periféricos
-    diagTeclado:params.get('diagTeclado')||'na',
-    diagDisplay:params.get('diagDisplay')||'na',
-    diagCamara:params.get('diagCamara')||'na',
-    diagBocinas:params.get('diagBocinas')||'na',
-    diagMicrofono:params.get('diagMicrofono')||'na',
+    diagTeclado: p('diagTeclado','dt','na'),
+    diagDisplay: p('diagDisplay','dp','na'),
+    diagCamara:  p('diagCamara','dc','na'),
+    diagBocinas: p('diagBocinas','db','na'),
+    diagMicrofono:p('diagMicrofono','dm','na'),
+    diagTouchpad:p('diagTouchpad','dtp','na'),
     // Pruebas automáticas
-    cpuPass:params.get('cpuPass')||'na',
-    cpuTempMax:params.get('cpuTempMax')||'',
-    wifiDet:params.get('wifiDet')||'na',
-    btDet:params.get('btDet')||'na',
-    smart:params.get('smart')||'',
-    smartSectores:params.get('smartSectores')||'',
-    ssdDesgaste:params.get('ssdDesgaste')||'',
-    discoVelocidad:params.get('discoVelocidad')||'',
-    osInstalado:params.get('osInstalado')||'no',
-    fecha:params.get('fecha')||''
+    cpuPass:     p('cpuPass','ca','na'),
+    cpuTempMax:  p('cpuTempMax','ct'),
+    wifiDet:     p('wifiDet','wd','na'),
+    btDet:       p('btDet','bd','na'),
+    smart:       p('smart','sm'),
+    smartSectores:p('smartSectores','ss'),
+    ssdDesgaste: p('ssdDesgaste','sd'),
+    discoVelocidad:p('discoVelocidad','dv'),
+    osInstalado: p('osInstalado','os','no'),
+    fecha:       p('fecha','fe')
   };
 }
 
@@ -1714,7 +1724,7 @@ function injectDiagToForm(d){
     document.getElementById('asset-bat-categoria').value=getBatCategoria(pct);
   }
   // Diagnóstico periféricos
-  [['teclado',d.diagTeclado],['display',d.diagDisplay],['camara',d.diagCamara],['bocinas',d.diagBocinas],['microfono',d.diagMicrofono]].forEach(([k,v])=>{
+  [['teclado',d.diagTeclado],['display',d.diagDisplay],['camara',d.diagCamara],['bocinas',d.diagBocinas],['microfono',d.diagMicrofono],['touchpad',d.diagTouchpad]].forEach(([k,v])=>{
     if(v&&v!=='na'){const el=document.querySelector(`input[name="asset-diag-${k}"][value="${v}"]`);if(el)el.checked=true;}
   });
   // Pruebas automáticas
