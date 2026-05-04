@@ -451,42 +451,47 @@ tr:hover td{background:#fafaf8}
   <div style="background:#f0f4ff;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #c7d7f5">
     <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Pruebas Automáticas</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field"><label>CPU</label>
+      <div class="field"><label>CPU Burn test</label>
         <select id="auto-cpu-pass">
           <option value="na">N/A</option>
           <option value="pass">✓ Pass</option>
           <option value="fail">✗ Fail</option>
         </select>
       </div>
-      <div class="field"><label>Temp. máx CPU (°C)</label><input type="text" id="auto-cpu-temp" readonly style="background:#f0f0ea;color:#888"></div>
-      <div class="field"><label>RAM</label>
-        <select id="auto-ram-pass">
-          <option value="na">N/A</option>
-          <option value="pass">✓ Pass</option>
-          <option value="fail">✗ Fail</option>
-        </select>
+      <div class="field"><label>Temp. máx CPU (°C)</label>
+        <input type="text" id="auto-cpu-temp" readonly style="background:#f0f0ea;color:#888">
       </div>
-      <div class="field"><label>Desgaste SSD (%)</label><input type="text" id="auto-ssd-desgaste" readonly style="background:#f0f0ea;color:#888"></div>
-      <div class="field"><label>WiFi</label>
+      <div class="field"><label>WiFi (scan)</label>
         <select id="auto-wifi">
           <option value="na">N/A</option>
           <option value="si">✓ Detectado</option>
           <option value="no">✗ No detectado</option>
         </select>
       </div>
-      <div class="field"><label>Ethernet</label>
-        <select id="auto-eth">
-          <option value="na">N/A</option>
-          <option value="si">✓ Detectado</option>
-          <option value="no">✗ No detectado</option>
-        </select>
-      </div>
-      <div class="field"><label>Bluetooth</label>
+      <div class="field"><label>Bluetooth (scan)</label>
         <select id="auto-bt">
           <option value="na">N/A</option>
           <option value="si">✓ Detectado</option>
           <option value="no">✗ No detectado</option>
         </select>
+      </div>
+      <div class="field"><label>SMART</label>
+        <input type="text" id="auto-smart" readonly style="background:#f0f0ea;color:#888">
+      </div>
+      <div class="field"><label>Sectores reasignados</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="text" id="auto-smart-sectores" readonly style="background:#f0f0ea;color:#888;flex:1">
+          <span id="auto-smart-sectores-led" style="font-size:16px">⚪</span>
+        </div>
+      </div>
+      <div class="field"><label>Velocidad disco (MB/s)</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="text" id="auto-disco-vel" readonly style="background:#f0f0ea;color:#888;flex:1">
+          <span id="auto-disco-vel-led" style="font-size:16px">⚪</span>
+        </div>
+      </div>
+      <div class="field"><label>Desgaste SSD (%)</label>
+        <input type="text" id="auto-ssd-desgaste" readonly style="background:#f0f0ea;color:#888">
       </div>
       <div class="field"><label>OS Instalado</label>
         <select id="auto-os">
@@ -960,6 +965,43 @@ function getBatCategoria(pct){
   return'No funcional';
 }
 
+// Semáforo para sectores reasignados y velocidad de disco
+function getSectoresLed(sectores, hdInterface){
+  const n=parseInt(sectores);
+  if(isNaN(n)||sectores==='N/A')return'⚪';
+  const isHDD=hdInterface&&/hdd|hard|mecanic/i.test(hdInterface)&&!/ssd|nvme/i.test(hdInterface);
+  if(isHDD){
+    if(n===0)return'🟢';
+    if(n<=5)return'🟡';
+    return'🔴';
+  }else{
+    // SSD SATA o NVMe: tolerancia cero
+    return n===0?'🟢':'🔴';
+  }
+}
+function getVelocidadLed(vel, hdInterface){
+  const v=parseInt(vel);
+  if(isNaN(v)||vel==='N/A')return'⚪';
+  const iface=(hdInterface||'').toLowerCase();
+  if(iface.includes('nvme')){
+    if(v>1000)return'🟢'; if(v>=500)return'🟡'; return'🔴';
+  }else if(iface.includes('hdd')||(/sata|ide/i.test(iface)&&!iface.includes('ssd'))){
+    if(v>80)return'🟢'; if(v>=40)return'🟡'; return'🔴';
+  }else{
+    // SSD SATA (default)
+    if(v>400)return'🟢'; if(v>=100)return'🟡'; return'🔴';
+  }
+}
+function updateAutoLeds(){
+  const hdIface=document.getElementById('asset-hd-interface')?.value||'';
+  const sect=document.getElementById('auto-smart-sectores')?.value||'';
+  const vel=document.getElementById('auto-disco-vel')?.value||'';
+  const sectLed=document.getElementById('auto-smart-sectores-led');
+  const velLed=document.getElementById('auto-disco-vel-led');
+  if(sectLed)sectLed.textContent=getSectoresLed(sect,hdIface);
+  if(velLed)velLed.textContent=getVelocidadLed(vel,hdIface);
+}
+
 function clearAssetForm(){
   // General
   ['asset-serial','asset-num-cliente','asset-marca','asset-modelo','asset-part-number','asset-grado'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
@@ -977,10 +1019,11 @@ function clearAssetForm(){
   // GPU
   ['asset-gpu-fabricante','asset-gpu-modelo','asset-gpu-vram','asset-gpu-tipo'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
   // Pruebas automáticas
-  ['auto-cpu-pass','auto-ram-pass','auto-wifi','auto-eth','auto-bt'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='na';});
-  document.getElementById('auto-cpu-temp').value='';
-  document.getElementById('auto-ssd-desgaste').value='';
+  ['auto-cpu-pass','auto-wifi','auto-bt'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='na';});
+  ['auto-cpu-temp','auto-smart','auto-smart-sectores','auto-disco-vel','auto-ssd-desgaste'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
   document.getElementById('auto-os').value='no';
+  const sectLed=document.getElementById('auto-smart-sectores-led');if(sectLed)sectLed.textContent='⚪';
+  const velLed=document.getElementById('auto-disco-vel-led');if(velLed)velLed.textContent='⚪';
   // Batería
   document.getElementById('asset-bat-pct').value='';
   document.getElementById('asset-bat-categoria').value='';
@@ -1030,12 +1073,14 @@ function fillAssetForm(a){
   // Pruebas automáticas
   document.getElementById('auto-cpu-pass').value=a.autoCpuPass||'na';
   document.getElementById('auto-cpu-temp').value=a.autoCpuTemp||'';
-  document.getElementById('auto-ram-pass').value=a.autoRamPass||'na';
-  document.getElementById('auto-ssd-desgaste').value=a.autoSsdDesgaste||'';
   document.getElementById('auto-wifi').value=a.autoWifi||'na';
-  document.getElementById('auto-eth').value=a.autoEth||'na';
   document.getElementById('auto-bt').value=a.autoBt||'na';
+  document.getElementById('auto-smart').value=a.autoSmart||'';
+  document.getElementById('auto-smart-sectores').value=a.autoSmartSectores||'';
+  document.getElementById('auto-disco-vel').value=a.autoDiscoVel||'';
+  document.getElementById('auto-ssd-desgaste').value=a.autoSsdDesgaste||'';
   document.getElementById('auto-os').value=a.autoOs||'no';
+  updateAutoLeds();
   // Batería
   document.getElementById('asset-bat-pct').value=a.batPct||'';
   document.getElementById('asset-bat-categoria').value=a.batCategoria||'';
@@ -1210,11 +1255,12 @@ function saveAsset(){
     // Pruebas automáticas
     autoCpuPass:document.getElementById('auto-cpu-pass').value,
     autoCpuTemp:document.getElementById('auto-cpu-temp').value,
-    autoRamPass:document.getElementById('auto-ram-pass').value,
-    autoSsdDesgaste:document.getElementById('auto-ssd-desgaste').value,
     autoWifi:document.getElementById('auto-wifi').value,
-    autoEth:document.getElementById('auto-eth').value,
     autoBt:document.getElementById('auto-bt').value,
+    autoSmart:document.getElementById('auto-smart').value,
+    autoSmartSectores:document.getElementById('auto-smart-sectores').value,
+    autoDiscoVel:document.getElementById('auto-disco-vel').value,
+    autoSsdDesgaste:document.getElementById('auto-ssd-desgaste').value,
     autoOs:document.getElementById('auto-os').value,
     // Diagnóstico, cosmético, funcional
     diag:readDiagFromForm(),cosmetico,funcional,
@@ -1611,11 +1657,12 @@ function parseDiagQR(){
     // Pruebas automáticas
     cpuPass:params.get('cpuPass')||'na',
     cpuTempMax:params.get('cpuTempMax')||'',
-    ramPass:params.get('ramPass')||'na',
-    ssdDesgaste:params.get('ssdDesgaste')||'',
     wifiDet:params.get('wifiDet')||'na',
-    ethDet:params.get('ethDet')||'na',
     btDet:params.get('btDet')||'na',
+    smart:params.get('smart')||'',
+    smartSectores:params.get('smartSectores')||'',
+    ssdDesgaste:params.get('ssdDesgaste')||'',
+    discoVelocidad:params.get('discoVelocidad')||'',
     osInstalado:params.get('osInstalado')||'no',
     fecha:params.get('fecha')||''
   };
@@ -1673,12 +1720,14 @@ function injectDiagToForm(d){
   // Pruebas automáticas
   if(d.cpuPass&&d.cpuPass!=='na'){const el=document.getElementById('auto-cpu-pass');if(el)el.value=d.cpuPass;}
   if(d.cpuTempMax){const el=document.getElementById('auto-cpu-temp');if(el)el.value=d.cpuTempMax+'°C';}
-  if(d.ramPass&&d.ramPass!=='na'){const el=document.getElementById('auto-ram-pass');if(el)el.value=d.ramPass;}
-  if(d.ssdDesgaste&&d.ssdDesgaste!=='N/A'){const el=document.getElementById('auto-ssd-desgaste');if(el)el.value=d.ssdDesgaste+'%';}
   if(d.wifiDet&&d.wifiDet!=='na'){const el=document.getElementById('auto-wifi');if(el)el.value=d.wifiDet;}
-  if(d.ethDet&&d.ethDet!=='na'){const el=document.getElementById('auto-eth');if(el)el.value=d.ethDet;}
   if(d.btDet&&d.btDet!=='na'){const el=document.getElementById('auto-bt');if(el)el.value=d.btDet;}
+  if(d.smart){const el=document.getElementById('auto-smart');if(el)el.value=d.smart;}
+  if(d.smartSectores&&d.smartSectores!=='N/A'){const el=document.getElementById('auto-smart-sectores');if(el)el.value=d.smartSectores;}
+  if(d.discoVelocidad&&d.discoVelocidad!=='N/A'){const el=document.getElementById('auto-disco-vel');if(el)el.value=d.discoVelocidad+' MB/s';}
+  if(d.ssdDesgaste&&d.ssdDesgaste!=='N/A'){const el=document.getElementById('auto-ssd-desgaste');if(el)el.value=d.ssdDesgaste+'%';}
   if(d.osInstalado){const el=document.getElementById('auto-os');if(el)el.value=d.osInstalado;}
+  updateAutoLeds();
   checkAssetMatch();
 }
 
