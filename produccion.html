@@ -447,6 +447,56 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
 
+  <!-- SECCIÓN: PRUEBAS AUTOMÁTICAS -->
+  <div style="background:#f0f4ff;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #c7d7f5">
+    <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Pruebas Automáticas</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field"><label>CPU</label>
+        <select id="auto-cpu-pass">
+          <option value="na">N/A</option>
+          <option value="pass">✓ Pass</option>
+          <option value="fail">✗ Fail</option>
+        </select>
+      </div>
+      <div class="field"><label>Temp. máx CPU (°C)</label><input type="text" id="auto-cpu-temp" readonly style="background:#f0f0ea;color:#888"></div>
+      <div class="field"><label>RAM</label>
+        <select id="auto-ram-pass">
+          <option value="na">N/A</option>
+          <option value="pass">✓ Pass</option>
+          <option value="fail">✗ Fail</option>
+        </select>
+      </div>
+      <div class="field"><label>Desgaste SSD (%)</label><input type="text" id="auto-ssd-desgaste" readonly style="background:#f0f0ea;color:#888"></div>
+      <div class="field"><label>WiFi</label>
+        <select id="auto-wifi">
+          <option value="na">N/A</option>
+          <option value="si">✓ Detectado</option>
+          <option value="no">✗ No detectado</option>
+        </select>
+      </div>
+      <div class="field"><label>Ethernet</label>
+        <select id="auto-eth">
+          <option value="na">N/A</option>
+          <option value="si">✓ Detectado</option>
+          <option value="no">✗ No detectado</option>
+        </select>
+      </div>
+      <div class="field"><label>Bluetooth</label>
+        <select id="auto-bt">
+          <option value="na">N/A</option>
+          <option value="si">✓ Detectado</option>
+          <option value="no">✗ No detectado</option>
+        </select>
+      </div>
+      <div class="field"><label>OS Instalado</label>
+        <select id="auto-os">
+          <option value="no">No</option>
+          <option value="si">Sí — Windows 11</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <!-- SECCIÓN: DIAGNÓSTICO -->
   <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
     <div style="font-weight:700;font-size:13px;color:#6b21a8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Diagnóstico</div>
@@ -926,6 +976,11 @@ function clearAssetForm(){
   ['asset-hd-services','asset-hd-manufacturer','asset-hd-model','asset-hd-interface','asset-hd-serial','asset-hd-source-serial','asset-hd-speed','asset-hd-capacity'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
   // GPU
   ['asset-gpu-fabricante','asset-gpu-modelo','asset-gpu-vram','asset-gpu-tipo'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  // Pruebas automáticas
+  ['auto-cpu-pass','auto-ram-pass','auto-wifi','auto-eth','auto-bt'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='na';});
+  document.getElementById('auto-cpu-temp').value='';
+  document.getElementById('auto-ssd-desgaste').value='';
+  document.getElementById('auto-os').value='no';
   // Batería
   document.getElementById('asset-bat-pct').value='';
   document.getElementById('asset-bat-categoria').value='';
@@ -972,6 +1027,15 @@ function fillAssetForm(a){
   document.getElementById('asset-gpu-modelo').value=a.gpuModelo||'';
   document.getElementById('asset-gpu-vram').value=a.gpuVRAM||'';
   document.getElementById('asset-gpu-tipo').value=a.gpuTipo||'';
+  // Pruebas automáticas
+  document.getElementById('auto-cpu-pass').value=a.autoCpuPass||'na';
+  document.getElementById('auto-cpu-temp').value=a.autoCpuTemp||'';
+  document.getElementById('auto-ram-pass').value=a.autoRamPass||'na';
+  document.getElementById('auto-ssd-desgaste').value=a.autoSsdDesgaste||'';
+  document.getElementById('auto-wifi').value=a.autoWifi||'na';
+  document.getElementById('auto-eth').value=a.autoEth||'na';
+  document.getElementById('auto-bt').value=a.autoBt||'na';
+  document.getElementById('auto-os').value=a.autoOs||'no';
   // Batería
   document.getElementById('asset-bat-pct').value=a.batPct||'';
   document.getElementById('asset-bat-categoria').value=a.batCategoria||'';
@@ -1143,6 +1207,15 @@ function saveAsset(){
     // Batería
     batPct:batPct,
     batCategoria:batPct?getBatCategoria(batPct):'',
+    // Pruebas automáticas
+    autoCpuPass:document.getElementById('auto-cpu-pass').value,
+    autoCpuTemp:document.getElementById('auto-cpu-temp').value,
+    autoRamPass:document.getElementById('auto-ram-pass').value,
+    autoSsdDesgaste:document.getElementById('auto-ssd-desgaste').value,
+    autoWifi:document.getElementById('auto-wifi').value,
+    autoEth:document.getElementById('auto-eth').value,
+    autoBt:document.getElementById('auto-bt').value,
+    autoOs:document.getElementById('auto-os').value,
     // Diagnóstico, cosmético, funcional
     diag:readDiagFromForm(),cosmetico,funcional,
     estado:destino==='Scrap'?'scrap_pendiente':'disponible'
@@ -1535,8 +1608,15 @@ function parseDiagQR(){
     diagCamara:params.get('diagCamara')||'na',
     diagBocinas:params.get('diagBocinas')||'na',
     diagMicrofono:params.get('diagMicrofono')||'na',
-    // Meta
-    smart:params.get('smart')||'',
+    // Pruebas automáticas
+    cpuPass:params.get('cpuPass')||'na',
+    cpuTempMax:params.get('cpuTempMax')||'',
+    ramPass:params.get('ramPass')||'na',
+    ssdDesgaste:params.get('ssdDesgaste')||'',
+    wifiDet:params.get('wifiDet')||'na',
+    ethDet:params.get('ethDet')||'na',
+    btDet:params.get('btDet')||'na',
+    osInstalado:params.get('osInstalado')||'no',
     fecha:params.get('fecha')||''
   };
 }
@@ -1590,6 +1670,15 @@ function injectDiagToForm(d){
   [['teclado',d.diagTeclado],['display',d.diagDisplay],['camara',d.diagCamara],['bocinas',d.diagBocinas],['microfono',d.diagMicrofono]].forEach(([k,v])=>{
     if(v&&v!=='na'){const el=document.querySelector(`input[name="asset-diag-${k}"][value="${v}"]`);if(el)el.checked=true;}
   });
+  // Pruebas automáticas
+  if(d.cpuPass&&d.cpuPass!=='na'){const el=document.getElementById('auto-cpu-pass');if(el)el.value=d.cpuPass;}
+  if(d.cpuTempMax){const el=document.getElementById('auto-cpu-temp');if(el)el.value=d.cpuTempMax+'°C';}
+  if(d.ramPass&&d.ramPass!=='na'){const el=document.getElementById('auto-ram-pass');if(el)el.value=d.ramPass;}
+  if(d.ssdDesgaste&&d.ssdDesgaste!=='N/A'){const el=document.getElementById('auto-ssd-desgaste');if(el)el.value=d.ssdDesgaste+'%';}
+  if(d.wifiDet&&d.wifiDet!=='na'){const el=document.getElementById('auto-wifi');if(el)el.value=d.wifiDet;}
+  if(d.ethDet&&d.ethDet!=='na'){const el=document.getElementById('auto-eth');if(el)el.value=d.ethDet;}
+  if(d.btDet&&d.btDet!=='na'){const el=document.getElementById('auto-bt');if(el)el.value=d.btDet;}
+  if(d.osInstalado){const el=document.getElementById('auto-os');if(el)el.value=d.osInstalado;}
   checkAssetMatch();
 }
 
@@ -1605,20 +1694,26 @@ function mostrarDiagBanner(d){
   const diagChips=[['Teclado',d.diagTeclado],['Display',d.diagDisplay],['Cámara',d.diagCamara],['Bocinas',d.diagBocinas],['Micrófono',d.diagMicrofono]]
     .filter(([,v])=>v&&v!=='na')
     .map(([n,v])=>`<span class="diag-chip ${v==='pass'?'ok':'bad'}">${v==='pass'?'✓':'✗'} ${n}</span>`).join('');
+  // Pruebas automáticas
+  const cpuChip=d.cpuPass&&d.cpuPass!=='na'?`<span class="diag-chip ${d.cpuPass==='pass'?'ok':'bad'}">${d.cpuPass==='pass'?'✓':'✗'} CPU${d.cpuTempMax?' '+d.cpuTempMax+'°C':''}</span>`:'';
+  const ramChip=d.ramPass&&d.ramPass!=='na'?`<span class="diag-chip ${d.ramPass==='pass'?'ok':'bad'}">${d.ramPass==='pass'?'✓':'✗'} RAM</span>`:'';
+  const wifiChip=d.wifiDet&&d.wifiDet!=='na'?`<span class="diag-chip ${d.wifiDet==='si'?'ok':'warn'}">WiFi:${d.wifiDet==='si'?'✓':'✗'}</span>`:'';
+  const ssdChip=d.ssdDesgaste&&d.ssdDesgaste!=='N/A'?`<span class="diag-chip ${parseInt(d.ssdDesgaste)<80?'ok':'bad'}">SSD ${d.ssdDesgaste}%</span>`:'';
+  const osChip=d.osInstalado==='si'?`<span class="diag-chip ok">✓ Win11</span>`:'';
   chips.innerHTML=`
     <span class="diag-chip ok">${d.marca} ${d.modelo}</span>
     ${d.serial&&d.serial!=='N/A'?`<span class="diag-chip">S/N: ${d.serial}</span>`:''}
     ${d.cpu&&d.cpu!=='N/A'?`<span class="diag-chip">${d.cpu}</span>`:''}
     ${d.ram&&d.ram!=='N/A'?`<span class="diag-chip ok">${d.ram} GB RAM</span>`:''}
     ${d.hdCapacity&&d.hdCapacity!=='N/A'?`<span class="diag-chip ok">${d.hdCapacity} GB ${d.hdInterface||''}</span>`:''}
-    ${smartChip}
+    ${smartChip}${ssdChip}
     ${d.batSalud&&d.batSalud!=='N/A'?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}">Bat: ${d.batSalud} (${batCat})</span>`:''}
+    ${cpuChip}${ramChip}${wifiChip}${osChip}
     ${diagChips}
     <span style="font-size:10px;color:#888;margin-left:8px">Diagnóstico: ${d.fecha}</span>`;
   el.style.display='flex';
   document.querySelectorAll('.nav button').forEach(btn=>{if(btn.textContent.trim()==='ARS')btn.click();});
 }
-
 function abrirAssetDesdeQR(){
   if(!_diagData)return;
   const d=_diagData;
