@@ -474,11 +474,15 @@ tr:hover td{background:#fafaf8}
       <div class="field" style="max-width:140px"><label>% Salud (QR)</label><input type="number" id="asset-bat-pct" min="0" max="100" oninput="onBatPctChange()"></div>
       <div class="field"><label>Categoría (auto)</label><input type="text" id="asset-bat-categoria" readonly style="background:#f0f0ea;color:#888;cursor:default"></div>
     </div>
+    <div class="field"><label>Baterías detectadas (QR)</label><input type="text" id="asset-bat-info" readonly style="background:#f0f0ea;color:#888;cursor:default;font-size:12px" placeholder="Ej. BAT0(interna):95%/87%/142c BAT1(interna):98%/92%/38c"></div>
   </div>
 
   <!-- SECCIÓN: PRUEBAS AUTOMÁTICAS -->
   <div style="background:#f0f4ff;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #c7d7f5">
     <div style="font-weight:700;font-size:13px;color:#1a56db;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Pruebas Automáticas</div>
+    <!-- Alertas MDM y Sticky Keys -->
+    <div id="auto-mdm-alert" style="display:none;margin-bottom:10px;padding:8px 12px;background:#fde8e8;border:1px solid #f0a0a0;border-radius:6px;font-size:12px;font-weight:600;color:#c0392b">⚠ MDM / Bloqueo remoto detectado</div>
+    <div id="auto-sticky-alert" style="display:none;margin-bottom:10px;padding:8px 12px;background:#fef8e8;border:1px solid #f0d080;border-radius:6px;font-size:12px;font-weight:600;color:#a05a00">⚠ Sticky Keys detectadas durante diagnóstico</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="field"><label>CPU Burn test</label>
         <select id="auto-cpu-pass">
@@ -535,6 +539,16 @@ tr:hover td{background:#fafaf8}
   <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
     <div style="font-weight:700;font-size:13px;color:#6b21a8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Diagnóstico</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
+      <!-- Fecha BIOS -->
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Fecha BIOS</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-fechabios" value="pass"> <span style="color:#1a7a3c">✓ Correcta</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-fechabios" value="fail"> <span style="color:#c0392b">✗ Incorrecta</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-fechabios" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <!-- Teclado -->
       <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
         <div style="font-size:12px;font-weight:600;margin-bottom:6px">Teclado</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -543,6 +557,7 @@ tr:hover td{background:#fafaf8}
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-teclado" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
+      <!-- Display -->
       <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
         <div style="font-size:12px;font-weight:600;margin-bottom:6px">Display</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -551,14 +566,25 @@ tr:hover td{background:#fafaf8}
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-display" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
+      <!-- Cámara (detección auto) -->
       <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
-        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Cámara</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Cámara (detección)</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camara" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camara" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camara" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
+      <!-- Cámara en vivo -->
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Cámara (imagen vivo)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camaravivo" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camaravivo" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-camaravivo" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <!-- Bocinas -->
       <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
         <div style="font-size:12px;font-weight:600;margin-bottom:6px">Bocinas</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -567,6 +593,7 @@ tr:hover td{background:#fafaf8}
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-bocinas" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
+      <!-- Micrófono -->
       <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
         <div style="font-size:12px;font-weight:600;margin-bottom:6px">Micrófono</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -575,12 +602,40 @@ tr:hover td{background:#fafaf8}
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-microfono" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
-      <div>
+      <!-- Touchpad -->
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
         <div style="font-size:12px;font-weight:600;margin-bottom:6px">Touchpad</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchpad" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchpad" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
           <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchpad" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <!-- Touch Screen -->
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Pantalla Touch</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchscreen" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchscreen" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-touchscreen" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <!-- Puertos USB -->
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Puertos USB</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-usb" value="pass"> <span style="color:#1a7a3c">✓ Pass</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-usb" value="fail"> <span style="color:#c0392b">✗ Fail</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-usb" value="na" checked> <span style="color:#888">N/A</span></label>
+        </div>
+      </div>
+      <!-- Centro de carga -->
+      <div style="background:#fff;border-radius:6px;padding:10px;border:1px solid #e0e0d8">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">Centro de carga</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-centrocarga" value="pass"> <span style="color:#1a7a3c">✓ Carga</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-centrocarga" value="fail"> <span style="color:#c0392b">✗ No carga</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400"><input type="radio" name="asset-diag-centrocarga" value="na" checked> <span style="color:#888">N/A</span></label>
         </div>
       </div>
     </div>
@@ -1153,11 +1208,14 @@ function clearAssetForm(){
   document.getElementById('auto-os').value='no';
   const sectLed=document.getElementById('auto-smart-sectores-led');if(sectLed)sectLed.textContent='⚪';
   const velLed=document.getElementById('auto-disco-vel-led');if(velLed)velLed.textContent='⚪';
+  const mdmA=document.getElementById('auto-mdm-alert');if(mdmA)mdmA.style.display='none';
+  const skyA=document.getElementById('auto-sticky-alert');if(skyA)skyA.style.display='none';
   // Batería
   document.getElementById('asset-bat-pct').value='';
   document.getElementById('asset-bat-categoria').value='';
-  // Diagnóstico
-  ['teclado','display','camara','bocinas','microfono','touchpad'].forEach(k=>{
+  const batInfo=document.getElementById('asset-bat-info');if(batInfo)batInfo.value='';
+  // Diagnóstico — todos los tests incluidos nuevos
+  ['teclado','display','camara','camaravivo','bocinas','microfono','touchpad','fechabios','touchscreen','usb','centrocarga'].forEach(k=>{
     const el=document.querySelector(`input[name="asset-diag-${k}"][value="na"]`);if(el)el.checked=true;
   });
   // Cosmético
@@ -1213,8 +1271,11 @@ function fillAssetForm(a){
   // Batería
   document.getElementById('asset-bat-pct').value=a.batPct||'';
   document.getElementById('asset-bat-categoria').value=a.batCategoria||'';
-  // Diagnóstico
-  ['teclado','display','camara','bocinas','microfono','touchpad'].forEach(k=>{
+  const batInfoEl=document.getElementById('asset-bat-info');if(batInfoEl)batInfoEl.value=a.batInfo||'';
+  const mdmEl=document.getElementById('auto-mdm-alert');if(mdmEl)mdmEl.style.display=a.mdmDetectado==='si'?'block':'none';
+  const skyEl=document.getElementById('auto-sticky-alert');if(skyEl)skyEl.style.display=a.stickyKeys==='si'?'block':'none';
+  // Diagnóstico — todos los tests
+  ['teclado','display','camara','camaravivo','bocinas','microfono','touchpad','fechabios','touchscreen','usb','centrocarga'].forEach(k=>{
     const val=(a.diag||{})[k]||'na';
     const el=document.querySelector(`input[name="asset-diag-${k}"][value="${val}"]`);if(el)el.checked=true;
   });
@@ -1301,7 +1362,7 @@ function checkAssetPrecio(){
 
 function readDiagFromForm(){
   const diag={};
-  ['teclado','display','camara','bocinas','microfono','touchpad'].forEach(k=>{
+  ['teclado','display','camara','camaravivo','bocinas','microfono','touchpad','fechabios','touchscreen','usb','centrocarga'].forEach(k=>{
     const sel=document.querySelector(`input[name="asset-diag-${k}"]:checked`);
     diag[k]=sel?sel.value:'na';
   });
@@ -1381,6 +1442,10 @@ function saveAsset(){
     // Batería
     batPct:batPct,
     batCategoria:batPct?getBatCategoria(batPct):'',
+    batInfo:(document.getElementById('asset-bat-info')||{}).value||'',
+    // Alertas (read-only, del QR)
+    mdmDetectado:(document.getElementById('auto-mdm-alert')||{}).style&&document.getElementById('auto-mdm-alert').style.display!=='none'?'si':'no',
+    stickyKeys:(document.getElementById('auto-sticky-alert')||{}).style&&document.getElementById('auto-sticky-alert').style.display!=='none'?'si':'no',
     // Pruebas automáticas
     autoCpuPass:document.getElementById('auto-cpu-pass').value,
     autoCpuTemp:document.getElementById('auto-cpu-temp').value,
@@ -1833,13 +1898,19 @@ function parseDiagQR(){
     gpuTipo:     p('gpuTipo','gt'),
     // Batería
     batSalud:    p('batSalud','ba'),
+    batInfo:     p('batInfo','bai'),        // info todas las baterías
     // Diagnóstico periféricos
+    diagFechaBios:p('diagFechaBios','dbios','na'),
     diagTeclado: p('diagTeclado','dt','na'),
     diagDisplay: p('diagDisplay','dp','na'),
     diagCamara:  p('diagCamara','dc','na'),
+    diagCamaraVivo:p('diagCamaraVivo','dcv','na'),
     diagBocinas: p('diagBocinas','db','na'),
     diagMicrofono:p('diagMicrofono','dm','na'),
     diagTouchpad:p('diagTouchpad','dtp','na'),
+    diagTouchScreen:p('diagTouchScreen','dts','na'),
+    diagUsb:     p('diagUsb','dusb','na'),
+    diagCentro:  p('diagCentro','dbc','na'),
     // Pruebas automáticas
     cpuPass:     p('cpuPass','ca','na'),
     cpuTempMax:  p('cpuTempMax','ct'),
@@ -1850,6 +1921,9 @@ function parseDiagQR(){
     ssdDesgaste: p('ssdDesgaste','sd'),
     discoVelocidad:p('discoVelocidad','dv'),
     osInstalado: p('osInstalado','os','no'),
+    // Alertas
+    mdmDetectado:p('mdmDetectado','mdm','no'),
+    stickyKeys:  p('stickyKeys','sky','no'),
     fecha:       p('fecha','fe')
   };
 }
@@ -1899,8 +1973,22 @@ function injectDiagToForm(d){
     const el=document.getElementById('asset-bat-pct');if(el&&!el.value){el.value=pct;el.classList.add('prefilled');el.addEventListener('animationend',()=>el.classList.remove('prefilled'),{once:true});}
     document.getElementById('asset-bat-categoria').value=getBatCategoria(pct);
   }
-  // Diagnóstico periféricos
-  [['teclado',d.diagTeclado],['display',d.diagDisplay],['camara',d.diagCamara],['bocinas',d.diagBocinas],['microfono',d.diagMicrofono],['touchpad',d.diagTouchpad]].forEach(([k,v])=>{
+  if(d.batInfo&&d.batInfo!=='N/A'){
+    const el=document.getElementById('asset-bat-info');if(el)el.value=d.batInfo;
+  }
+  // Alertas MDM y Sticky Keys
+  if(d.mdmDetectado==='si'){
+    const el=document.getElementById('auto-mdm-alert');if(el)el.style.display='block';
+  }
+  if(d.stickyKeys==='si'){
+    const el=document.getElementById('auto-sticky-alert');if(el)el.style.display='block';
+  }
+  // Diagnóstico periféricos — incluye nuevos tests
+  [['fechabios',d.diagFechaBios],['teclado',d.diagTeclado],['display',d.diagDisplay],
+   ['camara',d.diagCamara],['camaravivo',d.diagCamaraVivo],
+   ['bocinas',d.diagBocinas],['microfono',d.diagMicrofono],['touchpad',d.diagTouchpad],
+   ['touchscreen',d.diagTouchScreen],['usb',d.diagUsb],['centrocarga',d.diagCentro]
+  ].forEach(([k,v])=>{
     if(v&&v!=='na'){const el=document.querySelector(`input[name="asset-diag-${k}"][value="${v}"]`);if(el)el.checked=true;}
   });
   // Pruebas automáticas
@@ -1925,25 +2013,37 @@ function mostrarDiagBanner(d){
   const smartChip=d.smart&&d.smart!=='N/A'?`<span class="diag-chip ${smartOk?'ok':'bad'}">${smartOk?'✓ SMART OK':'✗ SMART FAIL'}</span>`:'';
   const batPct=parseInt(d.batSalud)||0;
   const batCat=d.batSalud&&d.batSalud!=='N/A'?getBatCategoria(batPct):'';
-  // Diagnóstico periféricos
-  const diagChips=[['Teclado',d.diagTeclado],['Display',d.diagDisplay],['Cámara',d.diagCamara],['Bocinas',d.diagBocinas],['Micrófono',d.diagMicrofono]]
+  // Alertas MDM y Sticky Keys
+  const mdmChip=d.mdmDetectado==='si'?`<span class="diag-chip bad">⚠ MDM</span>`:'';
+  const skyChip=d.stickyKeys==='si'?`<span class="diag-chip warn">⚠ Sticky Keys</span>`:'';
+  // Diagnóstico periféricos — todos los tests
+  const diagMap=[
+    ['Fecha BIOS',d.diagFechaBios],['Teclado',d.diagTeclado],['Display',d.diagDisplay],
+    ['Cámara',d.diagCamara],['Cámara vivo',d.diagCamaraVivo],
+    ['Bocinas',d.diagBocinas],['Micrófono',d.diagMicrofono],['Touchpad',d.diagTouchpad],
+    ['Touch',d.diagTouchScreen],['USB',d.diagUsb],['Carga',d.diagCentro]
+  ];
+  const diagChips=diagMap
     .filter(([,v])=>v&&v!=='na')
     .map(([n,v])=>`<span class="diag-chip ${v==='pass'?'ok':'bad'}">${v==='pass'?'✓':'✗'} ${n}</span>`).join('');
   // Pruebas automáticas
   const cpuChip=d.cpuPass&&d.cpuPass!=='na'?`<span class="diag-chip ${d.cpuPass==='pass'?'ok':'bad'}">${d.cpuPass==='pass'?'✓':'✗'} CPU${d.cpuTempMax?' '+d.cpuTempMax+'°C':''}</span>`:'';
-  const ramChip=d.ramPass&&d.ramPass!=='na'?`<span class="diag-chip ${d.ramPass==='pass'?'ok':'bad'}">${d.ramPass==='pass'?'✓':'✗'} RAM</span>`:'';
   const wifiChip=d.wifiDet&&d.wifiDet!=='na'?`<span class="diag-chip ${d.wifiDet==='si'?'ok':'warn'}">WiFi:${d.wifiDet==='si'?'✓':'✗'}</span>`:'';
-  const ssdChip=d.ssdDesgaste&&d.ssdDesgaste!=='N/A'?`<span class="diag-chip ${parseInt(d.ssdDesgaste)<80?'ok':'bad'}">SSD ${d.ssdDesgaste}%</span>`:'';
+  const ssdChip=d.ssdDesgaste&&d.ssdDesgaste!=='N/A'?`<span class="diag-chip ${parseInt(d.ssdDesgaste)>=50?'ok':'bad'}">SSD ${d.ssdDesgaste}%</span>`:'';
   const osChip=d.osInstalado==='si'?`<span class="diag-chip ok">✓ Win11</span>`:'';
+  // Batería: mostrar info completa si existe, sino salud simple
+  const batChip=d.batInfo&&d.batInfo!=='N/A'
+    ?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}" title="${d.batInfo}">Bat: ${d.batSalud}</span>`
+    :d.batSalud&&d.batSalud!=='N/A'?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}">Bat: ${d.batSalud} (${batCat})</span>`:'';
   chips.innerHTML=`
+    ${mdmChip}${skyChip}
     <span class="diag-chip ok">${d.marca} ${d.modelo}</span>
     ${d.serial&&d.serial!=='N/A'?`<span class="diag-chip">S/N: ${d.serial}</span>`:''}
     ${d.cpu&&d.cpu!=='N/A'?`<span class="diag-chip">${d.cpu}</span>`:''}
     ${d.ram&&d.ram!=='N/A'?`<span class="diag-chip ok">${d.ram} GB RAM</span>`:''}
     ${d.hdCapacity&&d.hdCapacity!=='N/A'?`<span class="diag-chip ok">${d.hdCapacity} GB ${d.hdInterface||''}</span>`:''}
-    ${smartChip}${ssdChip}
-    ${d.batSalud&&d.batSalud!=='N/A'?`<span class="diag-chip ${batPct>70?'ok':batPct>40?'warn':'bad'}">Bat: ${d.batSalud} (${batCat})</span>`:''}
-    ${cpuChip}${ramChip}${wifiChip}${osChip}
+    ${smartChip}${ssdChip}${batChip}
+    ${cpuChip}${wifiChip}${osChip}
     ${diagChips}
     <span style="font-size:10px;color:#888;margin-left:8px">Diagnóstico: ${d.fecha}</span>`;
   el.style.display='flex';
