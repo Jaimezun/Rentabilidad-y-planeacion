@@ -93,6 +93,7 @@ tr:hover td{background:#fafaf8}
 .estado-enproceso{background:#fef8e8;color:#a05a00;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .estado-finalizado{background:#e8f8ed;color:#1a7a3c;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .estado-plancompleta{background:#f0e8fe;color:#6b21a8;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.estado-listocierre{background:#dff5e0;color:#0b5d2d;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;border:1px solid #1a7a3c}
 .area-tag-eol{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;background:#e8f0fe;color:#1a56db;margin-left:4px}
 .area-tag-ars{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;background:#e8faf8;color:#0f6e56;margin-left:4px}
 .estado-encamino{background:#f0f0ea;color:#666;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
@@ -174,10 +175,10 @@ tr:hover td{background:#fafaf8}
   <div id="sec-clientes-lista" class="section active">
     <div class="row center" style="margin-bottom:20px">
       <h2 style="margin:0;flex:1">Clientes</h2>
-      <button class="btn primary" onclick="openModal('modal-cliente')">+ Nuevo cliente</button>
+      <button class="btn primary" onclick="openNewCliente()">+ Nuevo cliente</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Lotes</th><th>Estado</th><th></th></tr></thead>
+      <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Ubicaciones</th><th>Contactos</th><th>Lotes</th><th></th></tr></thead>
       <tbody id="clientes-table"></tbody></table>
     </div>
   </div>
@@ -310,7 +311,7 @@ tr:hover td{background:#fafaf8}
     <div class="row center" style="gap:8px;margin:0">
       <select id="lotes-filtro-estado" onchange="renderLotes()" style="width:160px;padding:7px 10px">
         <option value="">Todos los estados</option>
-        <option>En evaluación</option><option>Autorizada</option><option>En negociación</option><option>Ganada</option><option>Perdida</option><option>En camino</option><option>Sin programar</option><option>Programado</option><option>En proceso</option><option>Plan completa</option><option>Finalizado</option>
+        <option>En evaluación</option><option>Autorizada</option><option>En negociación</option><option>Ganada</option><option>Perdida</option><option>En camino</option><option>Sin programar</option><option>Programado</option><option>En proceso</option><option>Plan completa</option><option>Listo para cierre</option><option>Finalizado</option>
       </select>
       <button class="btn primary" onclick="openNewLote()">+ Nuevo lote</button>
     </div>
@@ -446,7 +447,6 @@ tr:hover td{background:#fafaf8}
     <button class="tab active" onclick="showSection('sec-plantilla-eol')">Plantilla EOL</button>
     <button class="tab" onclick="showSection('sec-plantilla-ars')">Plantilla ARS</button>
     <button class="tab" onclick="showSection('sec-inhabiles')">Días inhábiles</button>
-    <button class="tab" onclick="showSection('sec-cat-hoes')">Categorías HOE</button>
     <button class="tab" onclick="showSection('sec-datos')">Exportar / Importar</button>
   </div>
   <div id="sec-plantilla-eol" class="section active">
@@ -487,17 +487,6 @@ tr:hover td{background:#fafaf8}
       <div id="inhabiles-list"></div>
     </div>
   </div>
-  <div id="sec-cat-hoes" class="section">
-    <div class="card" style="max-width:500px">
-      <h3>Categorías de HOE</h3>
-      <p style="font-size:13px;color:#666;margin-bottom:12px">Define las categorías para clasificar las HOEs.</p>
-      <div class="row" style="gap:8px;align-items:flex-end;margin-bottom:12px">
-        <div class="field" style="margin:0"><label>Nueva categoría</label><input type="text" id="cfg-cat-hoe-input" placeholder="Ej. Servidores"></div>
-        <button class="btn primary" onclick="addCatHoe()" style="margin-bottom:0">Agregar</button>
-      </div>
-      <div id="cfg-cat-hoe-list"></div>
-    </div>
-  </div>
   <div id="sec-datos" class="section">
     <div class="card" style="max-width:500px">
       <h3>Exportar datos</h3>
@@ -518,13 +507,42 @@ tr:hover td{background:#fafaf8}
 </div><!-- end app -->
 
 <!-- ===== MODALS ===== -->
-<div id="modal-cliente" class="modal-overlay" style="display:none"><div class="modal">
+<div id="modal-cliente" class="modal-overlay" style="display:none"><div class="modal" style="max-width:720px">
   <h3 id="modal-cliente-title">Nuevo cliente</h3>
   <input type="hidden" id="cliente-edit-id">
-  <div class="field"><label>Nombre</label><input type="text" id="cliente-nombre" placeholder="Ej. Empresa ABC"></div>
-  <div class="field"><label>Usuario (portal)</label><input type="text" id="cliente-usuario"></div>
-  <div class="field"><label>Contraseña</label><input type="password" id="cliente-password"></div>
-  <div class="field"><label>Email (opcional)</label><input type="text" id="cliente-email"></div>
+
+  <!-- DATOS GENERALES -->
+  <div style="background:#f8f8f4;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #e0e0d8">
+    <div style="font-weight:700;font-size:12px;color:#1a1a1a;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Datos generales</div>
+    <div class="row">
+      <div class="field" style="flex:2"><label>Nombre</label><input type="text" id="cliente-nombre" placeholder="Ej. Empresa ABC"></div>
+      <div class="field"><label>Email principal (opcional)</label><input type="text" id="cliente-email"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Usuario (portal)</label><input type="text" id="cliente-usuario"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="cliente-password"></div>
+    </div>
+  </div>
+
+  <!-- UBICACIONES -->
+  <div style="background:#f0f4ff;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #c8d8f8">
+    <div class="row center" style="margin-bottom:8px">
+      <label style="flex:1;margin:0;font-size:12px;font-weight:700;color:#1a56db;text-transform:uppercase;letter-spacing:0.05em">📍 Ubicaciones</label>
+      <button class="btn small" onclick="addUbicacionRow()">+ Agregar ubicación</button>
+    </div>
+    <div id="cliente-ubicaciones-rows"></div>
+  </div>
+
+  <!-- CONTACTOS -->
+  <div style="background:#f0faf8;border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid #a0d8cc">
+    <div class="row center" style="margin-bottom:6px">
+      <label style="flex:1;margin:0;font-size:12px;font-weight:700;color:#0f6e56;text-transform:uppercase;letter-spacing:0.05em">👥 Contactos</label>
+      <button class="btn small" onclick="addContactoRow()">+ Agregar contacto</button>
+    </div>
+    <div style="font-size:11px;color:#0f6e56;margin-bottom:10px"><strong>Tier 1</strong>: reciben emails automáticos (próximamente). <strong>Tier 2</strong>: contactos de referencia, sin emails.</div>
+    <div id="cliente-contactos-rows"></div>
+  </div>
+
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-cliente')">Cancelar</button><button class="btn primary" onclick="saveCliente()">Guardar</button></div>
 </div></div>
 
@@ -616,7 +634,7 @@ tr:hover td{background:#fafaf8}
         <option value="especifica">Específica</option>
       </select>
     </div>
-    <div class="field" id="hoe-campo-categoria"><label>Categoría HOE</label><select id="hoe-categoria"><option value="">— Sin categoría —</option></select></div>
+    <div class="field" id="hoe-campo-categoria"><label>Categoría (catálogo de cierre)</label><select id="hoe-categoria"><option value="">— Sin categoría —</option></select></div>
   </div>
   <div id="hoe-estimada-section" style="display:none">
     <div class="alert warning" style="margin-bottom:8px">Esta HOE es un <strong>estimado</strong>. Los valores deberán confirmarse cuando llegue el dispositivo real.</div>
@@ -664,9 +682,7 @@ tr:hover td{background:#fafaf8}
   <input type="hidden" id="resultado-lote-id">
   <input type="hidden" id="resultado-tipo">
   <div id="modal-resultado-ganada" style="display:none">
-    <div class="alert success" style="margin-bottom:12px">¡Propuesta ganada! Define los días de entrega para calcular el deadline automáticamente al recibir el lote.</div>
-    <div class="field"><label>Días de entrega desde recibo</label><input type="number" id="resultado-dias-entrega" min="1" placeholder="Ej. 45"></div>
-    <div style="font-size:12px;color:#888;margin-top:-8px;margin-bottom:12px">El deadline se calculará automáticamente cuando se registre el recibo del lote.</div>
+    <div class="alert success" style="margin-bottom:12px">¡Propuesta ganada! Los días de entrega ya están definidos en el lote y el deadline se calculará al recibir el material.</div>
   </div>
   <div id="modal-resultado-perdida" style="display:none">
     <div class="alert danger" style="margin-bottom:12px">Marca este lote como perdido. Se conservará en histórico.</div>
@@ -691,15 +707,56 @@ tr:hover td{background:#fafaf8}
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-catalogo-cierre')">Cancelar</button><button class="btn primary" onclick="saveCatalogoCierre()">Guardar</button></div>
 </div></div>
 
-<div id="modal-lote" class="modal-overlay" style="display:none"><div class="modal" style="max-width:680px">
+<div id="modal-lote" class="modal-overlay" style="display:none"><div class="modal" style="max-width:720px">
   <h3 id="modal-lote-title">Nuevo lote</h3>
   <input type="hidden" id="lote-edit-id">
   <div class="row">
-    <div class="field" style="flex:2"><label>Número de lote</label><input type="text" id="lote-nombre" readonly style="background:#f5f5f0;color:#888;cursor:default"></div>
+    <div class="field" style="flex:1"><label>Número de lote</label><input type="text" id="lote-nombre" readonly style="background:#f5f5f0;color:#888;cursor:default"></div>
     <div class="field"><label>Fecha de arribo</label><input type="date" id="lote-arribo"></div>
-    <div class="field"><label>Deadline</label><input type="date" id="lote-deadline"></div>
+    <div class="field"><label>Días de entrega <span style="color:#c0392b">*</span></label><input type="number" id="lote-dias-entrega" min="1" placeholder="Ej. 45"></div>
   </div>
-  <div class="field"><label>Cliente</label><select id="lote-cliente"></select></div>
+  <div style="font-size:11px;color:#888;margin-top:-6px;margin-bottom:12px">El deadline se calcula automáticamente: fecha de recibo + días de entrega.</div>
+  <div class="row">
+    <div class="field" style="flex:2"><label>Cliente <span style="color:#c0392b">*</span></label><select id="lote-cliente" onchange="onLoteClienteChange()"></select></div>
+    <div class="field"><label>Ubicación / Entrega</label><select id="lote-ubicacion"></select></div>
+  </div>
+
+  <!-- INSTRUCCIONES DEL LOTE -->
+  <div style="margin-bottom:12px;padding:14px;background:#fff8f0;border-radius:8px;border:1px solid #f0d0a0">
+    <div style="font-weight:700;font-size:12px;color:#a05a00;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">Instrucciones del lote</div>
+    <div class="row">
+      <div class="field"><label>Tipo de lote <span style="color:#c0392b">*</span></label>
+        <select id="lote-tipo">
+          <option value="eol">EOL (solo destrucción)</option>
+          <option value="mixto">Mixto (EOL + ARS)</option>
+        </select>
+      </div>
+      <div class="field"><label>Tipo de inventario</label>
+        <select id="lote-inv-tipo">
+          <option value="">— Sin especificar —</option>
+          <option value="bajo">Bajo</option>
+          <option value="medio">Medio</option>
+          <option value="alto">Alto</option>
+        </select>
+      </div>
+      <div class="field"><label>Evidencia fotográfica</label>
+        <select id="lote-evidencia">
+          <option value="no">No requerida</option>
+          <option value="si">Sí, requerida</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>Servicio de borrado (selecciona uno o más)</label>
+      <div id="lote-borrado-options" style="display:flex;flex-wrap:wrap;gap:10px;padding:8px;background:#fff;border:1px solid #ccc;border-radius:6px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:#1a1a1a;cursor:pointer"><input type="checkbox" value="triturado" style="width:auto;margin:0"> Triturado</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:#1a1a1a;cursor:pointer"><input type="checkbox" value="blancco" style="width:auto;margin:0"> Blancco</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:#1a1a1a;cursor:pointer"><input type="checkbox" value="degauss" style="width:auto;margin:0"> DeGauss</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:#1a1a1a;cursor:pointer"><input type="checkbox" value="no-especificado" style="width:auto;margin:0"> No especificado</label>
+      </div>
+    </div>
+  </div>
+
   <div style="margin-bottom:12px;padding:14px;background:#f0f4ff;border-radius:8px;border:1px solid #c8d8f8">
     <div class="row center" style="margin-bottom:8px">
       <label style="flex:1;margin:0;font-size:13px;font-weight:600;color:#1a56db">HOEs <span class="area-tag-eol">EOL</span></label>
@@ -740,12 +797,13 @@ tr:hover td{background:#fafaf8}
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-cierre')">Cancelar</button><button class="btn warning" onclick="finalizarLote()" style="color:#fff">Finalizar lote</button></div>
 </div></div>
 
-<div id="modal-costeo" class="modal-overlay" style="display:none"><div class="modal" style="max-width:640px">
+<div id="modal-costeo" class="modal-overlay" style="display:none"><div class="modal" style="max-width:720px">
   <h3 id="modal-costeo-title">Costeo del lote</h3>
   <input type="hidden" id="costeo-lote-id">
   <div class="tabs">
     <button class="tab active" onclick="showCosteoTab('egresos')">Egresos</button>
     <button class="tab" onclick="showCosteoTab('ingresos')">Ingresos</button>
+    <button class="tab" onclick="showCosteoTab('linea')">Cobros por línea</button>
     <button class="tab" onclick="showCosteoTab('resumen')">Resumen</button>
   </div>
   <div id="costeo-egresos" class="section active">
@@ -758,15 +816,30 @@ tr:hover td{background:#fafaf8}
     <div id="cst-refacciones-box" class="info-box"></div>
   </div>
   <div id="costeo-ingresos" class="section">
-    <div class="field"><label>Cobro por procesamiento</label>
+    <div class="field"><label>Cobro global por procesamiento (coexiste con cobros por línea)</label>
       <div class="row" style="gap:8px">
         <select id="cst-cobro-tipo" style="flex:1"><option value="total">Total ($)</option><option value="kg">Por kg</option><option value="pieza">Por pieza</option></select>
         <input type="number" id="cst-cobro-valor" step="0.01" value="0" style="flex:1">
       </div>
+      <div style="font-size:11px;color:#888;margin-top:4px">Valor negativo = pago al cliente (entra como egreso).</div>
     </div>
     <div class="field"><label>Ingreso logística ($)</label><input type="number" id="cst-log-ingreso" step="0.01" value="0"></div>
     <div id="cst-commodities-val" class="info-box"></div>
     <div id="cst-items-ars-val" class="info-box"></div>
+  </div>
+  <div id="costeo-linea" class="section">
+    <div class="alert info" style="margin-bottom:12px">Define cobros/pagos por HOE o por item ARS individualmente. <strong>Valor negativo = pago al cliente</strong> (cuenta como ingreso/recuperación). Coexiste con el cobro global de la pestaña Ingresos.</div>
+    <div style="margin-bottom:12px;padding:12px;background:#f0f4ff;border-radius:8px;border:1px solid #c8d8f8">
+      <div style="font-weight:700;font-size:12px;color:#1a56db;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Cobros por HOE <span class="area-tag-eol">EOL</span></div>
+      <div id="cst-linea-hoe-rows"></div>
+      <div id="cst-linea-hoe-vacio" style="font-size:13px;color:#888;display:none">Este lote no tiene HOEs.</div>
+    </div>
+    <div style="margin-bottom:12px;padding:12px;background:#f0faf8;border-radius:8px;border:1px solid #a0d8cc">
+      <div style="font-weight:700;font-size:12px;color:#0f6e56;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Cobros por item ARS <span class="area-tag-ars">ARS</span></div>
+      <div id="cst-linea-ars-rows"></div>
+      <div id="cst-linea-ars-vacio" style="font-size:13px;color:#888;display:none">Este lote no tiene items ARS.</div>
+      <div id="cst-linea-ars-aviso" style="font-size:11px;color:#a05a00;margin-top:6px;display:none">⚠ Para facturar items ARS por kg se necesita que ARS haya hecho selección (kg/piezas) en producción. Mientras tanto solo se permite "Por pieza".</div>
+    </div>
   </div>
   <div id="costeo-resumen" class="section"><div id="cst-resumen-content"></div></div>
   <div class="modal-footer"><button class="btn" onclick="closeModal('modal-costeo')">Cancelar</button><button class="btn primary" onclick="saveCosteo()">Guardar</button></div>
@@ -842,7 +915,6 @@ let state={
   operadoresEOL:[],operadoresARS:[],
   diasEOL:{},diasARS:{},
   recibos:{},
-  catHoes:[],
   inhabiles:[],
   config:{
     eol:{sueldoDia:500,gastosFijos:1000},
@@ -895,10 +967,10 @@ function loadState(){
     state[k]=state[k]||[];
   });
   state.commodities=state.commodities.map(c=>({...c,tipo:c.tipo||'ingreso'}));
+  state.clientes=state.clientes.map(c=>({...c,ubicaciones:Array.isArray(c.ubicaciones)?c.ubicaciones:[],contactos:Array.isArray(c.contactos)?c.contactos:[]}));
   state.diasEOL=state.diasEOL||{};
   state.diasARS=state.diasARS||{};
   state.recibos=state.recibos||{};
-  state.catHoes=state.catHoes||[];
   state.costeos=state.costeos||{};
   state.cierres=state.cierres||{};
   checkAuth();
@@ -968,6 +1040,8 @@ function getEstadoLote(lote){
   if(lote.estadoComercial==='ganada'){
     // Operational flow
     if(lote.finalizado)return'Finalizado';
+    // Doble-cierre: lote listo para que el admin cierre
+    if(puedeCerrarseAdmin(lote))return'Listo para cierre';
     const trEOL=tiempoRestanteLote(lote.id,'eol');
     const trARS=tiempoRestanteLote(lote.id,'ars');
     const tieneEOL=(lote.tiempoTotal||0)>0;
@@ -990,8 +1064,19 @@ function getEstadoLote(lote){
   return'En evaluación';
 }
 
+// True si el lote está listo para que el admin marque finalizado
+function puedeCerrarseAdmin(lote){
+  if(!lote||lote.finalizado)return false;
+  if(lote.estadoComercial!=='ganada')return false;
+  if(!lote.eolCerrado)return false;
+  const tipoLote=lote.instrucciones&&lote.instrucciones.tipoLote||'eol';
+  if(tipoLote==='mixto'&&!lote.arsCerrado)return false;
+  return true;
+}
+
 function estadoBadge(est){
   if(est==='Finalizado')return`<span class="estado-finalizado">${est}</span>`;
+  if(est==='Listo para cierre')return`<span class="estado-listocierre">${est}</span>`;
   if(est==='En proceso')return`<span class="estado-enproceso">${est}</span>`;
   if(est==='Plan completa')return`<span class="estado-plancompleta">${est}</span>`;
   if(est==='En camino')return`<span class="estado-encamino">${est}</span>`;
@@ -1006,6 +1091,77 @@ function estadoBadge(est){
 }
 
 // ── CLIENTES ──────────────────────────────────────────────
+// Helper: escape para usar dentro de atributos HTML (value="...")
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// Lee las ubicaciones que están en el DOM ahora mismo (modal abierto)
+function getCurrentUbicaciones(){
+  return Array.from(document.querySelectorAll('#cliente-ubicaciones-rows .ubicacion-row')).map(r=>({
+    id:r.querySelector('.ubic-id').value,
+    nombre:r.querySelector('.ubic-nombre').value.trim()||'(sin nombre)'
+  })).filter(u=>u.id);
+}
+
+function addUbicacionRow(data){
+  data=data||{};
+  // Genera un id estable al crear; persiste aunque el usuario re-ordene
+  const ubicId=data.id||('ub'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const row=document.createElement('div');
+  row.className='ubicacion-row';
+  row.style.cssText='background:#fff;border:1px solid #c8d8f8;border-radius:6px;padding:10px;margin-bottom:8px';
+  row.innerHTML=`
+    <input type="hidden" class="ubic-id" value="${escAttr(ubicId)}">
+    <div class="row" style="gap:6px;margin-bottom:6px;align-items:center">
+      <input type="text" class="ubic-nombre" value="${escAttr(data.nombre||'')}" placeholder="Etiqueta (ej. Planta Norte)" style="flex:2">
+      <input type="text" class="ubic-ciudad" value="${escAttr(data.ciudad||'')}" placeholder="Ciudad / Estado" style="flex:1">
+      <button class="btn small danger" type="button">✕</button>
+    </div>
+    <div class="row" style="gap:6px;align-items:center">
+      <input type="text" class="ubic-direccion" value="${escAttr(data.direccion||'')}" placeholder="Dirección" style="flex:2">
+      <input type="text" class="ubic-notas" value="${escAttr(data.notas||'')}" placeholder="Notas (opcional)" style="flex:1">
+    </div>
+  `;
+  // Listener: cuando se borra una ubicación, se elimina la fila
+  row.querySelector('.btn.danger').addEventListener('click',()=>{row.remove();});
+  document.getElementById('cliente-ubicaciones-rows').appendChild(row);
+}
+
+function addContactoRow(data){
+  data=data||{};
+  const contId=data.id||('ct'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const tier=parseInt(data.tier)===2?2:1;
+  const row=document.createElement('div');
+  row.className='contacto-row';
+  row.style.cssText='background:#fff;border:1px solid #a0d8cc;border-radius:6px;padding:10px;margin-bottom:8px';
+  row.innerHTML=`
+    <input type="hidden" class="cont-id" value="${escAttr(contId)}">
+    <div class="row" style="gap:6px;margin-bottom:6px;align-items:center">
+      <input type="text" class="cont-nombre" value="${escAttr(data.nombre||'')}" placeholder="Nombre" style="flex:2">
+      <select class="cont-tier" style="flex:1;max-width:140px">
+        <option value="1"${tier===1?' selected':''}>Tier 1 — Email</option>
+        <option value="2"${tier===2?' selected':''}>Tier 2 — Extra</option>
+      </select>
+      <input type="text" class="cont-puesto" value="${escAttr(data.puesto||'')}" placeholder="Puesto" style="flex:1">
+      <button class="btn small danger" type="button">✕</button>
+    </div>
+    <div class="row" style="gap:6px;align-items:center">
+      <input type="text" class="cont-email" value="${escAttr(data.email||'')}" placeholder="Email" style="flex:2">
+      <input type="text" class="cont-telefono" value="${escAttr(data.telefono||'')}" placeholder="Teléfono" style="flex:1">
+    </div>
+  `;
+  row.querySelector('.btn.danger').addEventListener('click',()=>row.remove());
+  document.getElementById('cliente-contactos-rows').appendChild(row);
+}
+
+function openNewCliente(){
+  ['cliente-edit-id','cliente-nombre','cliente-usuario','cliente-password','cliente-email'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('cliente-ubicaciones-rows').innerHTML='';
+  document.getElementById('cliente-contactos-rows').innerHTML='';
+  document.getElementById('modal-cliente-title').textContent='Nuevo cliente';
+  openModal('modal-cliente');
+}
+
 function saveCliente(){
   const id=document.getElementById('cliente-edit-id').value;
   const nombre=document.getElementById('cliente-nombre').value.trim();
@@ -1014,20 +1170,54 @@ function saveCliente(){
   const email=document.getElementById('cliente-email').value.trim();
   if(!nombre){alert('Ingresa un nombre.');return;}
   if(!id&&!password){alert('Ingresa contraseña.');return;}
+  // Unicidad de usuario tanto en alta como en edición
+  if(state.clientes.some(c=>c.usuario===usuario&&c.id!==id)){alert('El usuario "'+usuario+'" ya existe.');return;}
+
+  // Extraer ubicaciones
+  const ubicaciones=Array.from(document.querySelectorAll('#cliente-ubicaciones-rows .ubicacion-row')).map(r=>({
+    id:r.querySelector('.ubic-id').value,
+    nombre:r.querySelector('.ubic-nombre').value.trim(),
+    ciudad:r.querySelector('.ubic-ciudad').value.trim(),
+    direccion:r.querySelector('.ubic-direccion').value.trim(),
+    notas:r.querySelector('.ubic-notas').value.trim()
+  })).filter(u=>u.nombre);
+
+  // Extraer contactos (los contactos son por empresa, no por ubicación)
+  const contactos=Array.from(document.querySelectorAll('#cliente-contactos-rows .contacto-row')).map(r=>({
+    id:r.querySelector('.cont-id').value,
+    nombre:r.querySelector('.cont-nombre').value.trim(),
+    tier:parseInt(r.querySelector('.cont-tier').value)===2?2:1,
+    puesto:r.querySelector('.cont-puesto').value.trim(),
+    email:r.querySelector('.cont-email').value.trim(),
+    telefono:r.querySelector('.cont-telefono').value.trim()
+  })).filter(c=>c.nombre);
+
+  // Aviso suave: contactos Tier 1 sin email no podrán recibir mails cuando se active la función
+  const tier1SinEmail=contactos.filter(c=>c.tier===1&&!c.email);
+  if(tier1SinEmail.length){
+    if(!confirm(`Hay ${tier1SinEmail.length} contacto${tier1SinEmail.length>1?'s':''} Tier 1 sin email. Tier 1 está pensado para recibir emails automáticos (próximamente).\n\n¿Guardar de todos modos?`))return;
+  }
+  // Validación blanda: emails con formato razonable
+  const emailMalo=contactos.find(c=>c.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email));
+  if(emailMalo){if(!confirm(`Email "${emailMalo.email}" del contacto ${emailMalo.nombre} no parece válido.\n\n¿Guardar de todos modos?`))return;}
+
   if(id){
     const i=state.clientes.findIndex(c=>c.id===id);
-    if(i>=0){state.clientes[i]={...state.clientes[i],nombre,usuario,email};if(password)state.clientes[i].password=password;}
+    if(i>=0){
+      state.clientes[i]={...state.clientes[i],nombre,usuario,email,ubicaciones,contactos};
+      if(password)state.clientes[i].password=password;
+    }
   }else{
-    if(state.clientes.some(c=>c.usuario===usuario)){alert('Usuario ya existe.');return;}
-    state.clientes.push({id:uid('cl'),nombre,usuario,password,email});
+    state.clientes.push({id:uid('cl'),nombre,usuario,password,email,ubicaciones,contactos});
   }
   saveState();closeModal('modal-cliente');renderClientes();
-  ['cliente-edit-id','cliente-nombre','cliente-usuario','cliente-password','cliente-email'].forEach(x=>document.getElementById(x).value='');
 }
+
 document.getElementById('cliente-nombre').addEventListener('input',function(){
   if(!document.getElementById('cliente-edit-id').value)
     document.getElementById('cliente-usuario').value=this.value.toLowerCase().replace(/\s+/g,'-');
 });
+
 function editCliente(id){
   const c=state.clientes.find(x=>x.id===id);if(!c)return;
   document.getElementById('cliente-edit-id').value=c.id;
@@ -1036,18 +1226,68 @@ function editCliente(id){
   document.getElementById('cliente-password').value='';
   document.getElementById('cliente-email').value=c.email||'';
   document.getElementById('modal-cliente-title').textContent='Editar cliente';
+  // Poblar ubicaciones primero (porque contactos pueden referenciarlas)
+  document.getElementById('cliente-ubicaciones-rows').innerHTML='';
+  (c.ubicaciones||[]).forEach(u=>addUbicacionRow(u));
+  document.getElementById('cliente-contactos-rows').innerHTML='';
+  (c.contactos||[]).forEach(co=>addContactoRow(co));
   openModal('modal-cliente');
 }
 function deleteCliente(id){if(!confirm('¿Eliminar?'))return;state.clientes=state.clientes.filter(c=>c.id!==id);saveState();renderClientes();}
+function viewCliente(id){
+  const c=state.clientes.find(x=>x.id===id);if(!c)return;
+  const ubicaciones=c.ubicaciones||[];const contactos=c.contactos||[];
+  const tier1=contactos.filter(x=>x.tier===1);const tier2=contactos.filter(x=>x.tier!==1);
+  const ubicMap={};ubicaciones.forEach(u=>{ubicMap[u.id]=u.nombre;});
+  const ubicRows=ubicaciones.length?ubicaciones.map(u=>`<tr>
+    <td><strong>${escHtml(u.nombre)}</strong></td>
+    <td>${escHtml(u.ciudad||'—')}</td>
+    <td>${escHtml(u.direccion||'—')}</td>
+    <td style="color:#888;font-size:12px">${escHtml(u.notas||'')}</td>
+  </tr>`).join(''):'';
+  const contactoRow=co=>{
+    return`<tr>
+      <td><strong>${escHtml(co.nombre)}</strong>${co.puesto?`<br><span style="font-size:11px;color:#888">${escHtml(co.puesto)}</span>`:''}</td>
+      <td>${co.email?`<a href="mailto:${escAttr(co.email)}" style="color:#1a56db;text-decoration:none">${escHtml(co.email)}</a>`:'<span style="color:#ccc">—</span>'}</td>
+      <td>${escHtml(co.telefono||'—')}</td>
+    </tr>`;
+  };
+  document.getElementById('modal-detail-title').textContent=c.nombre;
+  document.getElementById('modal-detail-content').innerHTML=`
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Usuario portal</div><div class="value" style="font-size:14px"><code>${escHtml(c.usuario)}</code></div></div>
+      <div class="metric"><div class="label">Email principal</div><div class="value" style="font-size:14px">${escHtml(c.email||'—')}</div></div>
+      <div class="metric"><div class="label">Ubicaciones</div><div class="value">${ubicaciones.length}</div></div>
+      <div class="metric"><div class="label">Contactos T1 / T2</div><div class="value" style="font-size:16px">${tier1.length} / ${tier2.length}</div></div>
+    </div>
+    ${ubicaciones.length?`<h3 style="margin:12px 0 8px;color:#1a56db">📍 Ubicaciones</h3><table><thead><tr><th>Etiqueta</th><th>Ciudad</th><th>Dirección</th><th>Notas</th></tr></thead><tbody>${ubicRows}</tbody></table>`:'<p style="font-size:13px;color:#888;margin:12px 0">Sin ubicaciones.</p>'}
+    ${tier1.length?`<h3 style="margin:16px 0 8px;color:#0f6e56">Tier 1 — Reciben emails (próximamente)</h3><table><thead><tr><th>Contacto</th><th>Email</th><th>Teléfono</th></tr></thead><tbody>${tier1.map(contactoRow).join('')}</tbody></table>`:''}
+    ${tier2.length?`<h3 style="margin:16px 0 8px;color:#666">Tier 2 — Contactos extra</h3><table><thead><tr><th>Contacto</th><th>Email</th><th>Teléfono</th></tr></thead><tbody>${tier2.map(contactoRow).join('')}</tbody></table>`:''}
+    ${!contactos.length?'<p style="font-size:13px;color:#888;margin:12px 0">Sin contactos.</p>':''}
+  `;
+  openModal('modal-detail');
+}
 function renderClientes(){
   const tb=document.getElementById('clientes-table');
-  if(!state.clientes.length){tb.innerHTML='<tr><td colspan="5" style="color:#888;text-align:center;padding:32px">Sin clientes</td></tr>';return;}
+  if(!state.clientes.length){tb.innerHTML='<tr><td colspan="6" style="color:#888;text-align:center;padding:32px">Sin clientes</td></tr>';return;}
   tb.innerHTML=state.clientes.map(c=>{
     const lotes=state.lotes.filter(l=>l.clienteId===c.id).length;
-    return`<tr><td><strong>${c.nombre}</strong>${c.email?`<br><span style="font-size:11px;color:#888">${c.email}</span>`:''}</td>
-    <td><code style="background:#f0f0ea;padding:2px 6px;border-radius:4px;font-size:12px">${c.usuario}</code></td>
-    <td>${lotes}</td><td><span class="badge success">Activo</span></td>
-    <td style="text-align:right"><button class="btn small" onclick="editCliente('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteCliente('${c.id}')">Eliminar</button></td></tr>`;
+    const ubicaciones=(c.ubicaciones||[]).length;
+    const contactos=c.contactos||[];
+    const t1=contactos.filter(x=>x.tier===1).length;
+    const t2=contactos.filter(x=>x.tier!==1).length;
+    const ubicBadge=ubicaciones?`<span class="badge info" style="font-size:10px">📍 ${ubicaciones}</span>`:'<span style="color:#ccc;font-size:11px">—</span>';
+    const contBadge=contactos.length
+      ?`<span class="badge teal" style="font-size:10px">T1: ${t1}</span> <span class="badge neutral" style="font-size:10px">T2: ${t2}</span>`
+      :'<span style="color:#ccc;font-size:11px">—</span>';
+    return`<tr>
+      <td><a href="#" onclick="viewCliente('${c.id}');return false" style="color:#1a56db;text-decoration:none;font-weight:500">${escHtml(c.nombre)}</a>${c.email?`<br><span style="font-size:11px;color:#888">${escHtml(c.email)}</span>`:''}</td>
+      <td><code style="background:#f0f0ea;padding:2px 6px;border-radius:4px;font-size:12px">${escHtml(c.usuario)}</code></td>
+      <td>${ubicBadge}</td>
+      <td>${contBadge}</td>
+      <td>${lotes}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn small" onclick="viewCliente('${c.id}')">Ver</button> <button class="btn small" onclick="editCliente('${c.id}')">Editar</button> <button class="btn small danger" onclick="deleteCliente('${c.id}')">Eliminar</button></td>
+    </tr>`;
   }).join('');
 }
 function renderResumenClienteSelects(){
@@ -1317,7 +1557,7 @@ function openNewHoe(){
   document.getElementById('hoe-tipo').value='estandar';
   document.getElementById('hoe-estimada-section').style.display='none';
   const catSel=document.getElementById('hoe-categoria');
-  catSel.innerHTML='<option value="">— Sin categoría —</option>'+state.catHoes.map(cat=>`<option value="${cat.id}">${cat.nombre}</option>`).join('');
+  catSel.innerHTML='<option value="">— Sin categoría —</option>'+state.catalogoCierre.map(cat=>`<option value="${cat.id}">${escHtml(cat.nombre)}</option>`).join('');
   document.getElementById('hoe-comm-rows').innerHTML='';document.getElementById('modal-hoe-title').textContent='Nueva HOE';
   addCommRow();openModal('modal-hoe');
 }
@@ -1333,7 +1573,11 @@ function saveHoe(){
   const sum=comms.reduce((a,cc)=>a+cc.pct,0);
   if(comms.length&&Math.abs(sum-100)>0.5){alert(`Porcentajes deben sumar 100% (actual: ${sum.toFixed(1)}%)`);return;}
   const existing=id?state.hoes.find(h=>h.id===id):{};
-  const hoe={id:id||uid('h'),modelo,tiempo,peso,tipo,catId,esEstimado,commodities:comms,lastConfirmed:existing.lastConfirmed||null};
+  // lastConfirmed: HOEs estándar y específicas-confirmadas marcan TODAY al crear/editar.
+  // Solo las específicas en modo "estimado" no avanzan lastConfirmed — esas lo marcan al confirmar.
+  let lastConfirmed=existing.lastConfirmed||null;
+  if(!esEstimado)lastConfirmed=TODAY;
+  const hoe={id:id||uid('h'),modelo,tiempo,peso,tipo,catId,esEstimado,commodities:comms,lastConfirmed};
   if(id){const i=state.hoes.findIndex(h=>h.id===id);if(i>=0)state.hoes[i]=hoe;}else state.hoes.push(hoe);
   saveState();closeModal('modal-hoe');renderHoes();
 }
@@ -1348,7 +1592,7 @@ function editHoe(id){
   document.getElementById('hoe-tipo').value=h.tipo||'estandar';
   // Populate categoria select
   const catSel=document.getElementById('hoe-categoria');
-  catSel.innerHTML='<option value="">— Sin categoría —</option>'+state.catHoes.map(cat=>`<option value="${cat.id}" ${cat.id===h.catId?'selected':''}>${cat.nombre}</option>`).join('');
+  catSel.innerHTML='<option value="">— Sin categoría —</option>'+state.catalogoCierre.map(cat=>`<option value="${cat.id}" ${cat.id===h.catId?'selected':''}>${escHtml(cat.nombre)}</option>`).join('');
   document.getElementById('hoe-estimada-section').style.display=(h.tipo==='especifica')?'block':'none';
   if(h.tipo==='especifica')document.getElementById('hoe-es-estimado').value=h.esEstimado?'si':'no';
   document.getElementById('hoe-comm-rows').innerHTML='';document.getElementById('modal-hoe-title').textContent='Editar HOE';
@@ -1366,15 +1610,15 @@ function renderHoes(){
   const sixMonthsAgo=new Date();sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
   tb.innerHTML=hoes.map(h=>{
     const comms=(h.commodities||[]).map(cc=>{const cm=state.commodities.find(x=>x.id===cc.id);if(!cm)return'';return`<span class="badge ${cm.tipo==='disposicion'?'warning':'success'}" style="margin-right:3px;font-size:10px">${cm.nombre} ${cc.pct}%</span>`;}).filter(Boolean).join('');
-    const cat=state.catHoes.find(x=>x.id===h.catId);
+    const cat=state.catalogoCierre.find(x=>x.id===h.catId);
     const tipoBadge=h.tipo==='especifica'
       ?h.esEstimado?'<span class="badge estimada">Específica — Estimado</span>':'<span class="badge especifica">Específica</span>'
       :'<span class="badge estandar">Estándar</span>';
-    // Std alert
+    // Std alert: marca si nunca se ha confirmado o si pasaron más de 6 meses
     let stdAlert='';
-    if(h.tipo==='estandar'&&h.lastConfirmed){
-      const lcd=new Date(h.lastConfirmed);
-      if(lcd<sixMonthsAgo)stdAlert='<span class="badge danger" style="margin-left:4px;font-size:10px">⚠ Revisar</span>';
+    if(h.tipo==='estandar'){
+      if(!h.lastConfirmed)stdAlert='<span class="badge danger" style="margin-left:4px;font-size:10px">⚠ Revisar</span>';
+      else if(new Date(h.lastConfirmed)<sixMonthsAgo)stdAlert='<span class="badge danger" style="margin-left:4px;font-size:10px">⚠ Revisar</span>';
     }
     const confirmarBtn=h.tipo==='especifica'&&h.esEstimado
       ?`<button class="btn small success" onclick="openConfirmarHoe('${h.id}')">Confirmar</button> `:'';
@@ -1493,54 +1737,137 @@ function updateLotePreview(){
     <div class="metric"><div class="label">Val. ARS</div><div class="value" style="color:#0f6e56">$${valorARSTotal.toFixed(0)}</div></div>
     <div class="metric"><div class="label">Costo refacc.</div><div class="value" style="color:#c0392b">$${costoRefTotal.toFixed(0)}</div></div>`;
 }
+// Pueblar el dropdown de ubicación a partir del cliente seleccionado
+function populateLoteUbicaciones(clienteId,selectedUbicId){
+  const sel=document.getElementById('lote-ubicacion');
+  const cl=state.clientes.find(c=>c.id===clienteId);
+  let opts='<option value="planta">El cliente entrega en planta</option>';
+  if(cl&&Array.isArray(cl.ubicaciones)){
+    cl.ubicaciones.forEach(u=>{
+      const lbl=escHtml(u.nombre)+(u.ciudad?' — '+escHtml(u.ciudad):'');
+      opts+=`<option value="${escAttr(u.id)}"${u.id===selectedUbicId?' selected':''}>${lbl}</option>`;
+    });
+  }
+  sel.innerHTML=opts;
+  // Si no se pasó selección y el cliente tiene exactamente 1 ubicación, seleccionarla por default
+  if(!selectedUbicId&&cl&&Array.isArray(cl.ubicaciones)&&cl.ubicaciones.length===1){
+    sel.value=cl.ubicaciones[0].id;
+  } else if(selectedUbicId){
+    sel.value=selectedUbicId;
+  }
+}
+function onLoteClienteChange(){
+  populateLoteUbicaciones(document.getElementById('lote-cliente').value);
+}
+
+// Lee los checkboxes de servicio de borrado del modal
+function getLoteBorradoSeleccion(){
+  return Array.from(document.querySelectorAll('#lote-borrado-options input[type=checkbox]:checked')).map(cb=>cb.value);
+}
+function setLoteBorradoSeleccion(valores){
+  const set=new Set(valores||[]);
+  document.querySelectorAll('#lote-borrado-options input[type=checkbox]').forEach(cb=>{cb.checked=set.has(cb.value);});
+}
+
 function openNewLote(){
+  if(!state.clientes.length){alert('Primero crea al menos un cliente.');return;}
   document.getElementById('lote-edit-id').value='';
   document.getElementById('lote-nombre').value=String(nextId.l).padStart(5,'0');
-  document.getElementById('lote-arribo').value='';document.getElementById('lote-deadline').value='';
+  document.getElementById('lote-arribo').value='';
+  document.getElementById('lote-dias-entrega').value='45';
   document.getElementById('lote-item-rows').innerHTML='';document.getElementById('lote-ars-rows').innerHTML='';document.getElementById('lote-ref-rows').innerHTML='';
   document.getElementById('lote-preview').innerHTML='';document.getElementById('modal-lote-title').textContent='Nuevo lote';
-  document.getElementById('lote-cliente').innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  // Cliente OBLIGATORIO: no hay opción "sin cliente"
+  document.getElementById('lote-cliente').innerHTML=state.clientes.map(c=>`<option value="${c.id}">${escHtml(c.nombre)}</option>`).join('');
+  // Instrucciones por default
+  document.getElementById('lote-tipo').value='eol';
+  document.getElementById('lote-inv-tipo').value='';
+  document.getElementById('lote-evidencia').value='no';
+  setLoteBorradoSeleccion([]);
+  // Inicializar dropdown de ubicación con el primer cliente
+  populateLoteUbicaciones(document.getElementById('lote-cliente').value);
   openModal('modal-lote');
 }
+
 function saveLote(){
   const id=document.getElementById('lote-edit-id').value;
   const nombre=id?document.getElementById('lote-nombre').value.trim():String(nextId.l).padStart(5,'0');
-  const fechaArribo=document.getElementById('lote-arribo').value;const deadline=document.getElementById('lote-deadline').value;
+  const fechaArribo=document.getElementById('lote-arribo').value;
+  const diasEntrega=parseInt(document.getElementById('lote-dias-entrega').value);
   const clienteId=document.getElementById('lote-cliente').value;
-  if(!deadline){alert('Completa el deadline.');return;}
+  const ubicacionId=document.getElementById('lote-ubicacion').value||'planta';
+  const tipoLote=document.getElementById('lote-tipo').value||'eol';
+  const invTipo=document.getElementById('lote-inv-tipo').value;
+  const evidencia=document.getElementById('lote-evidencia').value==='si';
+  const serviciosBorrado=getLoteBorradoSeleccion();
+  if(!clienteId){alert('El lote requiere un cliente. No se permite crear lotes sin cliente.');return;}
+  if(!diasEntrega||diasEntrega<=0){alert('Especifica los días de entrega (debe ser un entero mayor a 0).');return;}
   const items=Array.from(document.querySelectorAll('#lote-item-rows .row')).map(r=>({hoeId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
   const itemsARS=Array.from(document.querySelectorAll('#lote-ars-rows .row')).map(r=>({itemId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
   const refacciones=Array.from(document.querySelectorAll('#lote-ref-rows .row')).map(r=>({refId:r.querySelector('select').value,qty:parseInt(r.querySelector('input').value)||0})).filter(x=>x.qty>0);
   if(!items.length&&!itemsARS.length){alert('Agrega al menos un HOE o item.');return;}
+  // Si el lote es EOL, los itemsARS no aplican operativamente — pero los preservamos solo si el usuario los puso por error.
+  // No bloqueamos: si llegan, simplemente quedarán informativos. (La selección ARS en producción se bloquea.)
   const calc=getLoteCalc(items);const arsCalc=getLoteARSCalc(itemsARS);
-  const lote={id:id||uid('l'),nombre,fechaArribo,deadline,clienteId,items,itemsARS,refacciones,...calc,tiempoARSTotal:arsCalc.tiempoARSTotal,valorARSTotal:arsCalc.valorARSTotal,finalizado:false,estadoComercial:id?(state.lotes.find(l=>l.id===id)||{}).estadoComercial||'evaluacion':'evaluacion',diasEntrega:id?(state.lotes.find(l=>l.id===id)||{}).diasEntrega||null:null,motivoPerdida:id?(state.lotes.find(l=>l.id===id)||{}).motivoPerdida||'':null};
-  if(id){const i=state.lotes.findIndex(l=>l.id===id);if(i>=0)state.lotes[i]={...lote,finalizado:state.lotes[i].finalizado};}
+  const existing=id?(state.lotes.find(l=>l.id===id)||{}):{};
+  const instrucciones={tipoLote,tipoInventario:invTipo,serviciosBorrado,evidenciaFotografica:evidencia};
+  const lote={
+    id:id||uid('l'),nombre,fechaArribo,clienteId,ubicacionId,diasEntrega,
+    deadline:existing.deadline||null, // null hasta que se registre el recibo
+    items,itemsARS,refacciones,...calc,
+    tiempoARSTotal:arsCalc.tiempoARSTotal,valorARSTotal:arsCalc.valorARSTotal,
+    finalizado:existing.finalizado||false,
+    eolCerrado:existing.eolCerrado||false,
+    arsCerrado:existing.arsCerrado||false,
+    arsSeleccion:existing.arsSeleccion||null,
+    arsRechazado:existing.arsRechazado||false,
+    estadoComercial:existing.estadoComercial||'evaluacion',
+    motivoPerdida:existing.motivoPerdida||'',
+    instrucciones
+  };
+  // Si el tipoLote cambió a EOL, limpiar selección ARS
+  if(tipoLote==='eol'){
+    lote.arsSeleccion=null;lote.arsRechazado=false;lote.arsCerrado=false;
+  }
+  if(id){const i=state.lotes.findIndex(l=>l.id===id);if(i>=0)state.lotes[i]=lote;}
   else state.lotes.push(lote);
   saveState();closeModal('modal-lote');renderLotes();
 }
+
 function editLote(id){
   const l=state.lotes.find(x=>x.id===id);if(!l)return;
   if(l.finalizado){alert('Este lote está finalizado.');return;}
-  document.getElementById('lote-edit-id').value=l.id;document.getElementById('lote-nombre').value=l.nombre;document.getElementById('lote-arribo').value=l.fechaArribo||'';document.getElementById('lote-deadline').value=l.deadline;
+  document.getElementById('lote-edit-id').value=l.id;
+  document.getElementById('lote-nombre').value=l.nombre;
+  document.getElementById('lote-arribo').value=l.fechaArribo||'';
+  document.getElementById('lote-dias-entrega').value=l.diasEntrega||45;
   document.getElementById('lote-item-rows').innerHTML='';document.getElementById('lote-ars-rows').innerHTML='';document.getElementById('lote-ref-rows').innerHTML='';
   document.getElementById('modal-lote-title').textContent='Editar lote';
-  document.getElementById('lote-cliente').innerHTML='<option value="">— Sin cliente —</option>'+state.clientes.map(c=>`<option value="${c.id}" ${c.id===l.clienteId?'selected':''}>${c.nombre}</option>`).join('');
+  document.getElementById('lote-cliente').innerHTML=state.clientes.map(c=>`<option value="${c.id}"${c.id===l.clienteId?' selected':''}>${escHtml(c.nombre)}</option>`).join('');
+  populateLoteUbicaciones(l.clienteId,l.ubicacionId||'planta');
+  // Instrucciones
+  const ins=l.instrucciones||{};
+  document.getElementById('lote-tipo').value=ins.tipoLote||'eol';
+  document.getElementById('lote-inv-tipo').value=ins.tipoInventario||'';
+  document.getElementById('lote-evidencia').value=ins.evidenciaFotografica?'si':'no';
+  setLoteBorradoSeleccion(ins.serviciosBorrado||[]);
+  // Listas de HOEs/items/refacciones
   (l.items||[]).forEach(item=>{
-    const opts=state.hoes.map(h=>`<option value="${h.id}" ${h.id===item.hoeId?'selected':''}>${h.modelo}</option>`).join('');
+    const opts=state.hoes.map(h=>`<option value="${h.id}" ${h.id===item.hoeId?'selected':''}>${escHtml(h.modelo)}</option>`).join('');
     const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
     row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${item.qty}" min="1" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove();updateLotePreview()">✕</button>`;
     row.querySelector('input').addEventListener('input',updateLotePreview);row.querySelector('select').addEventListener('change',updateLotePreview);
     document.getElementById('lote-item-rows').appendChild(row);
   });
   (l.itemsARS||[]).forEach(item=>{
-    const opts=state.itemsFuncionales.map(it=>{const cat=state.categorias.find(x=>x.id===it.catId);return`<option value="${it.id}" ${it.id===item.itemId?'selected':''}>${it.marca} ${it.modelo}${cat?' ('+cat.nombre+')':''}</option>`;}).join('');
+    const opts=state.itemsFuncionales.map(it=>{const cat=state.categorias.find(x=>x.id===it.catId);return`<option value="${it.id}" ${it.id===item.itemId?'selected':''}>${escHtml(it.marca+' '+it.modelo)}${cat?' ('+escHtml(cat.nombre)+')':''}</option>`;}).join('');
     const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
     row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${item.qty}" min="1" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove();updateLotePreview()">✕</button>`;
     row.querySelector('input').addEventListener('input',updateLotePreview);row.querySelector('select').addEventListener('change',updateLotePreview);
     document.getElementById('lote-ars-rows').appendChild(row);
   });
   (l.refacciones||[]).forEach(ref=>{
-    const opts=state.refacciones.map(r=>`<option value="${r.id}" ${r.id===ref.refId?'selected':''}>${r.nombre} ($${r.precio})</option>`).join('');
+    const opts=state.refacciones.map(r=>`<option value="${r.id}" ${r.id===ref.refId?'selected':''}>${escHtml(r.nombre)} ($${r.precio})</option>`).join('');
     const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';
     row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${ref.qty}" min="1" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove();updateLotePreview()">✕</button>`;
     row.querySelector('input').addEventListener('input',updateLotePreview);row.querySelector('select').addEventListener('change',updateLotePreview);
@@ -1549,11 +1876,53 @@ function editLote(id){
   updateLotePreview();openModal('modal-lote');
 }
 function deleteLote(id){
-  if(!confirm('¿Eliminar este lote?'))return;
+  if(!confirm('¿Eliminar este lote? Se borrarán también todos sus datos asociados (recibo, cierre, costeo, planeación, sortings, assets, sales orders relacionadas).'))return;
+  // 1. Quitar del array de lotes
   state.lotes=state.lotes.filter(l=>l.id!==id);
-  // Remove from all planning
-  Object.keys(state.diasEOL).forEach(d=>{Object.keys(state.diasEOL[d]).forEach(op=>{state.diasEOL[d][op]=state.diasEOL[d][op].filter(a=>a.loteId!==id);});});
-  Object.keys(state.diasARS).forEach(d=>{Object.keys(state.diasARS[d]).forEach(op=>{state.diasARS[d][op]=state.diasARS[d][op].filter(a=>a.loteId!==id);});});
+  // 2. Limpiar planeación EOL/ARS, eliminando asignaciones del lote y compactando estructuras vacías
+  [state.diasEOL,state.diasARS].forEach(dias=>{
+    Object.keys(dias).forEach(d=>{
+      Object.keys(dias[d]).forEach(op=>{
+        dias[d][op]=dias[d][op].filter(a=>a.loteId!==id);
+        if(!dias[d][op].length)delete dias[d][op];
+      });
+      if(!Object.keys(dias[d]).length)delete dias[d];
+    });
+  });
+  // 3. Limpiar datos del admin asociados al lote
+  if(state.cierres)delete state.cierres[id];
+  if(state.costeos)delete state.costeos[id];
+  if(state.recibos)delete state.recibos[id];
+  // 4. Limpiar datos del módulo de producción (otra entrada de localStorage)
+  try{
+    const raw=localStorage.getItem('erp_prod_state');
+    if(raw){
+      const ps=JSON.parse(raw);
+      // sortings, destructions y assets del lote
+      if(Array.isArray(ps.sortings))ps.sortings=ps.sortings.filter(s=>s.loteId!==id);
+      if(Array.isArray(ps.destructions))ps.destructions=ps.destructions.filter(d=>d.loteId!==id);
+      const assetIdsBorrados=new Set();
+      if(Array.isArray(ps.assets)){
+        ps.assets.filter(a=>a.loteId===id).forEach(a=>assetIdsBorrados.add(a.id));
+        ps.assets=ps.assets.filter(a=>a.loteId!==id);
+      }
+      // lotesScraps: quitar assetIds borrados; si queda vacío, quitar el lote scrap
+      if(Array.isArray(ps.lotesScraps)){
+        ps.lotesScraps=ps.lotesScraps.map(ls=>({...ls,assetIds:(ls.assetIds||[]).filter(aid=>!assetIdsBorrados.has(aid))})).filter(ls=>ls.assetIds.length>0);
+      }
+      // salesOrders: quitar items que referencian assets borrados; recalcular monto.
+      // Si una SO queda sin items, eliminarla.
+      if(Array.isArray(ps.salesOrders)){
+        ps.salesOrders=ps.salesOrders.map(so=>{
+          if(so.tipo!=='assets')return so;
+          const items=(so.items||[]).filter(it=>!assetIdsBorrados.has(it.assetId));
+          const monto=items.reduce((a,it)=>a+(it.precio||0),0);
+          return{...so,items,monto};
+        }).filter(so=>(so.items||[]).length>0);
+      }
+      localStorage.setItem('erp_prod_state',JSON.stringify(ps));
+    }
+  }catch(e){console.warn('No se pudo limpiar erp_prod_state',e);}
   saveState();renderLotes();
 }
 function viewLote(id){
@@ -1565,15 +1934,36 @@ function viewLote(id){
   const refR=(l.refacciones||[]).map(ref=>{const r=state.refacciones.find(x=>x.id===ref.refId);return r?`<tr><td>${r.nombre}</td><td>${ref.qty}</td><td style="color:#c0392b">$${(r.precio*ref.qty).toFixed(2)}</td></tr>`:''}).join('');
   const cliente=state.clientes.find(x=>x.id===l.clienteId);
   const trEOL=tiempoRestanteLote(l.id,'eol');const trARS=tiempoRestanteLote(l.id,'ars');
+  const ins=l.instrucciones||{};
+  const tipoLote=ins.tipoLote||'eol';
+  const ubicNombre=l.ubicacionId==='planta'||!l.ubicacionId?'Entrega en planta':(cliente&&(cliente.ubicaciones||[]).find(u=>u.id===l.ubicacionId)||{}).nombre||'—';
+  const borradoLabels={triturado:'Triturado',blancco:'Blancco',degauss:'DeGauss','no-especificado':'No especificado'};
+  const borradoStr=(ins.serviciosBorrado||[]).map(s=>`<span class="badge neutral" style="margin-right:3px">${borradoLabels[s]||s}</span>`).join('')||'<span style="color:#888">—</span>';
+  const cierreInfo=`
+    <span class="badge ${l.eolCerrado?'success':'neutral'}" style="margin-right:4px">EOL ${l.eolCerrado?'✓ Cerrado':'pendiente'}</span>
+    ${tipoLote==='mixto'?`<span class="badge ${l.arsCerrado?'success':'neutral'}">ARS ${l.arsCerrado?(l.arsRechazado?'✓ Rechazado':'✓ Cerrado'):'pendiente'}</span>`:''}
+  `;
   document.getElementById('modal-detail-title').textContent=l.nombre;
   document.getElementById('modal-detail-content').innerHTML=`
     <div class="metric-grid">
       <div class="metric"><div class="label">Estado</div><div class="value" style="font-size:14px">${estadoBadge(getEstadoLote(l))}</div></div>
-      <div class="metric"><div class="label">Cliente</div><div class="value" style="font-size:14px">${cliente?cliente.nombre:'—'}</div></div>
+      <div class="metric"><div class="label">Cliente</div><div class="value" style="font-size:14px">${cliente?escHtml(cliente.nombre):'—'}</div></div>
+      <div class="metric"><div class="label">Tipo de lote</div><div class="value" style="font-size:14px">${tipoLote==='mixto'?'Mixto':'EOL'}</div></div>
+      <div class="metric"><div class="label">Deadline</div><div class="value" style="font-size:14px">${l.deadline||'<span style="color:#888">pendiente recibo</span>'}</div></div>
+      <div class="metric"><div class="label">Días de entrega</div><div class="value">${l.diasEntrega||'—'}</div></div>
       <div class="metric"><div class="label">Tiempo EOL total</div><div class="value">${(l.tiempoTotal||0).toFixed(0)} min</div></div>
       <div class="metric"><div class="label">Restante EOL</div><div class="value" style="color:${trEOL>0?'#a05a00':'#1a7a3c'}">${trEOL.toFixed(0)} min</div></div>
-      <div class="metric"><div class="label">Tiempo ARS total</div><div class="value" style="color:#0f6e56">${(l.tiempoARSTotal||0).toFixed(0)} min</div></div>
-      <div class="metric"><div class="label">Restante ARS</div><div class="value" style="color:${trARS>0?'#a05a00':'#1a7a3c'}">${trARS.toFixed(0)} min</div></div>
+      ${(l.tiempoARSTotal||0)>0?`<div class="metric"><div class="label">Tiempo ARS total</div><div class="value" style="color:#0f6e56">${(l.tiempoARSTotal||0).toFixed(0)} min</div></div>
+      <div class="metric"><div class="label">Restante ARS</div><div class="value" style="color:${trARS>0?'#a05a00':'#1a7a3c'}">${trARS.toFixed(0)} min</div></div>`:''}
+    </div>
+    <div class="info-box" style="margin-top:12px">
+      <div class="ib-title">Instrucciones</div>
+      <div class="ib-row"><span>Ubicación / Entrega</span><span>${escHtml(ubicNombre)}</span></div>
+      <div class="ib-row"><span>Tipo de inventario</span><span>${ins.tipoInventario?escHtml(ins.tipoInventario):'<span style="color:#888">—</span>'}</span></div>
+      <div class="ib-row"><span>Evidencia fotográfica</span><span>${ins.evidenciaFotografica?'Sí':'No'}</span></div>
+      <div class="ib-row" style="border:none;padding-top:4px"><span>Servicio de borrado</span><span>${borradoStr}</span></div>
+      <div class="ib-row" style="border:none;padding-top:4px"><span>Cierre operativo</span><span>${cierreInfo}</span></div>
+      ${l.arsSeleccion?`<div class="ib-row" style="border:none;padding-top:4px"><span>Selección ARS</span><span>${l.arsSeleccion.kg.toFixed(2)} kg · ${l.arsSeleccion.piezas} pz</span></div>`:''}
     </div>
     ${ir?`<h3 style="margin:12px 0 8px">HOEs <span class="area-tag-eol">EOL</span></h3><table><thead><tr><th>HOE</th><th>Cant.</th><th>Tiempo</th><th>Peso</th></tr></thead><tbody>${ir}</tbody></table>`:''}
     ${arsR?`<h3 style="margin:12px 0 8px">Items <span class="area-tag-ars">ARS</span></h3><table><thead><tr><th>Item</th><th>Cat.</th><th>Cant.</th><th>Tiempo</th><th>Valor</th></tr></thead><tbody>${arsR}</tbody></table>`:''}
@@ -1593,12 +1983,18 @@ function renderLotes(){
     const eolCount=(l.items||[]).reduce((a,x)=>a+x.qty,0);const arsCount=(l.itemsARS||[]).reduce((a,x)=>a+x.qty,0);
     const trEOL=tiempoRestanteLote(l.id,'eol');const trARS=tiempoRestanteLote(l.id,'ars');
     const est=getEstadoLote(l);const cliente=state.clientes.find(x=>x.id===l.clienteId);
+    const tipoLote=(l.instrucciones&&l.instrucciones.tipoLote)||'eol';
+    const tipoBadge=tipoLote==='mixto'?'<span class="badge purple" style="font-size:10px">Mixto</span>':'<span class="badge info" style="font-size:10px">EOL</span>';
+    const cierreBadges=(l.estadoComercial==='ganada'&&!l.finalizado)?
+      `<br><span style="font-size:10px">${l.eolCerrado?'<span class="badge success" style="font-size:9px">EOL ✓</span> ':''}${tipoLote==='mixto'?(l.arsCerrado?'<span class="badge success" style="font-size:9px">ARS ✓</span>':'<span class="badge warning" style="font-size:9px">ARS pend</span>'):''}</span>`:'';
+    const deadlineStr=l.deadline?l.deadline:'<span style="color:#888;font-size:11px">pendiente recibo</span>';
     return`<tr>
-      <td><a href="#" onclick="viewLote('${l.id}');return false" style="color:#1a56db;text-decoration:none;font-weight:500">${l.nombre}</a>${l.fechaArribo?`<br><span style="font-size:11px;color:#888">Arribo: ${l.fechaArribo}</span>`:''}</td>
-      <td>${cliente?cliente.nombre:'<span style="color:#ccc">—</span>'}</td>
+      <td><a href="#" onclick="viewLote('${l.id}');return false" style="color:#1a56db;text-decoration:none;font-weight:500">${l.nombre}</a> ${tipoBadge}${l.fechaArribo?`<br><span style="font-size:11px;color:#888">Arribo: ${l.fechaArribo}</span>`:''}</td>
+      <td>${cliente?escHtml(cliente.nombre):'<span style="color:#c0392b;font-size:11px">⚠ Sin cliente</span>'}</td>
       <td>${eolCount?`<span class="area-tag-eol">${eolCount} HOEs</span> `:''}${arsCount?`<span class="area-tag-ars">${arsCount} items</span>`:''}</td>
       <td style="font-size:12px">${(l.tiempoTotal||0)>0?`<span class="area-tag-eol">${trEOL} min</span> `:''}${(l.tiempoARSTotal||0)>0?`<span class="area-tag-ars">${trARS} min</span>`:''}</td>
-      <td>${l.deadline}</td><td>${estadoBadge(est)}</td>
+      <td>${deadlineStr}</td>
+      <td>${estadoBadge(est)}${cierreBadges}</td>
       <td style="text-align:right;white-space:nowrap">
         ${renderLoteAcciones(l)}
       </td></tr>`;
@@ -1618,6 +2014,20 @@ function openCierre(loteId){
   document.getElementById('cierre-lote-id').value=loteId;document.getElementById('modal-cierre-title').textContent=`Cierre: ${l.nombre}`;
   document.getElementById('cierre-rows').innerHTML='';
   const cierre=state.cierres[loteId];
+  // Banner: si los datos vienen de producción y no han sido revisados por admin, avisar
+  const alertBox=document.querySelector('#modal-cierre .alert');
+  if(alertBox){
+    if(cierre&&cierre.fromProduccion&&!cierre.adminEdited){
+      alertBox.className='alert warning';
+      alertBox.innerHTML='Datos pre-cargados desde el <strong>sorting de producción</strong>. Revísalos y ajusta piezas/kg si es necesario antes de finalizar.';
+    } else if(cierre&&cierre.adminEdited){
+      alertBox.className='alert success';
+      alertBox.innerHTML='Datos ya revisados. Puedes seguir ajustando antes de finalizar.';
+    } else {
+      alertBox.className='alert info';
+      alertBox.innerHTML='Registra los items y pesos reales procesados.';
+    }
+  }
   if(cierre){cierre.items.forEach(it=>{const opts=state.catalogoCierre.map(c=>`<option value="${c.id}" ${c.id===it.catId?'selected':''}>${c.nombre}</option>`).join('');const row=document.createElement('div');row.className='row';row.style.cssText='gap:8px;margin-bottom:8px;align-items:center';row.innerHTML=`<select style="flex:2">${opts}</select><input type="number" value="${it.piezas}" min="0" style="flex:1;max-width:80px"><input type="number" value="${it.kg}" min="0" step="0.01" style="flex:1;max-width:80px"><button class="btn small danger" onclick="this.parentElement.remove()">✕</button>`;document.getElementById('cierre-rows').appendChild(row);});}
   else addCierreRow();
   openModal('modal-cierre');
@@ -1627,7 +2037,7 @@ function finalizarLote(){
   const rows=document.querySelectorAll('#cierre-rows .row');if(!rows.length){alert('Agrega items.');return;}
   const items=Array.from(rows).map(r=>{const inputs=r.querySelectorAll('input[type=number]');return{catId:r.querySelector('select').value,piezas:parseInt(inputs[0].value)||0,kg:parseFloat(inputs[1].value)||0};}).filter(x=>x.catId);
   if(!confirm('¿Finalizar este lote? Ya no se podrá editar.'))return;
-  state.cierres[loteId]={items,fechaCierre:TODAY};
+  state.cierres[loteId]={items,fechaCierre:TODAY,adminEdited:true};
   const li=state.lotes.findIndex(l=>l.id===loteId);if(li>=0)state.lotes[li].finalizado=true;
   // Remove all future planning
   const futureDays=d=>d>TODAY;
@@ -2337,13 +2747,22 @@ function renderLoteAcciones(l){
     html+=`<button class="btn small success" onclick="openResultado('${l.id}','ganada')">Ganada</button> `;
     html+=`<button class="btn small danger" onclick="openResultado('${l.id}','perdida')">Perdida</button> `;
   }
-  if(['Ganada','En camino','Sin programar','Programado','En proceso','Plan completa'].includes(est)){
+  if(['Ganada','En camino','Sin programar','Programado','En proceso','Plan completa','Listo para cierre'].includes(est)){
     if(!state.recibos[l.id])html+=`<button class="btn small warning" onclick="openRecibo('${l.id}')" style="color:#fff">Recibir</button> `;
     else html+=`<button class="btn small" onclick="openRecibo('${l.id}')">Recibo</button> `;
-    const tieneSortingFinalizado=(()=>{try{const ps=JSON.parse(localStorage.getItem('erp_prod_state')||'{}');return(ps.sortings||[]).some(s=>s.loteId===l.id&&s.finalizado);}catch(e){return false;}})();
-    if(!l.finalizado&&tieneSortingFinalizado)html+=`<button class="btn small success" onclick="openCierre('${l.id}')">Cierre</button> `;
-    else if(!l.finalizado)html+=`<button class="btn small" style="opacity:0.45;cursor:not-allowed" title="Disponible después de finalizar sorting en Producción">Cierre</button> `;
-    else html+='<span class="badge success" style="margin-right:4px">Cerrado</span>';
+    // El botón "Cierre" del admin solo aparece cuando ambos lados (EOL y ARS si aplica) están cerrados desde producción
+    if(puedeCerrarseAdmin(l)){
+      html+=`<button class="btn small success" onclick="openCierre('${l.id}')">Cierre</button> `;
+    } else if(!l.finalizado){
+      const tipoLote=(l.instrucciones&&l.instrucciones.tipoLote)||'eol';
+      let pendientes=[];
+      if(!l.eolCerrado)pendientes.push('EOL');
+      if(tipoLote==='mixto'&&!l.arsCerrado)pendientes.push('ARS');
+      const titulo=pendientes.length?`Pendiente cerrar: ${pendientes.join(' + ')} (en módulo de Producción)`:'Disponible después de cerrar EOL y ARS en Producción';
+      html+=`<button class="btn small" style="opacity:0.45;cursor:not-allowed" title="${titulo}">Cierre</button> `;
+    } else {
+      html+='<span class="badge success" style="margin-right:4px">Cerrado</span>';
+    }
     html+=`<button class="btn small" onclick="openCosteo('${l.id}')">Costeo</button> `;
   }
   if(est==='Finalizado'){
@@ -2384,7 +2803,6 @@ function openResultado(id,tipo){
   document.getElementById('modal-resultado-perdida').style.display=tipo==='perdida'?'block':'none';
   document.getElementById('btn-resultado-confirm').textContent=tipo==='ganada'?'Confirmar ganada':'Marcar como perdida';
   document.getElementById('btn-resultado-confirm').className='btn '+(tipo==='ganada'?'success':'danger');
-  if(tipo==='ganada')document.getElementById('resultado-dias-entrega').value=l.diasEntrega||45;
   if(tipo==='perdida')document.getElementById('resultado-motivo').value=l.motivoPerdida||'';
   openModal('modal-resultado');
 }
@@ -2393,14 +2811,12 @@ function guardarResultado(){
   const tipo=document.getElementById('resultado-tipo').value;
   const i=state.lotes.findIndex(l=>l.id===id);if(i<0)return;
   if(tipo==='ganada'){
-    const dias=parseInt(document.getElementById('resultado-dias-entrega').value)||45;
     state.lotes[i].estadoComercial='ganada';
-    state.lotes[i].diasEntrega=dias;
-    // If already received, calculate deadline now
+    // Si ya hay recibo, recalcular deadline con los días de entrega definidos en el lote
     const recibo=state.recibos[id];
-    if(recibo&&recibo.fechaRecibo){
+    if(recibo&&recibo.fechaRecibo&&state.lotes[i].diasEntrega){
       const dt=new Date(recibo.fechaRecibo+'T12:00:00');
-      dt.setDate(dt.getDate()+dias);
+      dt.setDate(dt.getDate()+state.lotes[i].diasEntrega);
       state.lotes[i].deadline=dt.toISOString().split('T')[0];
     }
   } else {
@@ -2408,31 +2824,6 @@ function guardarResultado(){
     state.lotes[i].motivoPerdida=document.getElementById('resultado-motivo').value;
   }
   saveState();closeModal('modal-resultado');renderLotes();
-}
-
-// ── CATEGORÍAS HOE ────────────────────────────────────────────
-function addCatHoe(){
-  const inp=document.getElementById('cfg-cat-hoe-input');
-  const nombre=inp.value.trim();if(!nombre)return;
-  if(state.catHoes.some(x=>x.nombre.toLowerCase()===nombre.toLowerCase())){alert('Ya existe.');return;}
-  state.catHoes.push({id:uid('choe'),nombre});
-  inp.value='';
-  saveState();renderCatHoes();
-}
-function deleteCatHoe(id){
-  if(!confirm('¿Eliminar categoría?'))return;
-  state.catHoes=state.catHoes.filter(x=>x.id!==id);
-  saveState();renderCatHoes();
-}
-function renderCatHoes(){
-  const el=document.getElementById('cfg-cat-hoe-list');if(!el)return;
-  if(!state.catHoes.length){el.innerHTML='<p style="font-size:13px;color:#888">Sin categorías.</p>';return;}
-  el.innerHTML=`<table><thead><tr><th>Nombre</th><th>HOEs</th><th></th></tr></thead><tbody>${
-    state.catHoes.map(cat=>{
-      const uses=state.hoes.filter(h=>h.catId===cat.id).length;
-      return`<tr><td><strong>${cat.nombre}</strong></td><td>${uses}</td><td style="text-align:right"><button class="btn small danger" onclick="deleteCatHoe('${cat.id}')">Eliminar</button></td></tr>`;
-    }).join('')
-  }</tbody></table>`;
 }
 
 // ── CONFIRMAR HOE ESPECÍFICA ──────────────────────────────────
@@ -2532,6 +2923,27 @@ function saveConfig(){
 }
 
 // ── COSTEO ────────────────────────────────────────────────
+// Cobros por línea:
+// - cobrosHOE: { [hoeId]: {tipo: 'kg'|'pieza', valor: number} }
+// - cobrosARS: { [itemId]: {tipo: 'kg'|'pieza', valor: number} }
+// valor > 0 = cobro (ingreso). valor < 0 = pago al cliente (cuenta como egreso para nosotros).
+// Para ARS por kg: peso = arsSeleccion.kg / arsSeleccion.piezas × qty del item (peso promedio).
+
+function calcLineaIngresoEgreso(linea,kg,piezas){
+  // Devuelve {ingreso, egreso} basado en signo de valor
+  if(!linea||!linea.valor)return{ingreso:0,egreso:0};
+  const val=parseFloat(linea.valor)||0;
+  if(!val)return{ingreso:0,egreso:0};
+  let base=0;
+  if(linea.tipo==='kg')base=kg||0;
+  else base=piezas||0;
+  const monto=val*base;
+  // valor positivo → cobro al cliente (entra como ingreso)
+  // valor negativo → pago al cliente (entra como egreso)
+  if(monto>=0)return{ingreso:monto,egreso:0};
+  return{ingreso:0,egreso:Math.abs(monto)};
+}
+
 function calcCosteo(loteId){
   const l=state.lotes.find(x=>x.id===loteId);if(!l)return null;
   const cst=state.costeos[loteId]||{};
@@ -2560,16 +2972,64 @@ function calcCosteo(loteId){
 
   const valItemsARS=l.valorARSTotal||0;
   const logEgreso=parseFloat(cst.logEgreso)||0;
+
+  // Cobro GLOBAL (coexiste)
   let cobro=0;const tipo=cst.cobroTipo||'total';const val=parseFloat(cst.cobroValor)||0;
   const totalPiezas=(l.items||[]).reduce((a,x)=>a+x.qty,0)+(l.itemsARS||[]).reduce((a,x)=>a+x.qty,0);
   if(tipo==='total')cobro=val;else if(tipo==='kg')cobro=val*(l.pesoTotal||0);else if(tipo==='pieza')cobro=val*totalPiezas;
   const logIngreso=parseFloat(cst.logIngreso)||0;
 
-  const totalEgresos=costoMO_EOL+costoFijosEOL+costoMO_ARS+costoFijosARS+logEgreso+valDisposicion+costoRefacciones+(cobro<0?Math.abs(cobro):0);
-  const totalIngresos=valIngreso+valItemsARS+logIngreso+(cobro>0?cobro:0);
+  // Cobros POR LÍNEA
+  const cobrosHOE=cst.cobrosHOE||{};
+  const cobrosARS=cst.cobrosARS||{};
+  let lineaIngresos=0,lineaEgresos=0;
+  const lineaDetalle=[];
+
+  (l.items||[]).forEach(it=>{
+    const h=state.hoes.find(x=>x.id===it.hoeId);if(!h)return;
+    const linea=cobrosHOE[it.hoeId];if(!linea||!linea.valor)return;
+    const kg=h.peso*it.qty;const pz=it.qty;
+    const{ingreso,egreso}=calcLineaIngresoEgreso(linea,kg,pz);
+    lineaIngresos+=ingreso;lineaEgresos+=egreso;
+    lineaDetalle.push({tipo:'HOE',nombre:h.modelo,unidad:linea.tipo,base:linea.tipo==='kg'?kg:pz,valor:parseFloat(linea.valor)||0,ingreso,egreso});
+  });
+
+  // Para ARS por kg, calcular peso promedio si hay selección ARS
+  const arsKgPromedio=(l.arsSeleccion&&l.arsSeleccion.piezas>0)?(l.arsSeleccion.kg/l.arsSeleccion.piezas):0;
+  (l.itemsARS||[]).forEach(it=>{
+    const itf=state.itemsFuncionales.find(x=>x.id===it.itemId);if(!itf)return;
+    const linea=cobrosARS[it.itemId];if(!linea||!linea.valor)return;
+    const pz=it.qty;
+    const kg=linea.tipo==='kg'?(arsKgPromedio*pz):0;
+    if(linea.tipo==='kg'&&arsKgPromedio===0)return; // sin selección ARS no se puede facturar por kg
+    const{ingreso,egreso}=calcLineaIngresoEgreso(linea,kg,pz);
+    lineaIngresos+=ingreso;lineaEgresos+=egreso;
+    lineaDetalle.push({tipo:'ARS',nombre:itf.marca+' '+itf.modelo,unidad:linea.tipo,base:linea.tipo==='kg'?kg:pz,valor:parseFloat(linea.valor)||0,ingreso,egreso});
+  });
+
+  const totalEgresos=costoMO_EOL+costoFijosEOL+costoMO_ARS+costoFijosARS+logEgreso+valDisposicion+costoRefacciones+(cobro<0?Math.abs(cobro):0)+lineaEgresos;
+  const totalIngresos=valIngreso+valItemsARS+logIngreso+(cobro>0?cobro:0)+lineaIngresos;
   const ingresosNetos=totalIngresos-totalEgresos;
   const margen=totalIngresos>0?(ingresosNetos/totalIngresos*100):null;
-  return{costoMO_EOL,costoFijosEOL,costoMO_ARS,costoFijosARS,logEgreso,valDisposicion,costoRefacciones,totalEgresos,valIngreso,valItemsARS,cobro,logIngreso,totalIngresos,ingresosNetos,margen,horasTotalesEOL,horasTotalesARS,diasSatEOL,diasSatARS};
+  return{costoMO_EOL,costoFijosEOL,costoMO_ARS,costoFijosARS,logEgreso,valDisposicion,costoRefacciones,totalEgresos,valIngreso,valItemsARS,cobro,logIngreso,totalIngresos,ingresosNetos,margen,horasTotalesEOL,horasTotalesARS,diasSatEOL,diasSatARS,lineaIngresos,lineaEgresos,lineaDetalle};
+}
+
+// Lee los cobros por línea desde el DOM (modal abierto)
+function readCobrosLinea(){
+  const cobrosHOE={};const cobrosARS={};
+  document.querySelectorAll('#cst-linea-hoe-rows .linea-row').forEach(r=>{
+    const hoeId=r.dataset.id;const tipoEl=r.querySelector('select');const valorEl=r.querySelector('input[type=number]');
+    if(!hoeId||!tipoEl||!valorEl)return;
+    const valor=parseFloat(valorEl.value)||0;
+    if(valor!==0)cobrosHOE[hoeId]={tipo:tipoEl.value,valor};
+  });
+  document.querySelectorAll('#cst-linea-ars-rows .linea-row').forEach(r=>{
+    const itemId=r.dataset.id;const tipoEl=r.querySelector('select');const valorEl=r.querySelector('input[type=number]');
+    if(!itemId||!tipoEl||!valorEl)return;
+    const valor=parseFloat(valorEl.value)||0;
+    if(valor!==0)cobrosARS[itemId]={tipo:tipoEl.value,valor};
+  });
+  return{cobrosHOE,cobrosARS};
 }
 
 function openCosteo(loteId){
@@ -2578,12 +3038,70 @@ function openCosteo(loteId){
   document.getElementById('costeo-lote-id').value=loteId;document.getElementById('modal-costeo-title').textContent=`Costeo: ${l.nombre}`;
   document.getElementById('cst-log-egreso').value=cst.logEgreso||0;document.getElementById('cst-cobro-tipo').value=cst.cobroTipo||'total';
   document.getElementById('cst-cobro-valor').value=cst.cobroValor||0;document.getElementById('cst-log-ingreso').value=cst.logIngreso||0;
+
+  // Cobros por línea HOE
+  const cobrosHOE=cst.cobrosHOE||{};
+  const hoeRowsEl=document.getElementById('cst-linea-hoe-rows');
+  hoeRowsEl.innerHTML='';
+  (l.items||[]).forEach(it=>{
+    const h=state.hoes.find(x=>x.id===it.hoeId);if(!h)return;
+    const linea=cobrosHOE[it.hoeId]||{tipo:'pieza',valor:0};
+    const row=document.createElement('div');row.className='linea-row';row.dataset.id=it.hoeId;
+    row.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:6px;padding:6px;background:#fff;border-radius:6px';
+    row.innerHTML=`
+      <span style="flex:2;font-size:12px"><strong>${escHtml(h.modelo)}</strong><br><span style="color:#888">${it.qty} pz · ${(h.peso*it.qty).toFixed(2)} kg</span></span>
+      <select style="flex:1;max-width:90px">
+        <option value="pieza"${linea.tipo!=='kg'?' selected':''}>Por pieza</option>
+        <option value="kg"${linea.tipo==='kg'?' selected':''}>Por kg</option>
+      </select>
+      <input type="number" step="0.01" value="${linea.valor||0}" placeholder="$/u" style="flex:1;max-width:100px">
+      <span style="font-size:11px;color:#888;min-width:36px">${linea.valor<0?'pago':linea.valor>0?'cobro':''}</span>
+    `;
+    hoeRowsEl.appendChild(row);
+    const inp=row.querySelector('input[type=number]');
+    inp.addEventListener('input',function(){
+      const v=parseFloat(this.value)||0;
+      row.querySelector('span:last-child').textContent=v<0?'pago':v>0?'cobro':'';
+    });
+  });
+  document.getElementById('cst-linea-hoe-vacio').style.display=(l.items||[]).length?'none':'block';
+
+  // Cobros por línea ARS
+  const cobrosARS=cst.cobrosARS||{};
+  const arsRowsEl=document.getElementById('cst-linea-ars-rows');
+  arsRowsEl.innerHTML='';
+  const tieneArsSeleccion=l.arsSeleccion&&l.arsSeleccion.piezas>0;
+  (l.itemsARS||[]).forEach(it=>{
+    const itf=state.itemsFuncionales.find(x=>x.id===it.itemId);if(!itf)return;
+    const linea=cobrosARS[it.itemId]||{tipo:'pieza',valor:0};
+    const row=document.createElement('div');row.className='linea-row';row.dataset.id=it.itemId;
+    row.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:6px;padding:6px;background:#fff;border-radius:6px';
+    const kgOpcion=tieneArsSeleccion?`<option value="kg"${linea.tipo==='kg'?' selected':''}>Por kg</option>`:`<option value="kg" disabled${linea.tipo==='kg'?' selected':''}>Por kg (requiere selección ARS)</option>`;
+    row.innerHTML=`
+      <span style="flex:2;font-size:12px"><strong>${escHtml(itf.marca+' '+itf.modelo)}</strong><br><span style="color:#888">${it.qty} pz</span></span>
+      <select style="flex:1;max-width:90px">
+        <option value="pieza"${linea.tipo!=='kg'?' selected':''}>Por pieza</option>
+        ${kgOpcion}
+      </select>
+      <input type="number" step="0.01" value="${linea.valor||0}" placeholder="$/u" style="flex:1;max-width:100px">
+      <span style="font-size:11px;color:#888;min-width:36px">${linea.valor<0?'pago':linea.valor>0?'cobro':''}</span>
+    `;
+    arsRowsEl.appendChild(row);
+    const inp=row.querySelector('input[type=number]');
+    inp.addEventListener('input',function(){
+      const v=parseFloat(this.value)||0;
+      row.querySelector('span:last-child').textContent=v<0?'pago':v>0?'cobro':'';
+    });
+  });
+  document.getElementById('cst-linea-ars-vacio').style.display=(l.itemsARS||[]).length?'none':'block';
+  document.getElementById('cst-linea-ars-aviso').style.display=(l.itemsARS||[]).length&&!tieneArsSeleccion?'block':'none';
+
   const r=calcCosteo(loteId);
   const cfgEOL=state.config.eol;const cfgARS=state.config.ars;
   document.getElementById('cst-variables').innerHTML=r&&r.horasTotalesEOL>0?`<div class="ib-title">Mano de obra EOL <span class="area-tag-eol">EOL</span></div><div class="ib-row"><span>Horas-persona totales EOL</span><span>${r.horasTotalesEOL.toFixed(2)} h</span></div><div class="ib-row"><span>Sueldo/día EOL</span><span>$${cfgEOL.sueldoDia.toFixed(2)}</span></div><div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.costoMO_EOL.toFixed(2)}</span></div>`:`<div class="ib-title" style="color:#aaa">MO EOL — sin HOEs</div>`;
   document.getElementById('cst-variables-ars').innerHTML=r&&r.horasTotalesARS>0?`<div class="ib-title">Mano de obra ARS <span class="area-tag-ars">ARS</span></div><div class="ib-row"><span>Horas-persona totales ARS</span><span>${r.horasTotalesARS.toFixed(2)} h</span></div><div class="ib-row"><span>Sueldo/día ARS</span><span>$${cfgARS.sueldoDia.toFixed(2)}</span></div><div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.costoMO_ARS.toFixed(2)}</span></div>`:`<div class="ib-title" style="color:#aaa">MO ARS — sin items ARS</div>`;
   document.getElementById('cst-fijos').innerHTML=r&&r.diasSatEOL>0?`<div class="ib-title">Gastos fijos EOL <span class="area-tag-eol">EOL</span></div><div class="ib-row"><span>Días saturación</span><span>${r.diasSatEOL.toFixed(3)}</span></div><div class="ib-row"><span>Gastos/día EOL</span><span>$${cfgEOL.gastosFijos.toFixed(2)}</span></div><div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.costoFijosEOL.toFixed(2)}</span></div>`:`<div class="ib-title" style="color:#aaa">Gastos fijos EOL — sin HOEs</div>`;
-  document.getElementById('cst-fijos-ars').innerHTML=r&&r.diasSatARS>0?`<div class="ib-title">Gastos fijos ARS <span class="area-tag-ars">ARS</span></div><div class="ib-row"><span>Días saturación</span><span>${r.diasSatARS.toFixed(3)}</span></div><div class="ib-row"><span>Gastos/día ARS</span><span>$${cfgARS.gastosFijos.toFixed(2)}</span></div><div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.costoFijosARS.toFixed(2)}</span></div>`:`<div class="ib-title" style="color:#aaa">Gastos fijos ARS — sin items ARS</div>`;
+  document.getElementById('cst-fijos-ars').innerHTML=r&&r.diasSatARS>0?`<div class="ib-title">Gastos fijos ARS <span class="area-tag-ars">ARS</span></div><div class="ib-row"><span>Días saturación</span><span>${r.diasSatARS.toFixed(3)}</span></div><div class="ib-row"><span>Gastos/día ARS</span><span>$${cfgARS.sueldoDia.toFixed(2)}</span></div><div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r.costoFijosARS.toFixed(2)}</span></div>`:`<div class="ib-title" style="color:#aaa">Gastos fijos ARS — sin items ARS</div>`;
   const dr=Object.entries(l.commAgg||{}).filter(([cid])=>{const c=state.commodities.find(x=>x.id===cid);return c&&c.tipo==='disposicion';}).map(([cid,kg])=>{const c=state.commodities.find(x=>x.id===cid);return`<div class="ib-row"><span>${c.nombre} (${kg.toFixed(2)} kg)</span><span>$${(c.valor*kg).toFixed(2)}</span></div>`;}).join('');
   document.getElementById('cst-disposicion').innerHTML=`<div class="ib-title">Disposición de commodities</div>${dr||'<div style="color:#888;font-size:12px">Sin commodities de disposición</div>'}<div class="ib-row"><span>Subtotal</span><span style="color:#c0392b">$${r?r.valDisposicion.toFixed(2):'0.00'}</span></div>`;
   const refR=(l.refacciones||[]).map(ref=>{const rf=state.refacciones.find(x=>x.id===ref.refId);return rf?`<div class="ib-row"><span>${rf.nombre} × ${ref.qty}</span><span>$${(rf.precio*ref.qty).toFixed(2)}</span></div>`:''}).join('');
@@ -2602,9 +3120,15 @@ function showCosteoTab(id){
 }
 function renderCosteoResumen(){
   const loteId=document.getElementById('costeo-lote-id').value;
-  state.costeos[loteId]={...(state.costeos[loteId]||{}),logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value};
+  const{cobrosHOE,cobrosARS}=readCobrosLinea();
+  state.costeos[loteId]={...(state.costeos[loteId]||{}),logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value,cobrosHOE,cobrosARS};
   const r=calcCosteo(loteId);if(!r)return;
   const mc=r.margen===null?'neutral':r.margen>=20?'success':r.margen>=0?'warning':'danger';const mt=r.margen===null?'N/A':`${r.margen.toFixed(1)}%`;
+  const lineaRows=(r.lineaDetalle||[]).map(d=>{
+    const label=`${d.tipo==='HOE'?'<span class="area-tag-eol">EOL</span>':'<span class="area-tag-ars">ARS</span>'} ${escHtml(d.nombre)} (${d.unidad==='kg'?d.base.toFixed(2)+' kg':d.base+' pz'} × $${d.valor.toFixed(2)})`;
+    const signo=d.ingreso>0?`<span style="color:#1a7a3c">+$${d.ingreso.toFixed(2)}</span>`:`<span style="color:#c0392b">-$${d.egreso.toFixed(2)}</span>`;
+    return`<tr><td style="color:#666">${label}</td><td style="text-align:right">${signo}</td></tr>`;
+  }).join('');
   document.getElementById('cst-resumen-content').innerHTML=`
     <div class="metric-grid">
       <div class="metric"><div class="label">Total egresos</div><div class="value" style="font-size:16px;color:#c0392b">$${r.totalEgresos.toFixed(2)}</div></div>
@@ -2620,19 +3144,23 @@ function renderCosteoResumen(){
       <tr><td style="color:#666">Disposición</td><td style="text-align:right">$${r.valDisposicion.toFixed(2)}</td></tr>
       <tr><td style="color:#666">Refacciones</td><td style="text-align:right">$${r.costoRefacciones.toFixed(2)}</td></tr>
       <tr><td style="color:#666">Logística egreso</td><td style="text-align:right">$${r.logEgreso.toFixed(2)}</td></tr>
-      ${r.cobro<0?`<tr><td style="color:#666">Pago por material</td><td style="text-align:right;color:#c0392b">$${Math.abs(r.cobro).toFixed(2)}</td></tr>`:''}
+      ${r.cobro<0?`<tr><td style="color:#666">Pago global</td><td style="text-align:right;color:#c0392b">$${Math.abs(r.cobro).toFixed(2)}</td></tr>`:''}
+      ${r.lineaEgresos>0?`<tr><td style="color:#666">Pagos por línea</td><td style="text-align:right;color:#c0392b">$${r.lineaEgresos.toFixed(2)}</td></tr>`:''}
       <tr style="font-weight:600;border-top:2px solid #e0e0d8"><td>Total egresos</td><td style="text-align:right;color:#c0392b">$${r.totalEgresos.toFixed(2)}</td></tr>
       <tr><td colspan="2"></td></tr>
       <tr><td style="color:#666">Commodities ingreso</td><td style="text-align:right">$${r.valIngreso.toFixed(2)}</td></tr>
       <tr><td style="color:#666">Items ARS</td><td style="text-align:right">$${r.valItemsARS.toFixed(2)}</td></tr>
-      ${r.cobro>0?`<tr><td style="color:#666">Cobro procesamiento</td><td style="text-align:right">$${r.cobro.toFixed(2)}</td></tr>`:''}
+      ${r.cobro>0?`<tr><td style="color:#666">Cobro global</td><td style="text-align:right">$${r.cobro.toFixed(2)}</td></tr>`:''}
+      ${r.lineaIngresos>0?`<tr><td style="color:#666">Cobros por línea</td><td style="text-align:right">$${r.lineaIngresos.toFixed(2)}</td></tr>`:''}
       <tr><td style="color:#666">Logística ingreso</td><td style="text-align:right">$${r.logIngreso.toFixed(2)}</td></tr>
       <tr style="font-weight:600;border-top:2px solid #e0e0d8"><td>Total ingresos</td><td style="text-align:right;color:#1a7a3c">$${r.totalIngresos.toFixed(2)}</td></tr>
+      ${lineaRows?`<tr><td colspan="2" style="padding-top:12px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Detalle por línea</td></tr>${lineaRows}`:''}
     </tbody></table>`;
 }
 function saveCosteo(){
   const loteId=document.getElementById('costeo-lote-id').value;
-  state.costeos[loteId]={logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value};
+  const{cobrosHOE,cobrosARS}=readCobrosLinea();
+  state.costeos[loteId]={logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value,cobrosHOE,cobrosARS};
   saveState();closeModal('modal-costeo');renderCosteoList();
 }
 function renderCosteoList(){
@@ -2677,10 +3205,11 @@ function renderDashboard(){
   if(!state.lotes.length)le.innerHTML='<p style="font-size:13px;color:#888">Sin lotes</p>';
   else le.innerHTML=state.lotes.slice(0,6).map(l=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0ea"><span style="flex:1;font-size:13px;font-weight:500">${l.nombre}</span>${estadoBadge(getEstadoLote(l))}</div>`).join('');
   const ae=document.getElementById('dash-alertas');const al=[];
-  // HOE Estandar alerts (>6 months since lastConfirmed)
+  // HOE Estandar alerts (sin lastConfirmed o >6 meses)
   const sixMonthsAgo=new Date();sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
-  state.hoes.filter(h=>h.tipo==='estandar'&&h.lastConfirmed&&new Date(h.lastConfirmed)<sixMonthsAgo).forEach(h=>{
-    al.push(`<div class="alert warning" style="margin-bottom:8px">HOE <strong>${h.modelo}</strong>: estándar con más de 6 meses sin confirmar. <a href="#" onclick="showPage('hoes');return false" style="color:inherit">Ver HOEs</a></div>`);
+  state.hoes.filter(h=>h.tipo==='estandar'&&(!h.lastConfirmed||new Date(h.lastConfirmed)<sixMonthsAgo)).forEach(h=>{
+    const motivo=h.lastConfirmed?'más de 6 meses sin confirmar':'nunca se ha confirmado';
+    al.push(`<div class="alert warning" style="margin-bottom:8px">HOE <strong>${h.modelo}</strong>: estándar ${motivo}. <a href="#" onclick="showPage('hoes');return false" style="color:inherit">Ver HOEs</a></div>`);
   });
   // Deadline alerts: lotes with plan but deadline passed
   state.lotes.filter(l=>!l.finalizado).forEach(l=>{
@@ -2716,16 +3245,16 @@ function importarDatos(){
       if(cfg.eol&&!cfg.eol.sueldoDia)cfg.eol.sueldoDia=cfg.eol.sueldo||500;
       if(cfg.ars&&!cfg.ars.sueldoDia)cfg.ars.sueldoDia=cfg.ars.sueldo||500;
       state={role:state.role,user:state.user,
-        clientes:d.clientes||[],commodities:(d.commodities||[]).map(c=>({...c,tipo:c.tipo||'ingreso'})),
+        clientes:(d.clientes||[]).map(c=>({...c,ubicaciones:Array.isArray(c.ubicaciones)?c.ubicaciones:[],contactos:Array.isArray(c.contactos)?c.contactos:[]})),commodities:(d.commodities||[]).map(c=>({...c,tipo:c.tipo||'ingreso'})),
         commoditiesCierre:d.commoditiesCierre||[],hoes:d.hoes||[],catalogoCierre:d.catalogoCierre||[],
         categorias:d.categorias||[],itemsFuncionales:d.itemsFuncionales||[],refacciones:d.refacciones||[],
+        tiposServicio:d.tiposServicio||[],
         lotes:d.lotes||[],
         operadoresEOL:d.operadoresEOL||[],operadoresARS:d.operadoresARS||[],
         diasEOL:d.diasEOL||{},diasARS:d.diasARS||{},
         recibos:d.recibos||{},
-        catHoes:d.catHoes||{},
         inhabiles:d.inhabiles||[],config:cfg,costeos:d.costeos||{},cierres:d.cierres||{}};
-      nextId=d.nextId||{c:1,cc:1,h:1,hc:1,l:1,cl:1,cat:1,itf:1,ref:1,op:1};
+      nextId=d.nextId||{c:1,cc:1,h:1,hc:1,l:1,cl:1,cat:1,itf:1,ref:1,op:1,ts:1};
       saveState();renderAll();
       document.getElementById('import-preview').innerHTML=`<div class="alert success">Importado: ${state.lotes.length} lotes, ${state.clientes.length} clientes, ${state.operadoresEOL.length} ops EOL, ${state.operadoresARS.length} ops ARS.</div>`;
     }catch(err){alert('Error al leer el archivo. '+err);}
@@ -2737,7 +3266,7 @@ function renderAll(){
   renderCommodities();renderCommoditiesCierre();renderHoes();renderCatalogoCierre();
   renderLotes();renderClientes();renderInhabiles();renderDashboard();
   renderCategorias();renderTiposServicio();renderItemsFunc();renderRefacciones();
-  renderCosteoList();renderCatHoes();
+  renderCosteoList();
   document.getElementById('cfg-sueldo-eol').value=state.config.eol.sueldoDia||0;
   document.getElementById('cfg-gastos-eol').value=state.config.eol.gastosFijos||0;
   document.getElementById('cfg-sueldo-ars').value=state.config.ars.sueldoDia||0;

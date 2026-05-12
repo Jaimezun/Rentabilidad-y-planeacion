@@ -44,6 +44,8 @@ tr:last-child td{border-bottom:none}
 .lote-title{font-size:15px;font-weight:700;flex:1}
 .lote-date{font-size:12px;color:#888}
 .lote-huella{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
+.lote-ubicacion{font-size:12px;color:#555;background:#f0f8f4;border:1px solid #d0e8d8;border-radius:6px;padding:8px 12px;margin-bottom:12px}
+.lote-ubicacion strong{color:#1a7a3c}
 .lote-h-item{background:#f0f8f4;border-radius:8px;padding:10px;text-align:center}
 .lote-h-item .v{font-size:16px;font-weight:700;color:#1a7a3c}
 .lote-h-item .l{font-size:10px;color:#666;margin-top:2px}
@@ -127,6 +129,19 @@ function calcHuella(loteId,st){
 }
 function fmt(n){return n>=1000?`${(n/1000).toFixed(1)}k`:n.toFixed(1);}
 
+// Resuelve la ubicación de recibo del lote a un string legible
+function resolverUbicacion(lote,cliente){
+  if(!lote)return'';
+  const ubicId=lote.ubicacionId;
+  if(!ubicId||ubicId==='planta')return'El cliente entregó en planta';
+  if(!cliente||!Array.isArray(cliente.ubicaciones))return'(ubicación no disponible)';
+  const u=cliente.ubicaciones.find(x=>x.id===ubicId);
+  if(!u)return'(ubicación no disponible)';
+  const partes=[u.nombre];
+  if(u.ciudad)partes.push(u.ciudad);
+  return partes.join(' — ');
+}
+
 function renderPortal(){
   const sess=checkAuth();if(!sess)return;
   document.getElementById('cliente-name').textContent=sess.nombre;
@@ -156,6 +171,7 @@ function renderPortal(){
     // Individual lotes
     const lotesHtml=lotes.map(l=>{
       const cierre=st.cierres&&st.cierres[l.id];
+      const recibo=(st.recibos||{})[l.id];
       const h=calcHuella(l.id,st);
       const itemRows=cierre?cierre.items.map(it=>{const cat=(st.catalogoCierre||[]).find(x=>x.id===it.catId);return`<tr><td>${cat?cat.nombre:it.catId}</td><td>${it.piezas||0}</td><td>${it.kg.toFixed(2)} kg</td></tr>`;}).join(''):'';
       const huellaHtml=h?`<div class="lote-huella">
@@ -165,8 +181,12 @@ function renderPortal(){
         <div class="lote-h-item"><div class="v">${fmt(h.petroleo)}</div><div class="l">L petróleo</div></div>
         <div class="lote-h-item"><div class="v">${h.kgTotal.toFixed(1)}</div><div class="l">kg reciclados</div></div>
       </div>`:'';
+      const ubicacionStr=resolverUbicacion(l,cliente);
+      const fechaRecibo=recibo&&recibo.fechaRecibo?recibo.fechaRecibo:null;
+      const ubicacionInfo=`<div class="lote-ubicacion">📍 <strong>Recibido en:</strong> ${ubicacionStr}${fechaRecibo?` <span style="color:#888">· ${fechaRecibo}</span>`:''}</div>`;
       return`<div class="lote-card">
-        <div class="lote-header"><div class="lote-title">${l.nombre}</div><span class="badge success">Finalizado</span><span class="lote-date">${cierre?cierre.fechaCierre:l.deadline}</span></div>
+        <div class="lote-header"><div class="lote-title">${l.nombre}</div><span class="badge success">Finalizado</span><span class="lote-date">${cierre?cierre.fechaCierre:l.deadline||''}</span></div>
+        ${ubicacionInfo}
         ${itemRows?`<table><thead><tr><th>Categoría</th><th>Piezas</th><th>Kg procesados</th></tr></thead><tbody>${itemRows}</tbody></table>`:''}
         ${huellaHtml}
       </div>`;

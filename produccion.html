@@ -115,6 +115,7 @@ tr:hover td{background:#fafaf8}
   <button class="nav" onclick="showPage('inventario')">Inventario</button>
   <button class="nav" onclick="showPage('sales')">Sales Orders</button>
   <button class="nav" onclick="showPage('compradores')">Compradores</button>
+  <button class="nav" onclick="showPage('facturacion')">Facturación</button>
 </div>
 <div class="content">
 
@@ -168,12 +169,22 @@ tr:hover td{background:#fafaf8}
 <div id="page-ars" class="page">
   <h2>ARS — Asset Recovery</h2>
   <div class="tabs">
-    <button class="tab active" onclick="showSection('sec-assets')">Assets</button>
+    <button class="tab active" onclick="showSection('sec-seleccion')">Selección de lotes</button>
+    <button class="tab" onclick="showSection('sec-assets')">Assets</button>
     <button class="tab" onclick="showSection('sec-scrap')">Inventario Scrap</button>
   </div>
 
+  <!-- SELECCION -->
+  <div id="sec-seleccion" class="section active">
+    <div class="row center" style="margin-bottom:16px">
+      <h3 style="margin:0;flex:1">Selección de peso/piezas de lotes mixtos</h3>
+    </div>
+    <div class="alert info">Solo aparecen lotes <strong>mixtos</strong> que ya fueron recibidos y aún no han sido cerrados por ARS. Si tu lote es solo EOL, esta sección queda vacía. Si no encuentras material funcional, presiona <strong>Rechazar</strong>.</div>
+    <div id="seleccion-list"></div>
+  </div>
+
   <!-- ASSETS -->
-  <div id="sec-assets" class="section active">
+  <div id="sec-assets" class="section">
     <div class="row center" style="margin-bottom:16px">
       <h3 style="margin:0;flex:1">Assets</h3>
       <button class="btn ars" onclick="openModalAsset()">+ Nuevo asset</button>
@@ -265,6 +276,24 @@ tr:hover td{background:#fafaf8}
   <div class="card" style="padding:0;overflow:hidden">
     <table><thead><tr><th>Nombre</th><th>Contacto</th><th>Email</th><th>Sales Orders</th><th></th></tr></thead>
     <tbody id="compradores-table"></tbody></table>
+  </div>
+</div>
+
+<!-- FACTURACION -->
+<div id="page-facturacion" class="page">
+  <div class="row center" style="margin-bottom:20px">
+    <h2 style="margin:0;flex:1">Facturación</h2>
+  </div>
+  <div class="alert info">Muestra facturación <strong>preliminar</strong> (lotes ganados con costeo y deadline calculado) y <strong>final</strong> (lotes ya cerrados por el admin). La facturación final aparece automáticamente al finalizar el lote.</div>
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('sec-fact-final')">Final</button>
+    <button class="tab" onclick="showSection('sec-fact-preliminar')">Preliminar</button>
+  </div>
+  <div id="sec-fact-final" class="section active">
+    <div id="facturacion-final-list"></div>
+  </div>
+  <div id="sec-fact-preliminar" class="section">
+    <div id="facturacion-preliminar-list"></div>
   </div>
 </div>
 
@@ -708,10 +737,11 @@ function showPage(id){
   document.getElementById('page-'+id).classList.add('active');
   event.target.classList.add('active');
   if(id==='eol'){renderSortings();renderDestructions();renderLoads();}
-  if(id==='ars'){renderAssets();renderScrap();populateAssetLoteFiltro();}
+  if(id==='ars'){renderSeleccion();renderAssets();renderScrap();populateAssetLoteFiltro();}
   if(id==='inventario'){renderInvEOL();renderInvARS();}
   if(id==='sales'){renderSalesOrders();}
   if(id==='compradores'){renderCompradores();}
+  if(id==='facturacion'){renderFacturacion();}
 }
 function openModal(id){document.getElementById(id).style.display='flex';}
 function closeModal(id){
@@ -760,7 +790,7 @@ function openModalSorting(id){
     if(s){
       document.getElementById('sorting-lote').value=s.loteId;
       document.getElementById('sorting-fecha').value=s.fecha;
-      s.items.forEach(it=>addSortingRow(it.catCierreId,it.kg));
+      s.items.forEach(it=>addSortingRow(it.catCierreId,it.kg,it.piezas||''));
     }
   } else {
     addSortingRow();
@@ -773,21 +803,26 @@ function onSortingLoteChange(){
   const st=getAdminState();const l=st&&(st.lotes||[]).find(x=>x.id===loteId);
   const el=document.getElementById('sorting-lote-info');
   if(!l){el.innerHTML='';return;}
-  // Show accumulated kg already sorted for this lote
+  // Show accumulated kg and piezas already sorted for this lote
   const totalesPorCat={};
   pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>{
-    s.items.forEach(it=>{totalesPorCat[it.catCierreId]=(totalesPorCat[it.catCierreId]||0)+it.kg;});
+    s.items.forEach(it=>{
+      if(!totalesPorCat[it.catCierreId])totalesPorCat[it.catCierreId]={kg:0,piezas:0};
+      totalesPorCat[it.catCierreId].kg+=it.kg||0;
+      totalesPorCat[it.catCierreId].piezas+=it.piezas||0;
+    });
   });
-  const rows=Object.entries(totalesPorCat).map(([cid,kg])=>{
+  const rows=Object.entries(totalesPorCat).map(([cid,t])=>{
     const cat=(st.catalogoCierre||[]).find(x=>x.id===cid);
-    return`<span style="font-size:12px;margin-right:12px">${cat?cat.nombre:cid}: <strong>${kg.toFixed(2)} kg</strong></span>`;
+    return`<span style="font-size:12px;margin-right:12px">${cat?cat.nombre:cid}: <strong>${t.piezas} pz · ${t.kg.toFixed(2)} kg</strong></span>`;
   }).join('');
   el.innerHTML=rows?`<div class="alert info" style="margin-bottom:8px">Ya sorteado: ${rows}</div>`:'';
 }
-function addSortingRow(catId='',kg=''){
+function addSortingRow(catId='',kg='',piezas=''){
   const cats=getAdminCatCierre();
   const row=document.createElement('div');row.className='sorting-row';
   row.innerHTML=`<select style="flex:2">${cats.map(c=>`<option value="${c.id}" ${c.id===catId?'selected':''}>${c.nombre}</option>`).join('')}</select>
+    <input type="number" value="${piezas}" min="0" placeholder="piezas" style="flex:1;max-width:90px" oninput="updateSortingTotal()">
     <input type="number" value="${kg}" min="0" step="0.01" placeholder="kg" style="flex:1;max-width:100px" oninput="updateSortingTotal()">
     <button class="btn small danger" onclick="this.parentElement.remove();updateSortingTotal()">✕</button>`;
   document.getElementById('sorting-rows').appendChild(row);
@@ -795,8 +830,13 @@ function addSortingRow(catId='',kg=''){
 }
 function updateSortingTotal(){
   const rows=document.querySelectorAll('#sorting-rows .sorting-row');
-  let total=0;rows.forEach(r=>{total+=parseFloat(r.querySelector('input').value)||0;});
-  document.getElementById('sorting-total').textContent=`Total este sorting: ${total.toFixed(2)} kg`;
+  let totalKg=0,totalPz=0;
+  rows.forEach(r=>{
+    const inputs=r.querySelectorAll('input[type=number]');
+    totalPz+=parseInt(inputs[0].value)||0;
+    totalKg+=parseFloat(inputs[1].value)||0;
+  });
+  document.getElementById('sorting-total').textContent=`Total este sorting: ${totalPz} piezas · ${totalKg.toFixed(2)} kg`;
 }
 function saveSorting(){
   const id=document.getElementById('sorting-edit-id').value;
@@ -804,29 +844,90 @@ function saveSorting(){
   const fecha=document.getElementById('sorting-fecha').value;
   if(!loteId||!fecha){alert('Completa lote y fecha.');return;}
   const rows=document.querySelectorAll('#sorting-rows .sorting-row');
-  const items=Array.from(rows).map(r=>({catCierreId:r.querySelector('select').value,kg:parseFloat(r.querySelector('input').value)||0})).filter(x=>x.kg>0);
-  if(!items.length){alert('Agrega al menos una categoría con kg.');return;}
+  const items=Array.from(rows).map(r=>{
+    const inputs=r.querySelectorAll('input[type=number]');
+    return{
+      catCierreId:r.querySelector('select').value,
+      piezas:parseInt(inputs[0].value)||0,
+      kg:parseFloat(inputs[1].value)||0
+    };
+  }).filter(x=>x.kg>0||x.piezas>0);
+  if(!items.length){alert('Agrega al menos una categoría con kg o piezas.');return;}
   const obj={id:id||puid('s'),loteId,fecha,items,finalizado:false};
   if(id){const i=pState.sortings.findIndex(x=>x.id===id);if(i>=0)pState.sortings[i]=obj;}
   else pState.sortings.push(obj);
   savePState();closeModal('modal-sorting');renderSortings();
 }
 function finalizarSorting(loteId){
-  if(!confirm('¿Finalizar sorting de este lote? Esto alimentará el cierre en el módulo administrativo.'))return;
-  pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>s.finalizado=true);
-  // Update admin state cierres with accumulated sorting data
   const st=getAdminState();if(!st)return;
+  const loteIdx=(st.lotes||[]).findIndex(x=>x.id===loteId);
+  const lote=loteIdx>=0?st.lotes[loteIdx]:null;
+  if(lote&&lote.finalizado){
+    alert('Este lote ya fue cerrado por el administrador. No se puede modificar el sorting.');
+    return;
+  }
+  const cierreExistente=st.cierres&&st.cierres[loteId];
+  if(cierreExistente&&cierreExistente.adminEdited){
+    if(!confirm('El administrador ya revisó y editó los datos de cierre de este lote. Si continúas, se sobrescribirán con los kg/piezas del sorting actual y EOL quedará marcado como cerrado.\n\n¿Continuar?'))return;
+  } else {
+    // Aviso de alarma ±5% si aplica antes de cerrar
+    const balance=calcularBalanceLote(lote,st);
+    if(balance.alarma){
+      if(!confirm(`⚠ Alarma de peso: ${balance.alarmaMsg}\n\n¿Finalizar sorting de todos modos?`))return;
+    } else {
+      if(!confirm('¿Finalizar sorting de este lote? Esto cerrará EOL y alimentará el cierre en el módulo administrativo.'))return;
+    }
+  }
+  pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>s.finalizado=true);
+  // Acumular kg y piezas por categoría
   const totalesPorCat={};
   pState.sortings.filter(s=>s.loteId===loteId).forEach(s=>{
-    s.items.forEach(it=>{totalesPorCat[it.catCierreId]=(totalesPorCat[it.catCierreId]||0)+it.kg;});
+    s.items.forEach(it=>{
+      if(!totalesPorCat[it.catCierreId])totalesPorCat[it.catCierreId]={kg:0,piezas:0};
+      totalesPorCat[it.catCierreId].kg+=it.kg||0;
+      totalesPorCat[it.catCierreId].piezas+=it.piezas||0;
+    });
   });
   if(!st.cierres)st.cierres={};
-  // Build cierre items from sorting (kg per category)
-  const cierreItems=Object.entries(totalesPorCat).map(([catId,kg])=>({catId,piezas:0,kg}));
-  st.cierres[loteId]={items:cierreItems,fechaCierre:TODAY,fromProduccion:true};
+  const cierreItems=Object.entries(totalesPorCat).map(([catId,t])=>({catId,piezas:t.piezas,kg:t.kg}));
+  st.cierres[loteId]={items:cierreItems,fechaCierre:TODAY,fromProduccion:true,adminEdited:false};
+  // Marcar EOL como cerrado en el lote del admin state
+  if(loteIdx>=0){
+    st.lotes[loteIdx].eolCerrado=true;
+    st.lotes[loteIdx].eolCerradoFecha=TODAY;
+  }
   saveAdminState(st);
   savePState();renderSortings();
-  alert('Sorting finalizado. El lote ya puede cerrarse desde el módulo administrativo.');
+  alert('Sorting finalizado y EOL cerrado. El admin podrá cerrar el lote cuando ARS también esté cerrado (si aplica).');
+}
+
+// Calcula el balance de pesos del lote: recibido, ARS tomado, sorting acumulado, pendiente, alarma ±5%
+function calcularBalanceLote(lote,st){
+  if(!lote)return{recibidoKg:0,recibidoTarimas:0,arsKg:0,arsPiezas:0,sortKg:0,sortPz:0,pendienteEOL:0,alarma:false,alarmaMsg:''};
+  const recibo=(st.recibos||{})[lote.id]||{};
+  const recibidoKg=recibo.totalKg||0;
+  const recibidoTarimas=recibo.totalTarimas||0;
+  const recibidoPiezas=recibo.piezas||0;
+  const tipoLote=(lote.instrucciones&&lote.instrucciones.tipoLote)||'eol';
+  const arsKg=(tipoLote==='mixto'&&lote.arsSeleccion)?(lote.arsSeleccion.kg||0):0;
+  const arsPiezas=(tipoLote==='mixto'&&lote.arsSeleccion)?(lote.arsSeleccion.piezas||0):0;
+  let sortKg=0,sortPz=0;
+  (pState.sortings||[]).filter(s=>s.loteId===lote.id).forEach(s=>{
+    s.items.forEach(it=>{sortKg+=it.kg||0;sortPz+=it.piezas||0;});
+  });
+  const pendienteEOL=Math.max(0,recibidoKg-arsKg-sortKg);
+  // Alarma: |(sort + ARS) − recibido| / recibido > 5%
+  let alarma=false,alarmaMsg='';
+  if(recibidoKg>0){
+    const total=sortKg+arsKg;
+    const diff=Math.abs(total-recibidoKg);
+    const pct=(diff/recibidoKg)*100;
+    if(pct>5){
+      alarma=true;
+      alarmaMsg=`Recibido ${recibidoKg.toFixed(2)} kg, sorteado+ARS ${total.toFixed(2)} kg (diferencia ${pct.toFixed(1)}%)`;
+    }
+  }
+  return{recibidoKg,recibidoTarimas,recibidoPiezas,arsKg,arsPiezas,sortKg,sortPz,pendienteEOL,alarma,alarmaMsg,tipoLote};
 }
 function renderSortings(){
   const el=document.getElementById('sortings-list');
@@ -845,19 +946,39 @@ function renderSortings(){
     if(srch&&!l.nombre.toLowerCase().includes(srch.toLowerCase()))return;
     const finalizado=sortings.length>0&&sortings.every(s=>s.finalizado);
     const totalesPorCat={};
-    sortings.forEach(s=>s.items.forEach(it=>{totalesPorCat[it.catCierreId]=(totalesPorCat[it.catCierreId]||0)+it.kg;}));
-    const totalKg=Object.values(totalesPorCat).reduce((a,b)=>a+b,0);
-    const catRows=Object.entries(totalesPorCat).map(([cid,kg])=>{
+    sortings.forEach(s=>s.items.forEach(it=>{
+      if(!totalesPorCat[it.catCierreId])totalesPorCat[it.catCierreId]={kg:0,piezas:0};
+      totalesPorCat[it.catCierreId].kg+=it.kg||0;
+      totalesPorCat[it.catCierreId].piezas+=it.piezas||0;
+    }));
+    const totalKg=Object.values(totalesPorCat).reduce((a,t)=>a+t.kg,0);
+    const totalPz=Object.values(totalesPorCat).reduce((a,t)=>a+t.piezas,0);
+    const catRows=Object.entries(totalesPorCat).map(([cid,t])=>{
       const cat=(st&&st.catalogoCierre||[]).find(x=>x.id===cid);
-      return`<tr><td>${cat?cat.nombre:cid}</td><td>${kg.toFixed(2)} kg</td></tr>`;
+      return`<tr><td>${cat?cat.nombre:cid}</td><td>${t.piezas}</td><td>${t.kg.toFixed(2)} kg</td></tr>`;
     }).join('');
+    // Balance del lote
+    const b=calcularBalanceLote(l,st);
+    const tipoLoteBadge=b.tipoLote==='mixto'?'<span class="badge" style="background:#f0e8fe;color:#6b21a8">Mixto</span>':'<span class="badge eol">EOL</span>';
+    const balanceHeader=`
+      <div style="background:#f8f8f4;border:1px solid #e0e0d8;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+          <span>Recibido: <strong>${b.recibidoKg.toFixed(2)} kg</strong> · ${b.recibidoTarimas} tarima${b.recibidoTarimas!==1?'s':''}${b.recibidoPiezas?` · ${b.recibidoPiezas} pz`:''}</span>
+          ${b.tipoLote==='mixto'?`<span style="color:#0f6e56">ARS tomó: <strong>${b.arsKg.toFixed(2)} kg</strong> · ${b.arsPiezas} pz</span>`:'<span style="color:#888">Sin ARS</span>'}
+          <span style="color:#1a56db">Sorting acumulado: <strong>${b.sortKg.toFixed(2)} kg</strong> · ${b.sortPz} pz</span>
+          <span style="color:#a05a00">Pendiente EOL: <strong>${b.pendienteEOL.toFixed(2)} kg</strong></span>
+        </div>
+        ${b.alarma?`<div style="margin-top:6px;padding:6px;background:#fde8e8;color:#c0392b;border:1px solid #f0a0a0;border-radius:4px;font-weight:600">⚠ Alarma ±5%: ${b.alarmaMsg}</div>`:''}
+      </div>
+    `;
     html+=`<div class="card">
       <div class="row center" style="margin-bottom:12px">
-        <div style="flex:1"><strong style="font-size:15px">${l.nombre}</strong> ${finalizado?'<span class="badge success">Sorting finalizado</span>':'<span class="badge warning">En progreso</span>'}</div>
+        <div style="flex:1"><strong style="font-size:15px">${l.nombre}</strong> ${tipoLoteBadge} ${finalizado?'<span class="badge success">Sorting finalizado · EOL ✓</span>':'<span class="badge warning">En progreso</span>'}</div>
         ${!finalizado?`<button class="btn small" onclick="openModalSorting()">+ Sorting parcial</button> <button class="btn small success" onclick="finalizarSorting('${loteId}')">Finalizar sorting</button>`:''}
       </div>
-      ${totalKg>0?`<div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:6px">Acumulado total:</div><table><thead><tr><th>Categoría cierre</th><th>Kg totales</th></tr></thead><tbody>${catRows}</tbody></table><div style="font-weight:600;margin-top:8px;font-size:13px">Total: ${totalKg.toFixed(2)} kg</div></div>`:'<p style="font-size:13px;color:#888">Sin sortings aún.</p>'}
-      ${sortings.length>0?`<details style="margin-top:8px"><summary style="font-size:12px;color:#888;cursor:pointer">${sortings.length} sorting${sortings.length!==1?'s':''} registrados</summary><div style="margin-top:8px">${sortings.map(s=>`<div style="font-size:12px;padding:6px;background:#f8f8f4;border-radius:6px;margin-bottom:4px"><span style="color:#888">${s.fecha}</span> — ${s.items.map(it=>{const cat=(st&&st.catalogoCierre||[]).find(x=>x.id===it.catCierreId);return`${cat?cat.nombre:it.catCierreId}: ${it.kg} kg`;}).join(', ')} ${!finalizado?`<button class="btn small" style="margin-left:8px" onclick="openModalSorting('${s.id}')">Editar</button> <button class="btn small danger" onclick="deleteSorting('${s.id}')">Eliminar</button>`:''}</div>`).join('')}</div></details>`:''}
+      ${balanceHeader}
+      ${totalKg>0||totalPz>0?`<div style="margin-bottom:10px"><div style="font-size:12px;color:#888;margin-bottom:6px">Acumulado total:</div><table><thead><tr><th>Categoría cierre</th><th>Piezas</th><th>Kg totales</th></tr></thead><tbody>${catRows}</tbody></table><div style="font-weight:600;margin-top:8px;font-size:13px">Total: ${totalPz} piezas · ${totalKg.toFixed(2)} kg</div></div>`:'<p style="font-size:13px;color:#888">Sin sortings aún.</p>'}
+      ${sortings.length>0?`<details style="margin-top:8px"><summary style="font-size:12px;color:#888;cursor:pointer">${sortings.length} sorting${sortings.length!==1?'s':''} registrados</summary><div style="margin-top:8px">${sortings.map(s=>`<div style="font-size:12px;padding:6px;background:#f8f8f4;border-radius:6px;margin-bottom:4px"><span style="color:#888">${s.fecha}</span> — ${s.items.map(it=>{const cat=(st&&st.catalogoCierre||[]).find(x=>x.id===it.catCierreId);return`${cat?cat.nombre:it.catCierreId}: ${it.piezas||0} pz, ${it.kg} kg`;}).join(', ')} ${!finalizado?`<button class="btn small" style="margin-left:8px" onclick="openModalSorting('${s.id}')">Editar</button> <button class="btn small danger" onclick="deleteSorting('${s.id}')">Eliminar</button>`:''}</div>`).join('')}</div></details>`:''}
     </div>`;
   });
   el.innerHTML=html||'<div class="card" style="text-align:center;padding:32px;color:#888">Sin resultados.</div>';
@@ -1492,15 +1613,34 @@ function renderSoAssetsSeleccionados(){
   el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:6px">${sel.length} assets seleccionados — Total: $${total.toFixed(2)}</div>`;
 }
 function updateSoTotal(){
-  let total=0;let valid=true;
+  let total=0;let valid=true;let mensajes=[];
   if(_soTab==='loads'){
     const rows=document.querySelectorAll('#so-load-rows .sorting-row');
+    // 1) sumar kg pedidos por loadId (un mismo load puede aparecer en varias filas)
+    const pedidosPorLoad={};
+    rows.forEach(row=>{
+      const sel=row.querySelector('select');if(!sel)return;
+      const inputs=row.querySelectorAll('input[type=number]');
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;
+      pedidosPorLoad[loadId]=(pedidosPorLoad[loadId]||0)+kg;
+    });
+    // 2) marcar fila por fila + validar precio + validar kg vs disponible global
     rows.forEach(row=>{
       const inputs=row.querySelectorAll('input[type=number]');
       const sel=row.querySelector('select');if(!sel)return;
       const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
       const ld=pState.loads.find(x=>x.id===loadId);
+      // limpiar estilo previo
+      inputs[0].style.borderColor='';
       if(ld){
+        const disp=ld.peso-(ld.pesoVendido||0);
+        const pedidoTotal=pedidosPorLoad[loadId]||0;
+        if(pedidoTotal>disp+0.0001){
+          valid=false;
+          inputs[0].style.borderColor='#c0392b';
+          const msg=`L-${String(ld.num).padStart(7,'0')}: pedido total ${pedidoTotal.toFixed(2)} kg > disponible ${disp.toFixed(2)} kg`;
+          if(!mensajes.includes(msg))mensajes.push(msg);
+        }
         const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
         const isDisp=comm&&comm.tipo==='disposicion';
         const minPrecio=comm?(isDisp?-comm.valor:comm.valor):0;
@@ -1512,7 +1652,13 @@ function updateSoTotal(){
     total=Array.from(_soSelectedAssets).reduce((a,id)=>{const ast=pState.assets.find(x=>x.id===id);return a+(ast?ast.precio||0:0);},0);
   }
   document.getElementById('so-total-preview').innerHTML=`<strong>Total estimado: $${total.toFixed(2)}</strong>`;
-  document.getElementById('so-precio-alert').innerHTML=!valid?'<div class="alert danger">⚠ Uno o más precios están por debajo del mínimo autorizado.</div>':'';
+  const alertEl=document.getElementById('so-precio-alert');
+  if(!valid){
+    let html='';
+    if(mensajes.length)html+=`<div class="alert danger">⚠ Kg solicitados exceden el inventario:<ul style="margin:6px 0 0 18px;padding:0">${mensajes.map(m=>`<li>${m}</li>`).join('')}</ul></div>`;
+    else html+='<div class="alert danger">⚠ Uno o más precios están por debajo del mínimo autorizado.</div>';
+    alertEl.innerHTML=html;
+  } else {alertEl.innerHTML='';}
 }
 
 function saveSalesOrder(){
@@ -1521,6 +1667,23 @@ function saveSalesOrder(){
   let items=[];let monto=0;let tipo=_soTab;
   if(_soTab==='loads'){
     const rows=document.querySelectorAll('#so-load-rows .sorting-row');
+    // Pre-validar: pedido total por loadId ≤ disponible
+    const pedidosPorLoad={};
+    rows.forEach(row=>{
+      const inputs=row.querySelectorAll('input[type=number]');const sel=row.querySelector('select');if(!sel)return;
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;
+      if(!loadId||!kg)return;
+      pedidosPorLoad[loadId]=(pedidosPorLoad[loadId]||0)+kg;
+    });
+    const errores=[];
+    Object.entries(pedidosPorLoad).forEach(([loadId,kg])=>{
+      const ld=pState.loads.find(x=>x.id===loadId);if(!ld)return;
+      const disp=ld.peso-(ld.pesoVendido||0);
+      if(kg>disp+0.0001)errores.push(`L-${String(ld.num).padStart(7,'0')}: pedido ${kg.toFixed(2)} kg > disponible ${disp.toFixed(2)} kg`);
+    });
+    if(errores.length){alert('No se puede guardar la sales order. Los siguientes loads exceden su inventario disponible:\n\n• '+errores.join('\n• '));return;}
+    // Pre-validar precios: si hay precios bajo el mínimo, pedir confirmación una sola vez
+    const preciosBajos=[];
     rows.forEach(row=>{
       const inputs=row.querySelectorAll('input[type=number]');const sel=row.querySelector('select');if(!sel)return;
       const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
@@ -1529,7 +1692,17 @@ function saveSalesOrder(){
       const comm=getAdminCommodities().find(x=>x.id===ld.commodityId);
       const isDisp=comm&&comm.tipo==='disposicion';
       const minPrecio=comm?(isDisp?-comm.valor:comm.valor):0;
-      if(isDisp?pxkg<minPrecio:(pxkg>0&&pxkg<minPrecio)){if(!confirm(`Precio $${pxkg}/kg está fuera del mínimo autorizado $${minPrecio}/kg. ¿Continuar?`))return;}
+      if(isDisp?pxkg<minPrecio:(pxkg>0&&pxkg<minPrecio))preciosBajos.push(`L-${String(ld.num).padStart(7,'0')}: $${pxkg}/kg < mínimo $${minPrecio}/kg`);
+    });
+    if(preciosBajos.length){
+      if(!confirm('Los siguientes precios están bajo el mínimo autorizado:\n\n• '+preciosBajos.join('\n• ')+'\n\n¿Continuar?'))return;
+    }
+    // Aplicar
+    rows.forEach(row=>{
+      const inputs=row.querySelectorAll('input[type=number]');const sel=row.querySelector('select');if(!sel)return;
+      const loadId=sel.value;const kg=parseFloat(inputs[0].value)||0;const pxkg=parseFloat(inputs[1].value)||0;
+      if(!loadId||!kg||!pxkg)return;
+      const ld=pState.loads.find(x=>x.id===loadId);if(!ld)return;
       const subtotal=kg*pxkg;monto+=subtotal;
       items.push({loadId,kg,pxkg,subtotal,commodityId:ld.commodityId});
       // Update load
@@ -1544,8 +1717,11 @@ function saveSalesOrder(){
     });
   }
   if(!items.length){alert('Agrega items a la sales order.');return;}
-  const num=pNextId.so++;
-  pState.salesOrders.push({id:puid('so'),num,compradorId,fecha,tipo,items,monto});
+  if(!pNextId.so)pNextId.so=1;
+  const num=pNextId.so;
+  const soId='so'+num;
+  pNextId.so++;
+  pState.salesOrders.push({id:soId,num,compradorId,fecha,tipo,items,monto});
   savePState();closeModal('modal-so');renderSalesOrders();renderLoads();renderAssets();renderInvEOL();renderInvARS();
 }
 
@@ -1806,6 +1982,217 @@ function abrirAssetDesdeQR(){
     if(modalTitle)modalTitle.after(diagSection);
   }
   document.getElementById('diag-banner').style.display='none';
+}
+
+// ── SELECCIÓN ARS ─────────────────────────────────────────
+// Lotes mixtos recibidos, no cerrados por ARS
+function getLotesParaSeleccion(){
+  const st=getAdminState();if(!st)return[];
+  return(st.lotes||[]).filter(l=>{
+    if(l.finalizado)return false;
+    if(l.estadoComercial!=='ganada')return false;
+    const tipoLote=(l.instrucciones&&l.instrucciones.tipoLote)||'eol';
+    if(tipoLote!=='mixto')return false;
+    if(!(st.recibos||{})[l.id])return false; // requiere recibo
+    if(l.arsCerrado)return false;
+    return true;
+  });
+}
+
+function renderSeleccion(){
+  const el=document.getElementById('seleccion-list');if(!el)return;
+  const st=getAdminState();
+  const lotes=getLotesParaSeleccion();
+  if(!lotes.length){
+    el.innerHTML='<div class="card" style="text-align:center;padding:32px;color:#888">Sin lotes mixtos pendientes de selección. Los lotes deben ser <strong>mixtos</strong>, estar <strong>recibidos</strong>, y aún no cerrados por ARS.</div>';
+    return;
+  }
+  el.innerHTML=lotes.map(l=>{
+    const cliente=st&&(st.clientes||[]).find(c=>c.id===l.clienteId);
+    const recibo=(st.recibos||{})[l.id]||{};
+    const recibidoKg=recibo.totalKg||0;
+    const recibidoPiezas=recibo.piezas||0;
+    const tarimas=(recibo.tarimas||[]).map(t=>`<span class="badge neutral" style="font-size:10px;margin-right:3px">T${t.id}: ${t.peso} kg ${t.estado}</span>`).join('');
+    const ya=l.arsSeleccion;
+    const yaInfo=ya?`<div class="alert info" style="margin-top:8px;margin-bottom:0">Selección previa: <strong>${ya.kg.toFixed(2)} kg · ${ya.piezas} pz</strong>. Puedes ajustar y volver a guardar.</div>`:'';
+    const borrado=((l.instrucciones&&l.instrucciones.serviciosBorrado)||[]).join(', ')||'—';
+    const evidencia=l.instrucciones&&l.instrucciones.evidenciaFotografica?'Sí':'No';
+    return`<div class="card">
+      <div class="row center" style="margin-bottom:10px">
+        <div style="flex:1">
+          <strong style="font-size:15px">${l.nombre}</strong>
+          <span class="badge" style="background:#f0e8fe;color:#6b21a8;margin-left:6px">Mixto</span>
+          <span style="font-size:12px;color:#888;margin-left:6px">${cliente?cliente.nombre:'—'}</span>
+        </div>
+      </div>
+      <div style="background:#f8f8f4;border:1px solid #e0e0d8;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
+        <div style="margin-bottom:4px"><strong>Recibido:</strong> ${recibidoKg.toFixed(2)} kg · ${recibo.totalTarimas||0} tarima${(recibo.totalTarimas||0)!==1?'s':''} · ${recibidoPiezas} pz</div>
+        <div style="margin-bottom:4px"><strong>Instrucciones:</strong> Borrado: ${borrado} · Evidencia fotográfica: ${evidencia}</div>
+        <div>${tarimas}</div>
+      </div>
+      ${yaInfo}
+      <div class="row" style="gap:8px;align-items:flex-end;margin-top:10px">
+        <div class="field" style="margin-bottom:0"><label>Kg a tomar para ARS</label>
+          <input type="number" id="sel-kg-${l.id}" min="0" max="${recibidoKg}" step="0.01" value="${ya?ya.kg:''}" placeholder="máx ${recibidoKg.toFixed(2)}">
+        </div>
+        <div class="field" style="margin-bottom:0"><label>Piezas a tomar</label>
+          <input type="number" id="sel-pz-${l.id}" min="0" value="${ya?ya.piezas:''}" placeholder="piezas">
+        </div>
+        <button class="btn ars" onclick="guardarSeleccionARS('${l.id}')">Guardar selección</button>
+        <button class="btn warning" onclick="rechazarLoteARS('${l.id}')" style="color:#fff">Rechazar</button>
+        ${ya?`<button class="btn success" onclick="cerrarARSLote('${l.id}')">Cerrar ARS</button>`:''}
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:6px">Validación: kg ≤ kg recibido. El resto queda para EOL. "Rechazar" cierra ARS sin tomar nada.</div>
+    </div>`;
+  }).join('');
+}
+
+function guardarSeleccionARS(loteId){
+  const st=getAdminState();if(!st)return;
+  const loteIdx=(st.lotes||[]).findIndex(l=>l.id===loteId);if(loteIdx<0)return;
+  const lote=st.lotes[loteIdx];
+  if(lote.finalizado||lote.arsCerrado){alert('Este lote ya no acepta selección ARS.');return;}
+  const recibo=(st.recibos||{})[loteId]||{};
+  const recibidoKg=recibo.totalKg||0;
+  const kg=parseFloat(document.getElementById('sel-kg-'+loteId).value);
+  const pz=parseInt(document.getElementById('sel-pz-'+loteId).value);
+  if(isNaN(kg)||kg<0){alert('Ingresa los kg que ARS se lleva (debe ser ≥ 0).');return;}
+  if(isNaN(pz)||pz<0){alert('Ingresa las piezas que ARS se lleva (debe ser ≥ 0).');return;}
+  if(kg>recibidoKg+0.0001){alert(`No se puede tomar ${kg.toFixed(2)} kg: el recibo total es ${recibidoKg.toFixed(2)} kg. Si necesitas más, edita primero el recibo.`);return;}
+  st.lotes[loteIdx].arsSeleccion={kg,piezas:pz,fecha:TODAY};
+  st.lotes[loteIdx].arsRechazado=false;
+  saveAdminState(st);
+  renderSeleccion();
+  alert(`Selección ARS guardada: ${kg.toFixed(2)} kg · ${pz} pz. Cuando termines de procesar los assets de este lote, presiona "Cerrar ARS".`);
+}
+
+function rechazarLoteARS(loteId){
+  if(!confirm('Rechazar este lote significa que ARS no procesará nada y queda CERRADO inmediatamente. El sorting de EOL podrá seguir adelante con el peso completo. ¿Continuar?'))return;
+  const st=getAdminState();if(!st)return;
+  const loteIdx=(st.lotes||[]).findIndex(l=>l.id===loteId);if(loteIdx<0)return;
+  st.lotes[loteIdx].arsSeleccion=null;
+  st.lotes[loteIdx].arsRechazado=true;
+  st.lotes[loteIdx].arsCerrado=true;
+  st.lotes[loteIdx].arsCerradoFecha=TODAY;
+  saveAdminState(st);
+  renderSeleccion();
+  alert('Lote rechazado por ARS y cerrado. EOL puede continuar con el peso completo.');
+}
+
+function cerrarARSLote(loteId){
+  if(!confirm('Cerrar ARS para este lote. No importa si los assets están vendidos o si el lote scrap se creó. Una vez cerrado, no podrás modificar la selección. ¿Continuar?'))return;
+  const st=getAdminState();if(!st)return;
+  const loteIdx=(st.lotes||[]).findIndex(l=>l.id===loteId);if(loteIdx<0)return;
+  if(!st.lotes[loteIdx].arsSeleccion){alert('Primero guarda la selección de kg/piezas o presiona Rechazar.');return;}
+  st.lotes[loteIdx].arsCerrado=true;
+  st.lotes[loteIdx].arsCerradoFecha=TODAY;
+  saveAdminState(st);
+  renderSeleccion();
+  alert('ARS cerrado. El admin podrá cerrar el lote cuando EOL también esté cerrado.');
+}
+
+// ── FACTURACIÓN ────────────────────────────────────────────
+function renderFacturacion(){
+  const st=getAdminState();
+  const finalEl=document.getElementById('facturacion-final-list');
+  const prelEl=document.getElementById('facturacion-preliminar-list');
+  if(!st){if(finalEl)finalEl.innerHTML='<p style="color:#888">Sin datos.</p>';if(prelEl)prelEl.innerHTML='';return;}
+  // FINAL: lotes ya finalizados por admin
+  const finales=(st.lotes||[]).filter(l=>l.finalizado);
+  // PRELIMINAR: lotes ganados, NO finalizados (con o sin cierre operativo)
+  const preliminares=(st.lotes||[]).filter(l=>!l.finalizado&&l.estadoComercial==='ganada');
+
+  finalEl.innerHTML=finales.length?finales.map(l=>renderFacturaCard(l,st,'final')).join(''):'<div class="card" style="text-align:center;padding:32px;color:#888">Sin lotes finalizados. Aparecen aquí cuando el admin cierra el lote.</div>';
+  prelEl.innerHTML=preliminares.length?preliminares.map(l=>renderFacturaCard(l,st,'preliminar')).join(''):'<div class="card" style="text-align:center;padding:32px;color:#888">Sin lotes ganados en curso.</div>';
+}
+
+function renderFacturaCard(l,st,modo){
+  const cliente=(st.clientes||[]).find(c=>c.id===l.clienteId);
+  const costeo=(st.costeos||{})[l.id]||{};
+  const r=calcCosteoLocal(l,st,costeo);
+  const tipoLote=(l.instrucciones&&l.instrucciones.tipoLote)||'eol';
+  const cierreInfo=`
+    <span class="badge ${l.eolCerrado?'success':'neutral'}" style="font-size:10px">EOL ${l.eolCerrado?'✓':'pend'}</span>
+    ${tipoLote==='mixto'?`<span class="badge ${l.arsCerrado?'success':'neutral'}" style="font-size:10px">ARS ${l.arsCerrado?(l.arsRechazado?'rechazado':'✓'):'pend'}</span>`:''}
+  `;
+  const mc=r.margen===null?'neutral':r.margen>=20?'success':r.margen>=0?'warning':'danger';
+  const mt=r.margen===null?'N/A':`${r.margen.toFixed(1)}%`;
+  const lineas=(r.lineaDetalle||[]).map(d=>{
+    const signo=d.ingreso>0?`<span style="color:#1a7a3c">+$${d.ingreso.toFixed(2)}</span>`:`<span style="color:#c0392b">-$${d.egreso.toFixed(2)}</span>`;
+    return`<tr><td>${d.tipo==='HOE'?'<span class="badge eol" style="font-size:10px">EOL</span>':'<span class="badge ars" style="font-size:10px">ARS</span>'} ${d.nombre}</td><td>${d.unidad==='kg'?d.base.toFixed(2)+' kg':d.base+' pz'} × $${d.valor.toFixed(2)}</td><td style="text-align:right">${signo}</td></tr>`;
+  }).join('');
+  const tagModo=modo==='final'
+    ?'<span class="badge success" style="font-size:11px">Factura final</span>'
+    :'<span class="badge warning" style="font-size:11px">Preliminar — datos estimados</span>';
+  return`<div class="card">
+    <div class="row center" style="margin-bottom:8px">
+      <div style="flex:1">
+        <strong style="font-size:15px">${l.nombre}</strong> ${tagModo}
+        <br><span style="font-size:12px;color:#888">${cliente?cliente.nombre:'—'} · Deadline: ${l.deadline||'pendiente recibo'} · ${cierreInfo}</span>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Total egresos</div><div class="value" style="font-size:14px;color:#c0392b">$${r.totalEgresos.toFixed(2)}</div></div>
+      <div class="metric"><div class="label">Total ingresos</div><div class="value" style="font-size:14px;color:#1a7a3c">$${r.totalIngresos.toFixed(2)}</div></div>
+      <div class="metric"><div class="label">Neto</div><div class="value" style="font-size:14px">$${r.ingresosNetos.toFixed(2)}</div></div>
+      <div class="metric"><div class="label">Margen</div><div class="value"><span class="badge ${mc}" style="font-size:11px">${mt}</span></div></div>
+    </div>
+    ${lineas?`<details style="margin-top:10px"><summary style="font-size:12px;color:#888;cursor:pointer">Detalle por línea (${(r.lineaDetalle||[]).length} líneas)</summary>
+      <table style="margin-top:6px"><thead><tr><th>Concepto</th><th>Base × $/u</th><th style="text-align:right">Monto</th></tr></thead><tbody>${lineas}</tbody></table>
+    </details>`:''}
+  </div>`;
+}
+
+// Mini-réplica de calcCosteo del admin (solo para visualización en facturación)
+function calcCosteoLocal(l,st,cst){
+  const cfgEOL=(st.config&&st.config.eol)||{sueldoDia:0,gastosFijos:0};
+  const cfgARS=(st.config&&st.config.ars)||{sueldoDia:0,gastosFijos:0};
+  const opsEOL=((st.operadoresEOL||[]).filter(o=>o.activo!==false).length)||1;
+  const opsARS=((st.operadoresARS||[]).filter(o=>o.activo!==false).length)||1;
+  const horasEOL=(l.tiempoTotal||0)/60;const costoMO_EOL=(horasEOL/8)*cfgEOL.sueldoDia;
+  const costoFijosEOL=((l.tiempoTotal||0)/opsEOL/60/8)*cfgEOL.gastosFijos;
+  const horasARS=(l.tiempoARSTotal||0)/60;const costoMO_ARS=(horasARS/8)*cfgARS.sueldoDia;
+  const costoFijosARS=((l.tiempoARSTotal||0)/opsARS/60/8)*cfgARS.gastosFijos;
+  let valIngreso=0,valDisposicion=0;
+  Object.entries(l.commAgg||{}).forEach(([cid,kg])=>{const c=(st.commodities||[]).find(x=>x.id===cid);if(!c)return;if(c.tipo==='disposicion')valDisposicion+=c.valor*kg;else valIngreso+=c.valor*kg;});
+  let costoRefacciones=0;
+  (l.refacciones||[]).forEach(ref=>{const r=(st.refacciones||[]).find(x=>x.id===ref.refId);if(r)costoRefacciones+=r.precio*ref.qty;});
+  const valItemsARS=l.valorARSTotal||0;
+  const logEgreso=parseFloat(cst.logEgreso)||0;
+  const logIngreso=parseFloat(cst.logIngreso)||0;
+  let cobro=0;const tipo=cst.cobroTipo||'total';const val=parseFloat(cst.cobroValor)||0;
+  const totalPiezas=(l.items||[]).reduce((a,x)=>a+x.qty,0)+(l.itemsARS||[]).reduce((a,x)=>a+x.qty,0);
+  if(tipo==='total')cobro=val;else if(tipo==='kg')cobro=val*(l.pesoTotal||0);else if(tipo==='pieza')cobro=val*totalPiezas;
+  const cobrosHOE=cst.cobrosHOE||{};const cobrosARS=cst.cobrosARS||{};
+  let lineaIngresos=0,lineaEgresos=0;const lineaDetalle=[];
+  (l.items||[]).forEach(it=>{
+    const h=(st.hoes||[]).find(x=>x.id===it.hoeId);if(!h)return;
+    const linea=cobrosHOE[it.hoeId];if(!linea||!linea.valor)return;
+    const kg=h.peso*it.qty;const pz=it.qty;
+    const v=parseFloat(linea.valor)||0;
+    const base=linea.tipo==='kg'?kg:pz;
+    const monto=v*base;
+    if(monto>=0)lineaIngresos+=monto;else lineaEgresos+=Math.abs(monto);
+    lineaDetalle.push({tipo:'HOE',nombre:h.modelo,unidad:linea.tipo,base,valor:v,ingreso:monto>=0?monto:0,egreso:monto<0?Math.abs(monto):0});
+  });
+  const arsKgPromedio=(l.arsSeleccion&&l.arsSeleccion.piezas>0)?(l.arsSeleccion.kg/l.arsSeleccion.piezas):0;
+  (l.itemsARS||[]).forEach(it=>{
+    const itf=(st.itemsFuncionales||[]).find(x=>x.id===it.itemId);if(!itf)return;
+    const linea=cobrosARS[it.itemId];if(!linea||!linea.valor)return;
+    const pz=it.qty;
+    const kg=linea.tipo==='kg'?(arsKgPromedio*pz):0;
+    if(linea.tipo==='kg'&&arsKgPromedio===0)return;
+    const v=parseFloat(linea.valor)||0;
+    const base=linea.tipo==='kg'?kg:pz;
+    const monto=v*base;
+    if(monto>=0)lineaIngresos+=monto;else lineaEgresos+=Math.abs(monto);
+    lineaDetalle.push({tipo:'ARS',nombre:itf.marca+' '+itf.modelo,unidad:linea.tipo,base,valor:v,ingreso:monto>=0?monto:0,egreso:monto<0?Math.abs(monto):0});
+  });
+  const totalEgresos=costoMO_EOL+costoFijosEOL+costoMO_ARS+costoFijosARS+logEgreso+valDisposicion+costoRefacciones+(cobro<0?Math.abs(cobro):0)+lineaEgresos;
+  const totalIngresos=valIngreso+valItemsARS+logIngreso+(cobro>0?cobro:0)+lineaIngresos;
+  const ingresosNetos=totalIngresos-totalEgresos;
+  const margen=totalIngresos>0?(ingresosNetos/totalIngresos*100):null;
+  return{totalEgresos,totalIngresos,ingresosNetos,margen,lineaDetalle};
 }
 
 // ── INIT ─────────────────────────────────────────────────
