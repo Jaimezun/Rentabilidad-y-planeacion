@@ -800,6 +800,7 @@ tr:hover td{background:#fafaf8}
 <div id="modal-costeo" class="modal-overlay" style="display:none"><div class="modal" style="max-width:720px">
   <h3 id="modal-costeo-title">Costeo del lote</h3>
   <input type="hidden" id="costeo-lote-id">
+  <div id="costeo-readonly-banner" class="alert warning" style="display:none">Este costeo está bloqueado: el lote ya no está <strong>En evaluación</strong>. Solo se puede consultar. Para modificarlo, regresa el lote a “En evaluación” (Desautorizar).</div>
   <div class="tabs">
     <button class="tab active" onclick="showCosteoTab('egresos')">Egresos</button>
     <button class="tab" onclick="showCosteoTab('ingresos')">Ingresos</button>
@@ -842,7 +843,7 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
   <div id="costeo-resumen" class="section"><div id="cst-resumen-content"></div></div>
-  <div class="modal-footer"><button class="btn" onclick="closeModal('modal-costeo')">Cancelar</button><button class="btn primary" onclick="saveCosteo()">Guardar</button></div>
+  <div class="modal-footer"><button class="btn" onclick="closeModal('modal-costeo')">Cerrar</button><button id="costeo-save-btn" class="btn primary" onclick="saveCosteo()">Guardar</button></div>
 </div></div>
 
 <!-- MODAL OPERADOR -->
@@ -3032,6 +3033,31 @@ function readCobrosLinea(){
   return{cobrosHOE,cobrosARS};
 }
 
+// ── BLOQUEO DE COSTEO ─────────────────────────────────────
+// Regla de negocio: el costeo SOLO puede modificarse mientras el lote
+// está "En evaluación" (estadoComercial === 'evaluacion'). Una vez
+// autorizado —y en cualquier estado posterior: negociación, ganada,
+// perdida, finalizado— el costeo queda congelado y es de solo lectura.
+// Para volver a editarlo hay que regresar el lote a "En evaluación"
+// (botón Desautorizar).
+function costeoEditable(lote){
+  return !!lote && lote.estadoComercial==='evaluacion';
+}
+function aplicarModoCosteo(editable){
+  const modal=document.getElementById('modal-costeo');
+  if(!modal)return;
+  modal.dataset.editable=editable?'1':'0';
+  // Deshabilita TODOS los campos de captura (no los botones de pestaña ni del footer)
+  modal.querySelectorAll('input, select, textarea').forEach(el=>{
+    if(el.type==='hidden')return;
+    el.disabled=!editable;
+  });
+  const banner=document.getElementById('costeo-readonly-banner');
+  if(banner)banner.style.display=editable?'none':'block';
+  const saveBtn=document.getElementById('costeo-save-btn');
+  if(saveBtn)saveBtn.style.display=editable?'':'none';
+}
+
 function openCosteo(loteId){
   const l=state.lotes.find(x=>x.id===loteId);if(!l)return;
   const cst=state.costeos[loteId]||{};
@@ -3112,6 +3138,7 @@ function openCosteo(loteId){
   document.getElementById('cst-items-ars-val').innerHTML=`<div class="ib-title">Items funcionales <span class="area-tag-ars">ARS</span></div>${arsIR||'<div style="color:#888;font-size:12px">Sin items ARS</div>'}<div class="ib-row"><span>Subtotal</span><span style="color:#0f6e56">$${r?r.valItemsARS.toFixed(2):'0.00'}</span></div>`;
   document.querySelectorAll('#modal-costeo .section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('#modal-costeo .tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('costeo-egresos').classList.add('active');document.querySelector('#modal-costeo .tab').classList.add('active');
+  aplicarModoCosteo(costeoEditable(l));
   openModal('modal-costeo');
 }
 function showCosteoTab(id){
@@ -3120,8 +3147,11 @@ function showCosteoTab(id){
 }
 function renderCosteoResumen(){
   const loteId=document.getElementById('costeo-lote-id').value;
-  const{cobrosHOE,cobrosARS}=readCobrosLinea();
-  state.costeos[loteId]={...(state.costeos[loteId]||{}),logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value,cobrosHOE,cobrosARS};
+  const lote=state.lotes.find(x=>x.id===loteId);
+  if(costeoEditable(lote)){
+    const{cobrosHOE,cobrosARS}=readCobrosLinea();
+    state.costeos[loteId]={...(state.costeos[loteId]||{}),logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value,cobrosHOE,cobrosARS};
+  }
   const r=calcCosteo(loteId);if(!r)return;
   const mc=r.margen===null?'neutral':r.margen>=20?'success':r.margen>=0?'warning':'danger';const mt=r.margen===null?'N/A':`${r.margen.toFixed(1)}%`;
   const lineaRows=(r.lineaDetalle||[]).map(d=>{
@@ -3159,6 +3189,11 @@ function renderCosteoResumen(){
 }
 function saveCosteo(){
   const loteId=document.getElementById('costeo-lote-id').value;
+  const lote=state.lotes.find(x=>x.id===loteId);
+  if(!costeoEditable(lote)){
+    alert('Este costeo está bloqueado: el lote ya no está “En evaluación”. Para modificarlo, regresa el lote a “En evaluación” (Desautorizar).');
+    return;
+  }
   const{cobrosHOE,cobrosARS}=readCobrosLinea();
   state.costeos[loteId]={logEgreso:document.getElementById('cst-log-egreso').value,cobroTipo:document.getElementById('cst-cobro-tipo').value,cobroValor:document.getElementById('cst-cobro-valor').value,logIngreso:document.getElementById('cst-log-ingreso').value,cobrosHOE,cobrosARS};
   saveState();closeModal('modal-costeo');renderCosteoList();
@@ -3171,7 +3206,7 @@ function renderCosteoList(){
     const eolCount=(l.items||[]).reduce((a,x)=>a+x.qty,0);const arsCount=(l.itemsARS||[]).reduce((a,x)=>a+x.qty,0);
     return`<div class="card"><div class="row center" style="margin-bottom:14px">
       <div style="flex:1"><span style="font-weight:600;font-size:15px">${l.nombre}</span> <span style="font-size:12px;color:#888">· ${cliente?cliente.nombre:'Sin cliente'} · deadline ${l.deadline}</span> ${estadoBadge(getEstadoLote(l))} ${eolCount?`<span class="area-tag-eol">${eolCount} HOEs</span> `:''}${arsCount?`<span class="area-tag-ars">${arsCount} items</span>`:''}</div>
-      <button class="btn small" onclick="openCosteo('${l.id}')">Editar costeo</button>
+      <button class="btn small" onclick="openCosteo('${l.id}')">${costeoEditable(l)?'Editar costeo':'Ver costeo'}</button>
     </div>
     ${r?`<div class="metric-grid"><div class="metric"><div class="label">Egresos</div><div class="value" style="font-size:16px">$${r.totalEgresos.toFixed(0)}</div></div><div class="metric"><div class="label">Ingresos</div><div class="value" style="font-size:16px">$${r.totalIngresos.toFixed(0)}</div></div><div class="metric"><div class="label">Neto</div><div class="value" style="font-size:16px">$${r.ingresosNetos.toFixed(0)}</div></div><div class="metric"><div class="label">Margen</div><div class="value"><span class="badge ${mc}">${mt}</span></div></div></div>`:'<p style="font-size:13px;color:#888">Sin datos de costeo</p>'}
     </div>`;
