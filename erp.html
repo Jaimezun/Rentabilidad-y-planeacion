@@ -145,10 +145,8 @@ tr:hover td{background:#fafaf8}
 <div class="nav" id="main-nav">
   <button class="nav active" onclick="showPage('dashboard')">Dashboard</button>
   <button class="nav" onclick="showPage('clientes')">Clientes</button>
-  <button class="nav" onclick="showPage('commodities')">Commodities</button>
+  <button class="nav" id="nav-materiales" onclick="showPage('materiales')">Materiales</button>
   <button class="nav" onclick="showPage('funcional')">Funcional</button>
-  <button class="nav" onclick="showPage('hoes')">HOEs</button>
-  <button class="nav" onclick="showPage('catalogo-cierre')">Catálogo cierre</button>
   <button class="nav" onclick="showPage('lotes')">Lotes</button>
   <button class="nav" onclick="showPage('planeacion')">Planeación</button>
   <button class="nav" onclick="showPage('costeo')">Costeo</button>
@@ -195,10 +193,12 @@ tr:hover td{background:#fafaf8}
 </div>
 
 <!-- COMMODITIES -->
-<div id="page-commodities" class="page">
+<div id="page-materiales" class="page">
   <div class="tabs">
-    <button class="tab active" onclick="showSection('sec-comm-normales')">Commodities de producción</button>
-    <button class="tab" onclick="showSection('sec-comm-cierre')">Commodities de cierre</button>
+    <button class="tab active" id="tab-sec-comm-normales" onclick="showSection('sec-comm-normales')">Commodities de producción</button>
+    <button class="tab" id="tab-sec-comm-cierre" onclick="showSection('sec-comm-cierre')">Commodities de cierre</button>
+    <button class="tab" id="tab-sec-hoes" onclick="showSection('sec-hoes')">HOEs</button>
+    <button class="tab" id="tab-sec-catalogo" onclick="showSection('sec-catalogo')">Catálogo de cierre</button>
   </div>
   <div id="sec-comm-normales" class="section active">
     <div class="row center" style="margin-bottom:12px">
@@ -219,6 +219,28 @@ tr:hover td{background:#fafaf8}
     <div class="card" style="padding:0;overflow:hidden">
       <table><thead><tr><th>Nombre</th><th>kWh/kg</th><th>CO₂/kg (kg)</th><th>Agua/kg (L)</th><th>Petróleo/kg (L)</th><th></th></tr></thead>
       <tbody id="commodities-cierre-table"></tbody></table>
+    </div>
+  </div>
+  <div id="sec-hoes" class="section">
+    <div class="row center" style="margin-bottom:20px">
+      <h2 style="margin:0;flex:1">Hojas de Operación Estándar</h2>
+      <button class="btn primary" onclick="openNewHoe()">+ Nueva HOE</button>
+    </div>
+    <div class="search-wrap"><input type="text" class="search-box" id="hoes-search" placeholder="Buscar HOE..." oninput="renderHoes()"></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Modelo / Descripción</th><th>Tipo</th><th>Categoría</th><th>Tiempo (min)</th><th>Peso (kg)</th><th>Estado HOE</th><th></th></tr></thead>
+      <tbody id="hoes-table"></tbody></table>
+    </div>
+  </div>
+  <div id="sec-catalogo" class="section">
+    <div class="row center" style="margin-bottom:20px">
+      <h2 style="margin:0;flex:1">Catálogo de cierre</h2>
+      <button class="btn primary" onclick="openNewCatalogoCierre()">+ Nueva categoría</button>
+    </div>
+    <div class="alert info">Las categorías de cierre agrupan items reales procesados.</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>Nombre</th><th>Commodities de cierre</th><th></th></tr></thead>
+      <tbody id="catalogo-cierre-table"></tbody></table>
     </div>
   </div>
 </div>
@@ -275,32 +297,6 @@ tr:hover td{background:#fafaf8}
       <table><thead><tr><th>Nombre</th><th>Precio ($)</th><th></th></tr></thead>
       <tbody id="refacciones-table"></tbody></table>
     </div>
-  </div>
-</div>
-
-<!-- HOEs -->
-<div id="page-hoes" class="page">
-  <div class="row center" style="margin-bottom:20px">
-    <h2 style="margin:0;flex:1">Hojas de Operación Estándar</h2>
-    <button class="btn primary" onclick="openNewHoe()">+ Nueva HOE</button>
-  </div>
-  <div class="search-wrap"><input type="text" class="search-box" id="hoes-search" placeholder="Buscar HOE..." oninput="renderHoes()"></div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <table><thead><tr><th>Modelo / Descripción</th><th>Tipo</th><th>Categoría</th><th>Tiempo (min)</th><th>Peso (kg)</th><th>Estado HOE</th><th></th></tr></thead>
-    <tbody id="hoes-table"></tbody></table>
-  </div>
-</div>
-
-<!-- CATÁLOGO CIERRE -->
-<div id="page-catalogo-cierre" class="page">
-  <div class="row center" style="margin-bottom:20px">
-    <h2 style="margin:0;flex:1">Catálogo de cierre</h2>
-    <button class="btn primary" onclick="openNewCatalogoCierre()">+ Nueva categoría</button>
-  </div>
-  <div class="alert info">Las categorías de cierre agrupan items reales procesados.</div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <table><thead><tr><th>Nombre</th><th>Commodities de cierre</th><th></th></tr></thead>
-    <tbody id="catalogo-cierre-table"></tbody></table>
   </div>
 </div>
 
@@ -984,18 +980,29 @@ function saveState(){
 function uid(p){if(!nextId[p])nextId[p]=1;return p+(nextId[p]++);}
 
 // ── NAVIGATION ────────────────────────────────────────────
-function showPage(id){
+function showPage(id,sec){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  event.target.classList.add('active');
+  const navBtn=document.getElementById('nav-'+id);
+  if(navBtn)navBtn.classList.add('active');
+  else if(typeof event!=='undefined'&&event&&event.target&&event.target.classList&&event.target.classList.contains('nav'))event.target.classList.add('active');
   if(id==='planeacion'){renderCalendar('eol');renderCalendar('ars');renderOpsPanel('eol');renderOpsPanel('ars');renderCalendarRecibo();renderProximosArribos();}
   if(id==='dashboard')renderDashboard();
   if(id==='costeo')renderCosteoList();
   if(id==='clientes'){renderClientes();renderResumenClienteSelects();}
-  if(id==='catalogo-cierre')renderCatalogoCierre();
+  if(id==='materiales'){renderCommodities();renderCommoditiesCierre();renderHoes();renderCatalogoCierre();}
   if(id==='funcional'){renderCategorias();renderTiposServicio();renderItemsFunc();renderRefacciones();}
   if(id==='lotes')renderLotes();
+  if(sec){
+    const page=document.getElementById('page-'+id);
+    if(page){
+      page.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      page.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      const secEl=document.getElementById(sec);if(secEl)secEl.classList.add('active');
+      const tabEl=document.getElementById('tab-'+sec);if(tabEl)tabEl.classList.add('active');
+    }
+  }
 }
 function openModal(id){document.getElementById(id).style.display='flex';}
 function closeModal(id){document.getElementById(id).style.display='none';}
@@ -3244,7 +3251,7 @@ function renderDashboard(){
   const sixMonthsAgo=new Date();sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
   state.hoes.filter(h=>h.tipo==='estandar'&&(!h.lastConfirmed||new Date(h.lastConfirmed)<sixMonthsAgo)).forEach(h=>{
     const motivo=h.lastConfirmed?'más de 6 meses sin confirmar':'nunca se ha confirmado';
-    al.push(`<div class="alert warning" style="margin-bottom:8px">HOE <strong>${h.modelo}</strong>: estándar ${motivo}. <a href="#" onclick="showPage('hoes');return false" style="color:inherit">Ver HOEs</a></div>`);
+    al.push(`<div class="alert warning" style="margin-bottom:8px">HOE <strong>${h.modelo}</strong>: estándar ${motivo}. <a href="#" onclick="showPage('materiales','sec-hoes');return false" style="color:inherit">Ver HOEs</a></div>`);
   });
   // Deadline alerts: lotes with plan but deadline passed
   state.lotes.filter(l=>!l.finalizado).forEach(l=>{
